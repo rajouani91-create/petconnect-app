@@ -1,6 +1,8 @@
 // Datenzugriff. owner_id wird nie mitgeschickt – die Datenbank setzt ihn, RLS schützt die Zeilen.
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { Lang } from '../i18n';
+import type { Database } from './database.types';
+import { docExt, type DocCategory, type DocMime } from './record';
 import { supabase, type PetRow, type ProfileRow, type RoutineRow } from './supabase';
 import { isGrantRole, isOpenInvite, parsePreview, toRole, type GrantRole, type InvitePreview, type MemberRole, type Membership } from './sharing';
 import type { TemplateEntry } from './templates';
@@ -265,5 +267,128 @@ export async function removePhotoFile(path: string): Promise<void> {
 export async function signedPhotoUrl(path: string, seconds: number): Promise<string> {
   const res = await supabase.storage.from(PHOTO_BUCKET).createSignedUrl(path, seconds);
   if (res.error || !res.data) throw new ApiError({ message: res.error?.message ?? 'Keine Daten erhalten', code: 'storage' });
+  return res.data.signedUrl;
+}
+
+// ---------- Tierakte: Gewicht ----------
+
+export type WeightRow = Database['public']['Tables']['weights']['Row'];
+export type VaccinationRow = Database['public']['Tables']['vaccinations']['Row'];
+export type DocumentRow = Database['public']['Tables']['pet_documents']['Row'];
+
+/** Schreibvorgang, der Zeilen zurückgibt: keine Zeile = RLS hat abgelehnt → Rechte-Fehler */
+function checkChanged<T>(res: { data: T[] | null; error: PostgrestError | null }): T {
+  const rows = check(res);
+  const first = rows[0];
+  if (first === undefined) throw new ApiError({ message: 'Keine Berechtigung', code: '42501' });
+  return first;
+}
+
+export async function listWeights(petId: string): Promise<WeightRow[]> {
+  return check(
+    await supabase.from('weights').select('*').eq('pet_id', petId).order('measured_on', { ascending: false }).order('created_at', { ascending: false }),
+  );
+}
+
+export async function addWeight(petId: string, measuredOn: string, kg: number): Promise<WeightRow> {
+  return check(await supabase.from('weights').insert({ pet_id: petId, measured_on: measuredOn, kg }).select('*').single());
+}
+
+export async function updateWeight(id: string, measuredOn: string, kg: number): Promise<WeightRow> {
+  return checkChanged(await supabase.from('weights').update({ measured_on: measuredOn, kg }).eq('id', id).select('*'));
+}
+
+export async function deleteWeight(id: string): Promise<void> {
+  checkChanged(await supabase.from('weights').delete().eq('id', id).select('id'));
+}
+
+// ---------- Tierakte: Impfungen ----------
+
+export interface VaccinationInput {
+  name: string;
+  given_on: string | null;
+  valid_until: string | null;
+}
+
+export async function listVaccinations(petId: string): Promise<VaccinationRow[]> {
+  return check(await supabase.from('vaccinations').select('*').eq('pet_id', petId).order('created_at', { ascending: true }));
+}
+
+/** Die App legt nur eigene Einträge an (source = 'owner', Standard der Datenbank). */
+export async function addVaccination(petId: string, v: VaccinationInput): Promise<VaccinationRow> {
+  return check(await supabase.from('vaccinations').insert({ pet_id: petId, ...v }).select('*').single());
+}
+
+/** Einträge der Praxis lassen sich nicht ändern (RLS); dann Rechte-Fehler. */
+export async function updateVaccination(id: string, v: VaccinationInput): Promise<VaccinationRow> {
+  return checkChanged(await supabase.from('vaccinations').update(v).eq('id', id).eq('source', 'owner').select('*'));
+}
+
+export async function deleteVaccination(id: string): Promise<void> {
+  checkChanged(await supabase.from('vaccinations').delete().eq('id', id).eq('source', 'owner').select('id'));
+}
+
+// ---------- Tierakte: Dokumente (Bucket pet-documents, Pfad <pet_id>/<uuid>.<endung>) ----------
+
+const DOC_BUCKET = 'pet-documents';
+
+function storageError(err: { message: string; statusCode?: string; status?: number }): ApiError {
+  const denied = err.statusCode === '403' || err.status === 403 || /row-level security|unauthorized/i.test(err.message);
+  return new ApiError({ message: err.message, code: denied ? '42501' : 'storage' });
+}
+
+export async function listDocuments(petId: string): Promise<DocumentRow[]> {
+  return check(await supabase.from('pet_documents').select('*').eq('pet_id', petId).order('created_at', { ascending: false }));
+}
+
+export interface DocumentInput {
+  title: string;
+  category: DocCategory;
+  doc_date: string | null;
+}
+
+/** Erst die Datei hochladen, dann die Zeile anlegen. Scheitert die Zeile, wird die Datei wieder gelöscht. */
+export async function uploadDocument(petId: string, file: Blob, mime: DocMime, meta: DocumentInput): Promise<DocumentRow> {
+  const path = `${petId}/${crypto.randomUUID()}.${docExt(mime)}`;
+  // Typ fest an die Datei binden: supabase-js schickt Blobs als FormData, dort zählt der Typ des Blobs, nicht contentType.
+  const body = file.type === mime ? file : new Blob([file], { type: mime });
+  const up = await supabase.storage.from(DOC_BUCKET).upload(path, body, { contentType: mime, upsert: false });
+  if (up.error) throw storageError(up.error as { message: string; statusCode?: string; status?: number });
+  const res = await supabase
+    .from('pet_documents')
+    .insert({ pet_id: petId, storage_path: path, mime_type: mime, size_bytes: file.size, ...meta })
+    .select('*')
+    .single();
+  if (res.error || !res.data) {
+    const rm = await supabase.storage.from(DOC_BUCKET).remove([path]);
+    if (rm.error) console.error('Hochgeladene Datei konnte nach einem Fehler nicht entfernt werden');
+    throw new ApiError(res.error ?? { message: 'Keine Daten erhalten' });
+  }
+  return res.data;
+}
+
+/** Nachträglich änderbar: Titel, Kategorie, Datum */
+export async function updateDocument(id: string, meta: DocumentInput): Promise<DocumentRow> {
+  return checkChanged(await supabase.from('pet_documents').update(meta).eq('id', id).select('*'));
+}
+
+/**
+ * Erst die Zeile löschen, dann die Datei. Scheitert nur die Datei, gilt das Löschen trotzdem als erfolgreich
+ * (die Zeile ist weg); der Fehler landet ohne Pfad in der Konsole.
+ */
+export async function deleteDocument(doc: Pick<DocumentRow, 'id' | 'storage_path'>): Promise<void> {
+  checkChanged(await supabase.from('pet_documents').delete().eq('id', doc.id).select('id'));
+  try {
+    const rm = await supabase.storage.from(DOC_BUCKET).remove([doc.storage_path]);
+    if (rm.error) console.error('Dokument-Datei konnte nicht gelöscht werden');
+  } catch {
+    console.error('Dokument-Datei konnte nicht gelöscht werden');
+  }
+}
+
+/** Signierte, kurzlebige URL zu einem Dokument (nie öffentlich) */
+export async function signedDocumentUrl(path: string, seconds: number): Promise<string> {
+  const res = await supabase.storage.from(DOC_BUCKET).createSignedUrl(path, seconds);
+  if (res.error || !res.data) throw storageError(res.error ?? { message: 'Keine Daten erhalten' });
   return res.data.signedUrl;
 }

@@ -11,8 +11,8 @@ describe('toHHMM / toMinutes', () => {
     expect(toMinutes('21:30:00')).toBe(21 * 60 + 30);
   });
   it('lehnt ungültige Zeiten ab', () => {
-    expect(() => toHHMM('25:00')).toThrow();
-    expect(() => toHHMM('abc')).toThrow();
+    expect(() => toHHMM('25:00')).toThrow('Ungültige Uhrzeit: 25:00');
+    expect(() => toHHMM('abc')).toThrow('Ungültige Uhrzeit: abc');
   });
 });
 

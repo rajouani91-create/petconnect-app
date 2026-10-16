@@ -37,9 +37,13 @@ export function Today() {
   const [pending, setPending] = useState<string | null>(null);
 
   // Meldung nur einmal zeigen: aus dem Verlauf entfernen, damit sie beim Neuladen nicht wiederkommt.
+  const flashCleared = useRef(false);
+  const { pathname } = location;
   useEffect(() => {
-    if (flash) navigate(location.pathname, { replace: true, state: null });
-  }, []);
+    if (!flash || flashCleared.current) return;
+    flashCleared.current = true;
+    navigate(pathname, { replace: true, state: null });
+  }, [flash, navigate, pathname]);
 
   const load = useCallback(async (petId: string, date: string) => {
     try {
@@ -63,7 +67,9 @@ export function Today() {
 
   // Andere Betreuer haken auch ab: beim Zurückkehren ins Fenster und jede Minute still neu laden.
   const latest = useRef({ petId, date: zn.date });
-  latest.current = { petId, date: zn.date };
+  useEffect(() => {
+    latest.current = { petId, date: zn.date };
+  }, [petId, zn.date]);
   useEffect(() => {
     const refresh = () => {
       const { petId: id, date } = latest.current;

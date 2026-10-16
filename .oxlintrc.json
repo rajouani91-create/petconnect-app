@@ -1,0 +1,38 @@
+{
+  // oxlint statt ESLint: typescript-eslint unterstützt TypeScript 7 (noch) nicht, oxlint braucht keine TS-API.
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "jsx-a11y", "unicorn", "oxc", "vitest"],
+  "categories": { "correctness": "error", "suspicious": "warn" },
+  "env": { "browser": true, "es2024": true },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "error",
+    // Neuer JSX-Transform (React 17+): React muss nicht importiert sein.
+    "react/react-in-jsx-scope": "off",
+    "typescript/no-explicit-any": "error",
+    "no-console": ["error", { "allow": ["error", "warn"] }],
+    "eqeqeq": ["error", "smart"],
+    // Beschriftung steckt in verschachtelten <span>s (Titel + Erklärung, z. B. RoleChoice)
+    "jsx-a11y/label-has-associated-control": ["error", { "depth": 3 }],
+
+    // Die Vorgaben verlangen Statusmeldungen über role="status" (und role="group"/"img" für Gruppen und Symbole).
+    "jsx-a11y/prefer-tag-over-role": "off",
+    // "nickname" ist laut HTML-Standard ein gültiger autocomplete-Wert; die Regel kennt ihn nicht.
+    "jsx-a11y/autocomplete-valid": "off",
+    // Daten werden bewusst in Effekten geladen (kein Router-Loader); Zurücksetzen beim Tierwechsel gehört dazu.
+    "react/set-state-in-effect": "off",
+    // Doppelt zu react-hooks/exhaustive-deps, meldet aber gewollte Auslöser (z. B. Neu-Laden nach Rechte-Änderung).
+    "react/exhaustive-effect-dependencies": "off",
+    // Sortiert wird immer eine Kopie ([...x].sort); toSorted() wäre gleichwertig.
+    "unicorn/no-array-sort": "off",
+    "unicorn/consistent-function-scoping": "off"
+  },
+  "overrides": [
+    {
+      // <dialog>: Klick auf den Hintergrund schließt; Tastatur (Escape) erledigt der Browser über onCancel.
+      "files": ["src/components/Dialog.tsx"],
+      "rules": { "jsx-a11y/click-events-have-key-events": "off", "jsx-a11y/no-noninteractive-element-interactions": "off" }
+    }
+  ],
+  "ignorePatterns": ["dist/**", "node_modules/**", "src/lib/database.types.ts"]
+}

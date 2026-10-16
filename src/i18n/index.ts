@@ -114,3 +114,11 @@ export function formatIsoDate(iso: string, lang: Lang): string {
     new Date(Date.UTC(y ?? 2000, (mo ?? 1) - 1, d ?? 1)),
   );
 }
+
+/** ISO-Datum "YYYY-MM-DD" kurz, im Deutschen TT.MM.JJJJ. */
+export function formatIsoDateShort(iso: string, lang: Lang): string {
+  const [y, mo, d] = iso.split('-').map(Number);
+  return new Intl.DateTimeFormat(localeOf(lang), { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' }).format(
+    new Date(Date.UTC(y ?? 2000, (mo ?? 1) - 1, d ?? 1)),
+  );
+}

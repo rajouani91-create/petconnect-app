@@ -14,10 +14,11 @@ import { PetSwitcher } from '../components/PetSwitcher';
 import { PetAvatar } from '../components/PetAvatar';
 import { PetPhotoControls } from '../components/PetPhotoControls';
 import { PetSharedWith } from '../components/PetSharedWith';
+import { PetRecord } from '../components/record/PetRecord';
 import { IconPlus } from '../components/Icons';
 import { SPECIES_LABEL } from '../components/SpeciesPicker';
 
-/** Stammdaten und Foto ansehen und bearbeiten, weiteres Tier anlegen, Tier löschen. */
+/** Stammdaten und Foto ansehen und bearbeiten, Tierakte (Gewicht, Impfungen, Dokumente), weiteres Tier anlegen, Tier löschen. */
 export function Pet() {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -97,6 +98,8 @@ export function Pet() {
         </>
       )}
       <p className="sr-only" role="status" aria-live="polite">{status}</p>
+
+      {!editing && <PetRecord key={`record-${pet.id}`} pet={pet} />}
 
       {role === 'owner' && (
         <div className="danger-zone">

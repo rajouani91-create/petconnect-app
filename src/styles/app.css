@@ -356,3 +356,41 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .em-pet h2 { min-width: 0; overflow-wrap: anywhere; }
 .species-tile .pet-photo { width: 36px; height: 36px; }
 [aria-disabled="true"] { cursor: not-allowed; opacity: 0.55; }
+
+/* ---------- Tierakte ---------- */
+.tabs { display: flex; gap: var(--s-1); border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tab {
+  flex: 1 0 auto; min-height: var(--tap); padding: var(--s-2) var(--s-3); background: none; border: 0;
+  border-bottom: 3px solid transparent; margin-bottom: -1px; color: var(--muted); font-weight: 600; cursor: pointer;
+}
+.tab[aria-selected="true"] { color: var(--brand); border-bottom-color: var(--brand); }
+.tab:hover { color: var(--fg); }
+.record-panel { padding-top: var(--s-2); }
+.record-list { display: flex; flex-direction: column; }
+.record-row {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-3);
+  padding: var(--s-3) 0; border-top: 1px solid var(--line); min-width: 0;
+}
+.record-row:first-child { border-top: 0; }
+.record-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 12rem; overflow-wrap: anywhere; }
+.record-title { font-weight: 600; display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+.btn-start { align-self: flex-start; }
+.weight-now { display: flex; flex-direction: column; gap: 2px; }
+.weight-now-value { font-family: var(--f-display); font-weight: 700; font-size: 2rem; line-height: 1.1; }
+.weight-chart { margin: 0; display: flex; flex-direction: column; gap: var(--s-1); }
+.weight-chart svg { width: 100%; height: 120px; display: block; background: var(--surface-2); border-radius: var(--r); }
+.chart-line { stroke: var(--brand); stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.chart-dot { fill: var(--surface); stroke: var(--brand); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.chart-axis { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.chart-range { display: flex; justify-content: space-between; gap: var(--s-2); flex-wrap: wrap; }
+.vacc-valid { background: var(--ok-soft); color: var(--ok-ink); }
+.vacc-soon { background: var(--warn-soft); color: var(--warn-ink); }
+.vacc-expired { background: var(--crit-soft); color: var(--crit); }
+.practice-note { color: var(--brand); font-weight: 600; }
+.doc-row { align-items: flex-start; }
+.doc-thumb { width: 48px; height: 48px; flex: none; object-fit: cover; border-radius: var(--r); background: var(--surface-2); }
+.doc-icon {
+  display: grid; place-items: center; width: 48px; height: 48px; flex: none; border-radius: var(--r);
+  background: var(--brand-soft); color: var(--brand); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em;
+}
+.file-input { padding: var(--s-2); min-height: var(--tap); }

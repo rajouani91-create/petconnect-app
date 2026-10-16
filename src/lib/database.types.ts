@@ -14,6 +14,46 @@ export type Database = {
   }
   public: {
     Tables: {
+      pet_documents: {
+        Row: {
+          category: string
+          created_at: string
+          doc_date: string | null
+          id: string
+          mime_type: string
+          owner_id: string
+          pet_id: string
+          size_bytes: number
+          storage_path: string
+          title: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          doc_date?: string | null
+          id?: string
+          mime_type: string
+          owner_id?: string
+          pet_id: string
+          size_bytes: number
+          storage_path: string
+          title: string
+        }
+        Update: {
+          category?: string
+          doc_date?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_documents_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_invite_pets: {
         Row: {
           invite_id: string

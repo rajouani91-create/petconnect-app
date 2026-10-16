@@ -3,6 +3,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import { formatTime } from '../i18n';
 import { templateFor } from '../lib/templates';
 import { zonedNow } from '../lib/time';
+import { useNow } from '../lib/useNow';
 import { KIND_LABEL, REPEAT_LABEL } from '../lib/labels';
 import { hasErrors, validatePet, type Errors, type PetField, type PetFormValues } from '../lib/validate';
 import { Field } from './Field';
@@ -32,7 +33,7 @@ export function PetForm({ initial, withTemplate, submitLabel, onSubmit, onCancel
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const today = zonedNow(new Date()).date;
+  const today = zonedNow(useNow()).date;
 
   const set = <K extends PetField>(key: K, value: PetFormValues[K]) => {
     setV((prev) => ({ ...prev, [key]: value }));

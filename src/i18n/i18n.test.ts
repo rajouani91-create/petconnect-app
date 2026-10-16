@@ -10,7 +10,7 @@ describe('translate', () => {
 
   it('fehlender Schlüssel: fällt auf Deutsch zurück und warnt in der Konsole', () => {
     const dicts = { ...DICTIONARIES, fr: { ...DICTIONARIES.fr, gpNow: undefined } as Messages };
-    const warn = vi.fn();
+    const warn = vi.fn<(message: string) => void>();
     expect(translate('fr', 'gpNow', undefined, dicts, warn)).toBe('Jetzt');
     expect(warn).toHaveBeenCalledOnce();
     expect(warn.mock.calls[0]![0]).toContain('gpNow');
@@ -25,13 +25,13 @@ describe('translate', () => {
   });
 
   it('auch Deutsch fehlt: Schlüssel selbst, ohne Absturz', () => {
-    const warn = vi.fn();
+    const warn = vi.fn<(message: string) => void>();
     const dicts = { ...DICTIONARIES, de: {}, en: {} } as Record<Lang, Messages>;
     expect(translate('en', 'gpNow', undefined, dicts, warn)).toBe('gpNow');
   });
 
   it('keine Warnung, wenn der Schlüssel vorhanden ist', () => {
-    const warn = vi.fn();
+    const warn = vi.fn<(message: string) => void>();
     translate('ar', 'gpNow', undefined, DICTIONARIES, warn);
     expect(warn).not.toHaveBeenCalled();
   });
