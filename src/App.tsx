@@ -15,6 +15,7 @@ import { More } from './pages/More';
 import { Appointments } from './pages/Appointments';
 import { Emergency } from './pages/Emergency';
 import { Invite } from './pages/Invite';
+import { Reminders } from './pages/Reminders';
 
 export function App() {
   return (
@@ -38,6 +39,7 @@ export function App() {
               <Route path="termine" element={<Appointments />} />
               <Route path="tier" element={<Pet />} />
               <Route path="tier/neu" element={<PetNew />} />
+              <Route path="erinnerungen" element={<Reminders />} />
               <Route path="alltag" element={<Routine />} />
               <Route path="mehr" element={<More />} />
               <Route path="notfall" element={<Emergency />} />

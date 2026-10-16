@@ -3,6 +3,7 @@ import type { PostgrestError } from '@supabase/supabase-js';
 import type { Lang } from '../i18n';
 import type { Database } from './database.types';
 import { docExt, type DocCategory, type DocMime } from './record';
+import type { ApptKind, ApptStatus, RemKind } from './schedule';
 import { supabase, type PetRow, type ProfileRow, type RoutineRow } from './supabase';
 import { isGrantRole, isOpenInvite, parsePreview, toRole, type GrantRole, type InvitePreview, type MemberRole, type Membership } from './sharing';
 import type { TemplateEntry } from './templates';
@@ -391,4 +392,79 @@ export async function signedDocumentUrl(path: string, seconds: number): Promise<
   const res = await supabase.storage.from(DOC_BUCKET).createSignedUrl(path, seconds);
   if (res.error || !res.data) throw storageError(res.error ?? { message: 'Keine Daten erhalten' });
   return res.data.signedUrl;
+}
+
+// ---------- Termine ----------
+
+export type AppointmentRow = Database['public']['Tables']['appointments']['Row'];
+export type ReminderRow = Database['public']['Tables']['reminders']['Row'];
+
+export interface AppointmentInput {
+  title: string;
+  kind: ApptKind;
+  starts_at: string;
+  ends_at: string | null;
+  location: string | null;
+  note: string | null;
+}
+
+/** Termine aller Tiere, die ich betreue (RLS filtert) */
+export async function listAppointments(petIds: readonly string[]): Promise<AppointmentRow[]> {
+  if (petIds.length === 0) return [];
+  return check(await supabase.from('appointments').select('*').in('pet_id', [...petIds]).order('starts_at', { ascending: true }));
+}
+
+export async function addAppointment(petId: string, v: AppointmentInput): Promise<AppointmentRow> {
+  return check(await supabase.from('appointments').insert({ pet_id: petId, ...v }).select('*').single());
+}
+
+/** pet_id ist nachträglich nicht änderbar */
+export async function updateAppointment(id: string, v: AppointmentInput): Promise<AppointmentRow> {
+  return checkChanged(await supabase.from('appointments').update(v).eq('id', id).select('*'));
+}
+
+export async function setAppointmentStatus(id: string, status: ApptStatus): Promise<AppointmentRow> {
+  return checkChanged(await supabase.from('appointments').update({ status }).eq('id', id).select('*'));
+}
+
+export async function deleteAppointment(id: string): Promise<void> {
+  checkChanged(await supabase.from('appointments').delete().eq('id', id).select('id'));
+}
+
+// ---------- Erinnerungen ----------
+
+export interface ReminderInput {
+  title: string;
+  kind: RemKind;
+  due_on: string;
+  repeat_days: number | null;
+  note: string | null;
+}
+
+export async function listReminders(petIds: readonly string[]): Promise<ReminderRow[]> {
+  if (petIds.length === 0) return [];
+  return check(await supabase.from('reminders').select('*').in('pet_id', [...petIds]).order('due_on', { ascending: true }));
+}
+
+export async function addReminder(petId: string, v: ReminderInput): Promise<ReminderRow> {
+  return check(await supabase.from('reminders').insert({ pet_id: petId, ...v }).select('*').single());
+}
+
+export async function updateReminder(id: string, v: ReminderInput): Promise<ReminderRow> {
+  return checkChanged(await supabase.from('reminders').update(v).eq('id', id).select('*'));
+}
+
+export async function deleteReminder(id: string): Promise<void> {
+  checkChanged(await supabase.from('reminders').delete().eq('id', id).select('id'));
+}
+
+/** Abhaken immer über die Datenbank-Funktion (rechnet die nächste Fälligkeit in einer Transaktion). */
+export async function completeReminder(id: string, doneOn: string): Promise<ReminderRow> {
+  return check(await supabase.rpc('complete_reminder', { p_id: id, p_done_on: doneOn }));
+}
+
+/** Impfungen mehrerer Tiere (für abgeleitete Erinnerungen) */
+export async function listVaccinationsFor(petIds: readonly string[]): Promise<VaccinationRow[]> {
+  if (petIds.length === 0) return [];
+  return check(await supabase.from('vaccinations').select('*').in('pet_id', [...petIds]));
 }

@@ -71,7 +71,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   padding-bottom: env(safe-area-inset-bottom);
 }
 .nav-brand { display: none; }
-.nav ul { display: grid; grid-template-columns: repeat(5, 1fr); }
+.nav ul { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .nav-link {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   min-height: 60px; padding: var(--s-1) 2px;
@@ -394,3 +394,27 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
   background: var(--brand-soft); color: var(--brand); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em;
 }
 .file-input { padding: var(--s-2); min-height: var(--tap); }
+
+/* ---------- Termine und Erinnerungen ---------- */
+.row-3 { display: grid; grid-template-columns: 1fr; gap: var(--s-4); }
+@media (min-width: 520px) { .row-3 { grid-template-columns: 2fr 1fr 1fr; } }
+.pet-filter { max-width: 22rem; }
+.appt-when { font-weight: 600; color: var(--brand); }
+.appt-note { color: var(--fg); overflow-wrap: anywhere; }
+.record-row.is-closed .record-title { color: var(--muted); }
+.appt-done { background: var(--ok-soft); color: var(--ok-ink); }
+.appt-cancelled { background: var(--surface-2); color: var(--muted); text-decoration: line-through; }
+.rem-st-overdue { background: var(--crit-soft); color: var(--crit); }
+.rem-st-today { background: var(--warn-soft); color: var(--warn-ink); }
+.rem-st-later { background: var(--surface-2); color: var(--fg); }
+.rem-group.rem-overdue { border-inline-start: 4px solid var(--crit); }
+.rem-group.rem-today { border-inline-start: 4px solid var(--warn); }
+.rem-derived .record-title { font-weight: 500; }
+.count { font-weight: 500; font-size: 0.9em; }
+.disclosure > summary {
+  min-height: var(--tap); display: flex; align-items: center; cursor: pointer;
+  font-family: var(--f-display); font-weight: 700; font-size: 1.1rem; list-style-position: inside;
+}
+.disclosure > summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: var(--r); }
+.disclosure[open] > summary { margin-bottom: var(--s-2); }
+.upcoming-card h3 { font-size: 1rem; }

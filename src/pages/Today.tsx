@@ -13,6 +13,7 @@ import { isKind } from '../lib/domain';
 import { useNow } from '../lib/useNow';
 import { PetSwitcher } from '../components/PetSwitcher';
 import { PetAvatar } from '../components/PetAvatar';
+import { UpcomingCard } from '../components/schedule/UpcomingCard';
 import { IconCheck, KindIcon } from '../components/Icons';
 import { Loading } from '../components/Loading';
 
@@ -190,6 +191,7 @@ export function Today() {
           </section>
         </>
       )}
+      <UpcomingCard onStatus={setStatus} />
       <p className="sr-only" role="status" aria-live="polite">{status}</p>
     </div>
   );
