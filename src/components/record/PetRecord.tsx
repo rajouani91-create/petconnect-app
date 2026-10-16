@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useLocation } from 'react-router';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { MessageKey } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
@@ -26,6 +27,16 @@ export function PetRecord({ pet }: { pet: PetRow }) {
   const tabRefs = useRef(new Map<Tab, HTMLButtonElement>());
   const today = zonedNow(useNow()).date;
   const editable = canEdit(myRole(pet));
+  const { hash, key: locKey } = useLocation();
+
+  // „Gewicht & Verlauf“ unter „Mehr zu …“: Reiter Gewicht wählen und dorthin springen
+  useEffect(() => {
+    if (hash !== '#gewicht') return;
+    setTab('weight');
+    const el = tabRefs.current.get('weight');
+    el?.scrollIntoView({ block: 'start' });
+    el?.focus();
+  }, [hash, locKey]);
 
   // Namen für „eingetragen von …“: alle Betreuer dieses Tiers (nicht lesbare Profile fehlen einfach)
   const memberKey = memberships.filter((m) => m.pet_id === pet.id).map((m) => m.user_id).sort().join(',');

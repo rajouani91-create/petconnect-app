@@ -418,3 +418,64 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .disclosure > summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: var(--r); }
 .disclosure[open] > summary { margin-bottom: var(--s-2); }
 .upcoming-card h3 { font-size: 1rem; }
+
+/* ---------- Mehr zu …: Notfallkarte, Versicherung, Betreuung, Gesundheitsakte ---------- */
+.more-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr)); gap: var(--s-2); }
+.more-btn { width: 100%; justify-content: flex-start; }
+.emergency-big { min-height: 56px; font-size: 1.1rem; }
+.choose-list { display: flex; flex-direction: column; gap: var(--s-2); }
+.choose-pet { justify-content: flex-start; }
+.ec-head { display: flex; gap: var(--s-3); align-items: flex-start; }
+.ec-pet { display: flex; gap: var(--s-3); align-items: center; }
+.ec-pet .pet-ava-sm { width: 56px; height: 56px; }
+.ec-pet-name { font-family: var(--f-display); font-weight: 700; font-size: 1.3rem; }
+.tel-link { padding: 0; min-height: var(--tap); }
+.tip-list { padding-inline-start: 1.2rem; display: flex; flex-direction: column; gap: var(--s-2); list-style: disc; }
+.claim-sums { border-top: 1px solid var(--line); padding-top: var(--s-3); }
+.claim-reimbursed { background: var(--ok-soft); color: var(--ok-ink); }
+.claim-partial, .claim-query { background: var(--warn-soft); color: var(--warn-ink); }
+.claim-rejected { background: var(--crit-soft); color: var(--crit); }
+.sit-active { background: var(--ok-soft); color: var(--ok-ink); }
+.sit-upcoming { background: var(--brand-soft); color: var(--brand); }
+.sit-expired, .sit-revoked { background: var(--surface-2); color: var(--muted); }
+.sitter-card.is-closed h2 { color: var(--muted); }
+.sitter-qr-card { display: flex; flex-direction: column; align-items: center; gap: var(--s-2); text-align: center; }
+.sitter-qr { background: #fff; padding: 6px; border-radius: var(--r); border: 1px solid var(--line); }
+.sitter-qr-caption { font-weight: 600; }
+.check-row { display: inline-flex; align-items: center; gap: var(--s-2); min-height: var(--tap); cursor: pointer; font-weight: 600; }
+.check-row input { width: 24px; height: 24px; accent-color: var(--brand); margin: 0; }
+.public-page { min-height: 100dvh; display: flex; flex-direction: column; }
+.public-main { flex: 1; width: 100%; max-width: 640px; margin: 0 auto; padding: var(--s-4) var(--s-4) var(--s-7); }
+.vault { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s-5); display: flex; flex-direction: column; gap: var(--s-5); }
+.vault-head { display: flex; flex-direction: column; gap: var(--s-2); border-bottom: 2px solid var(--brand); padding-bottom: var(--s-3); }
+.vault-section { display: flex; flex-direction: column; gap: var(--s-2); }
+.vault-section h3 { font-size: 1.1rem; }
+.table-wrap { overflow-x: auto; max-width: 100%; }
+.vault-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.vault-table th, .vault-table td { text-align: start; padding: var(--s-2); border-bottom: 1px solid var(--line); vertical-align: top; }
+.vault-table th { font-weight: 700; }
+.vault-chart { width: 100%; height: 90px; background: var(--surface-2); border-radius: var(--r); }
+.vault-foot { border-top: 1px solid var(--line); padding-top: var(--s-3); font-size: 0.85rem; color: var(--muted); display: flex; flex-direction: column; gap: var(--s-1); }
+
+/* ---------- Drucken: schwarz auf weiß, ohne Navigation ---------- */
+@page { size: A4; margin: 15mm; }
+@media print {
+  :root { --bg: #fff; --surface: #fff; --surface-2: #f2f2f2; --fg: #000; --muted: #333; --line: #999; --brand: #000; --brand-soft: #eee; color-scheme: light; }
+  body { background: #fff; color: #000; }
+  .topbar, .nav, .skip-link, .no-print, .pet-switcher, .notice-info { display: none !important; }
+  .shell { display: block; }
+  .main { padding: 0 !important; margin: 0; }
+  .card, .vault { box-shadow: none; border-color: #000; }
+  a { color: #000; text-decoration: none; }
+  .print-card { max-width: 105mm; border: 2px solid #000; break-inside: avoid; }
+  .print-a4 { border: 0; padding: 0; }
+  .vault-section { break-inside: avoid; }
+  .vault-section.page-break { break-before: page; }
+  .vault-table th, .vault-table td { border-bottom: 1px solid #000; }
+  .chart-line { stroke: #000; }
+  .chart-dot { stroke: #000; fill: #fff; }
+  /* Einzelnes Element drucken (z. B. QR-Karte für Sitter) */
+  body.printing-target * { visibility: hidden; }
+  body.printing-target .print-target, body.printing-target .print-target * { visibility: visible; }
+  body.printing-target .print-target { position: absolute; inset-inline-start: 0; top: 0; width: 90mm; border: 2px solid #000; padding: 6mm; }
+}

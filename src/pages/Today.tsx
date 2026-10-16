@@ -14,6 +14,7 @@ import { useNow } from '../lib/useNow';
 import { PetSwitcher } from '../components/PetSwitcher';
 import { PetAvatar } from '../components/PetAvatar';
 import { UpcomingCard } from '../components/schedule/UpcomingCard';
+import { EmergencyButton } from '../components/more/EmergencyButton';
 import { IconCheck, KindIcon } from '../components/Icons';
 import { Loading } from '../components/Loading';
 
@@ -139,6 +140,8 @@ export function Today() {
       </header>
 
       {flash && <p className="notice notice-ok" role="status">{flash}</p>}
+
+      <EmergencyButton />
 
       <PetSwitcher />
 

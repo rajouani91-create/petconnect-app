@@ -4,6 +4,7 @@ import type { Lang } from '../i18n';
 import type { Database } from './database.types';
 import { docExt, type DocCategory, type DocMime } from './record';
 import type { ApptKind, ApptStatus, RemKind } from './schedule';
+import { parseSitterView, type ClaimStatus, type SitterView, type Submission } from './care';
 import { supabase, type PetRow, type ProfileRow, type RoutineRow } from './supabase';
 import { isGrantRole, isOpenInvite, parsePreview, toRole, type GrantRole, type InvitePreview, type MemberRole, type Membership } from './sharing';
 import type { TemplateEntry } from './templates';
@@ -467,4 +468,104 @@ export async function completeReminder(id: string, doneOn: string): Promise<Remi
 export async function listVaccinationsFor(petIds: readonly string[]): Promise<VaccinationRow[]> {
   if (petIds.length === 0) return [];
   return check(await supabase.from('vaccinations').select('*').in('pet_id', [...petIds]));
+}
+
+// ---------- Notfallkarte ----------
+
+export interface EmergencyInput {
+  owner_phone: string | null;
+  chip_no: string | null;
+  allergies: string | null;
+  medications: string | null;
+  vet_name: string | null;
+  vet_phone: string | null;
+  emergency_contact: string | null;
+}
+
+export async function updateEmergency(petId: string, v: EmergencyInput): Promise<PetRow> {
+  return checkChanged(await supabase.from('pets').update(v).eq('id', petId).select('*'));
+}
+
+// ---------- Versicherung ----------
+
+export type InsuranceRow = Database['public']['Tables']['pet_insurances']['Row'];
+export type ClaimRow = Database['public']['Tables']['insurance_claims']['Row'];
+
+export interface InsuranceInput {
+  insurer: string;
+  policy_no: string;
+  holder_name: string | null;
+  deductible: number | null;
+  reimbursement_pct: number | null;
+  submission: Submission | null;
+  note: string | null;
+}
+
+export async function listInsurances(petId: string): Promise<InsuranceRow[]> {
+  return check(await supabase.from('pet_insurances').select('*').eq('pet_id', petId).order('created_at', { ascending: true }));
+}
+export async function addInsurance(petId: string, v: InsuranceInput): Promise<InsuranceRow> {
+  return check(await supabase.from('pet_insurances').insert({ pet_id: petId, ...v }).select('*').single());
+}
+export async function updateInsurance(id: string, v: InsuranceInput): Promise<InsuranceRow> {
+  return checkChanged(await supabase.from('pet_insurances').update(v).eq('id', id).select('*'));
+}
+export async function deleteInsurance(id: string): Promise<void> {
+  checkChanged(await supabase.from('pet_insurances').delete().eq('id', id).select('id'));
+}
+
+export interface ClaimInput {
+  title: string;
+  amount: number;
+  claim_date: string;
+  status: ClaimStatus;
+  reimbursed_amount: number | null;
+  document_id: string | null;
+  note: string | null;
+}
+
+export async function listClaims(petId: string): Promise<ClaimRow[]> {
+  return check(await supabase.from('insurance_claims').select('*').eq('pet_id', petId).order('claim_date', { ascending: false }));
+}
+export async function addClaim(insuranceId: string, petId: string, v: ClaimInput): Promise<ClaimRow> {
+  return check(await supabase.from('insurance_claims').insert({ insurance_id: insuranceId, pet_id: petId, ...v }).select('*').single());
+}
+export async function updateClaim(id: string, v: ClaimInput): Promise<ClaimRow> {
+  return checkChanged(await supabase.from('insurance_claims').update(v).eq('id', id).select('*'));
+}
+export async function deleteClaim(id: string): Promise<void> {
+  checkChanged(await supabase.from('insurance_claims').delete().eq('id', id).select('id'));
+}
+
+// ---------- Betreuung (Sitter-Zugang) ----------
+
+export type SitterRow = Database['public']['Tables']['sitter_access']['Row'];
+
+export interface SitterInput {
+  sitter_name: string;
+  valid_from: string;
+  valid_to: string;
+  feeding: string | null;
+  care_notes: string | null;
+}
+
+/** RLS: nur Haupthalter:in und Mithalter:innen sehen die Zugänge (und damit die Links) */
+export async function listSitters(petId: string): Promise<SitterRow[]> {
+  return check(await supabase.from('sitter_access').select('*').eq('pet_id', petId).order('valid_from', { ascending: false }));
+}
+export async function addSitter(petId: string, v: SitterInput): Promise<SitterRow> {
+  return check(await supabase.from('sitter_access').insert({ pet_id: petId, ...v }).select('*').single());
+}
+export async function revokeSitter(id: string): Promise<SitterRow> {
+  return checkChanged(await supabase.from('sitter_access').update({ revoked_at: new Date().toISOString() }).eq('id', id).select('*'));
+}
+export async function deleteSitter(id: string): Promise<void> {
+  checkChanged(await supabase.from('sitter_access').delete().eq('id', id).select('id'));
+}
+
+/** Öffentliche Sitter-Ansicht, auch ohne Anmeldung. Der Code wird nie protokolliert. */
+export async function sitterView(token: string): Promise<SitterView> {
+  const res = await supabase.rpc('sitter_view', { p_token: token });
+  if (res.error) throw new ApiError({ message: res.error.message, code: res.error.code });
+  return parseSitterView(res.data);
 }

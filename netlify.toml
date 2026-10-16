@@ -4,3 +4,11 @@
 
 [build.environment]
   NODE_VERSION = "20"
+
+# Öffentliche Sitter-Links: nicht indexieren, keine Herkunfts-URL (mit Code) an andere Seiten weitergeben
+[[headers]]
+  for = "/betreuung/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
