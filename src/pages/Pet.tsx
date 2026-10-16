@@ -60,7 +60,7 @@ export function Pet() {
         </div>
       </header>
 
-      {editable && <PetPhotoControls key={pet.id} pet={pet} onChange={upsertLocal} />}
+      {editable && <PetPhotoControls key={`photo-${pet.id}`} pet={pet} onChange={upsertLocal} />}
 
       <PetSharedWith pet={pet} />
 
@@ -68,7 +68,7 @@ export function Pet() {
 
       {editing && editable ? (
         <PetForm
-          key={pet.id}
+          key={`form-${pet.id}`}
           initial={petToForm(pet)}
           withTemplate={false}
           submitLabel={t('saveBtn')}
