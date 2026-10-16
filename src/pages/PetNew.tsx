@@ -19,6 +19,7 @@ export function PetNew() {
         <h1>{first ? t('petNewTitle') : t('addAnother')}</h1>
         <p className="muted">{t('petNewSub')}</p>
       </header>
+      {first && <p className="notice notice-info">{t('petNewInvite')}</p>}
       <PetForm
         initial={emptyPetForm()}
         withTemplate

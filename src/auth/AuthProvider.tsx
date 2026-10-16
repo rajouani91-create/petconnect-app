@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { getProfile } from '../lib/api';
 import { supabase, type ProfileRow } from '../lib/supabase';
 import { isLang } from '../i18n';
+import { clearPendingInvite } from '../lib/sharing';
 import { useI18n } from '../i18n/I18nProvider';
 
 interface AuthValue {
@@ -29,6 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // onAuthStateChange meldet sofort INITIAL_SESSION und danach jede Änderung.
     const { data } = supabase.auth.onAuthStateChange((event, s) => {
+      // Abmelden (auch in einem anderen Tab): gemerkte Einladung gehört nicht zum nächsten Konto.
+      if (event === 'SIGNED_OUT') clearPendingInvite();
       setSession(s);
       setLastEvent(event);
       setReady(true);
@@ -62,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [userId, loadProfile]);
 
   const signOut = useCallback(async () => {
+    clearPendingInvite();
     await supabase.auth.signOut();
   }, []);
 

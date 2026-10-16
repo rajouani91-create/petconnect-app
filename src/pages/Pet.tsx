@@ -1,62 +1,94 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { formatIsoDate, type MessageKey } from '../i18n';
 import { usePets } from '../pets/PetsProvider';
-import { updatePet } from '../lib/api';
+import { deletePet, removePhotoFile, updatePet } from '../lib/api';
 import { isSpecies } from '../lib/domain';
+import { canEdit } from '../lib/sharing';
 import { petToForm } from '../lib/validate';
 import type { PetRow } from '../lib/supabase';
+import { Dialog } from '../components/Dialog';
 import { PetForm } from '../components/PetForm';
 import { PetSwitcher } from '../components/PetSwitcher';
-import { CareSection } from '../components/CareSection';
-import { IconPlus, SpeciesIcon } from '../components/Icons';
+import { PetAvatar } from '../components/PetAvatar';
+import { PetPhotoControls } from '../components/PetPhotoControls';
+import { PetSharedWith } from '../components/PetSharedWith';
+import { IconPlus } from '../components/Icons';
 import { SPECIES_LABEL } from '../components/SpeciesPicker';
 
-/** Stammdaten ansehen und bearbeiten, weiteres Tier anlegen, Betreuung verwalten. */
+/** Stammdaten und Foto ansehen und bearbeiten, weiteres Tier anlegen, Tier löschen. */
 export function Pet() {
   const { t } = useI18n();
-  const { active, upsertLocal } = usePets();
+  const navigate = useNavigate();
+  const { active, upsertLocal, myRole, reload } = usePets();
   const [editing, setEditing] = useState(false);
   const [status, setStatus] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   if (!active) return null;
+  const role = myRole(active);
+  const editable = canEdit(role);
+  const pet = active;
+
+  async function removePet() {
+    setConfirmDelete(false);
+    setBusy(true);
+    try {
+      // Erst das Foto aus dem Speicher, danach das Tier (sonst bleibt die Datei verwaist und ist nicht mehr löschbar).
+      if (pet.photo_path) await removePhotoFile(pet.photo_path);
+      await deletePet(pet.id);
+      await reload();
+      navigate('/', { replace: true, state: { flash: t('petDeleted', { pet: pet.name }) } });
+    } catch (e) {
+      console.error(e);
+      setStatus(t('errGeneric'));
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="page stack-lg">
-      <header className="page-head page-head-row">
-        <div className="pet-ava" aria-hidden="true">
-          <SpeciesIcon species={isSpecies(active.species) ? active.species : 'other'} size={34} />
+      <header className="page-head pet-head">
+        <div className="pet-ava pet-ava-lg">
+          <PetAvatar key={pet.id} pet={pet} size={112} iconSize={48} alt={t('photoAlt', { n: pet.name })} />
         </div>
-        <div>
-          <h1>{active.name}</h1>
-          <p className="muted">{speciesText(active, t)}</p>
+        <div className="pet-head-text">
+          <h1>{pet.name}</h1>
+          <p className="muted">{speciesText(pet, t)}</p>
         </div>
       </header>
 
+      {editable && <PetPhotoControls key={pet.id} pet={pet} onChange={upsertLocal} />}
+
+      <PetSharedWith pet={pet} />
+
       <PetSwitcher />
 
-      {editing ? (
+      {editing && editable ? (
         <PetForm
-          key={active.id}
-          initial={petToForm(active)}
+          key={pet.id}
+          initial={petToForm(pet)}
           withTemplate={false}
           submitLabel={t('saveBtn')}
           onCancel={() => setEditing(false)}
           onSubmit={async (values) => {
-            const pet = await updatePet(active.id, values);
-            upsertLocal(pet);
+            const updated = await updatePet(pet.id, values);
+            upsertLocal(updated);
             setEditing(false);
             setStatus(t('savedShort'));
           }}
         />
       ) : (
         <>
-          <PetDetails pet={active} />
+          <PetDetails pet={pet} />
           <div className="actions actions-start">
-            <button type="button" className="btn btn-primary" onClick={() => { setEditing(true); setStatus(''); }}>
-              {t('editBtn')}
-            </button>
+            {editable && (
+              <button type="button" className="btn btn-primary" onClick={() => { setEditing(true); setStatus(''); }}>
+                {t('editBtn')}
+              </button>
+            )}
             <Link to="/tier/neu" className="btn btn-secondary">
               <IconPlus size={20} />
               {t('addAnother')}
@@ -66,7 +98,27 @@ export function Pet() {
       )}
       <p className="sr-only" role="status" aria-live="polite">{status}</p>
 
-      <CareSection key={active.id} pet={active} />
+      {role === 'owner' && (
+        <div className="danger-zone">
+          <button type="button" className="btn btn-danger" onClick={() => setConfirmDelete(true)} disabled={busy} aria-busy={busy}>
+            {t('petDelete')}
+          </button>
+        </div>
+      )}
+
+      <Dialog
+        open={confirmDelete}
+        title={t('petDeleteTitle', { pet: pet.name })}
+        onClose={() => setConfirmDelete(false)}
+        actions={
+          <>
+            <button type="button" className="btn btn-ghost" onClick={() => setConfirmDelete(false)}>{t('cancelBtn')}</button>
+            <button type="button" className="btn btn-danger" onClick={() => void removePet()}>{t('petDeleteYes')}</button>
+          </>
+        }
+      >
+        <p>{t('petDeleteAsk', { pet: pet.name })}</p>
+      </Dialog>
     </div>
   );
 }

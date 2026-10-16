@@ -2,7 +2,7 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { Lang } from '../i18n';
 import { supabase, type PetRow, type ProfileRow, type RoutineRow } from './supabase';
-import { isOpenInvite, type MemberRole } from './sharing';
+import { isGrantRole, isOpenInvite, parsePreview, toRole, type GrantRole, type InvitePreview, type MemberRole, type Membership } from './sharing';
 import type { TemplateEntry } from './templates';
 import type { PetFormValues, RoutineFormValues } from './validate';
 import { petFormToRow } from './validate';
@@ -124,7 +124,7 @@ export async function markUndone(itemId: string, date: string): Promise<void> {
   checkOk(await supabase.from('routine_done').delete().eq('routine_item_id', itemId).eq('done_on', date));
 }
 
-// ---------- Gemeinsam betreuen ----------
+// ---------- Familie & Mithalter:innen ----------
 
 export interface Member {
   petId: string;
@@ -134,7 +134,7 @@ export interface Member {
 }
 
 /** Betreuer der Tiere `petIds` (RLS: nur Tiere, die man selbst betreut). Ohne Namen. */
-export async function listMemberships(petIds: readonly string[]): Promise<{ pet_id: string; user_id: string; role: string }[]> {
+export async function listMemberships(petIds: readonly string[]): Promise<Membership[]> {
   if (petIds.length === 0) return [];
   return check(await supabase.from('pet_members').select('pet_id, user_id, role').in('pet_id', [...petIds]));
 }
@@ -146,8 +146,8 @@ export async function listMembers(petId: string): Promise<Member[]> {
   );
   const names = await profileNames(rows.map((r) => r.user_id));
   return rows
-    .map((r) => ({ petId: r.pet_id, userId: r.user_id, role: (r.role === 'owner' ? 'owner' : 'carer') as MemberRole, name: names.get(r.user_id) ?? '' }))
-    .sort((a, b) => (a.role === b.role ? 0 : a.role === 'owner' ? -1 : 1));
+    .map((r) => ({ petId: r.pet_id, userId: r.user_id, role: toRole(r.role), name: names.get(r.user_id) ?? '' }))
+    .sort((a, b) => (a.role === b.role ? 0 : a.role === 'owner' ? -1 : b.role === 'owner' ? 1 : 0));
 }
 
 /** Anzeigenamen zu Personen-IDs (RLS: eigenes Profil und Mitbetreuer). */
@@ -158,56 +158,112 @@ export async function profileNames(userIds: readonly string[]): Promise<Map<stri
   return new Map(rows.map((r) => [r.id, r.display_name ?? '']));
 }
 
-/** Mitbetreuer entfernen oder selbst gehen. Wirft, wenn RLS nichts gelöscht hat. */
-export async function removeMember(petId: string, userId: string): Promise<void> {
-  const rows = check(await supabase.from('pet_members').delete().eq('pet_id', petId).eq('user_id', userId).select('user_id'));
+/** Person bei den Tieren `petIds` entfernen oder selbst gehen. Wirft, wenn RLS nichts gelöscht hat. */
+export async function removeMember(petIds: readonly string[], userId: string): Promise<void> {
+  if (petIds.length === 0) return;
+  const rows = check(await supabase.from('pet_members').delete().in('pet_id', [...petIds]).eq('user_id', userId).select('user_id'));
   if (rows.length === 0) throw new ApiError({ message: 'Nichts gelöscht', code: '42501' });
+}
+
+/** Rechte-Stufe einer Person für alle angegebenen Tiere ändern (nur Besitzer). */
+export async function setMemberRole(petIds: readonly string[], userId: string, role: GrantRole): Promise<void> {
+  if (petIds.length === 0) return;
+  const rows = check(
+    await supabase.from('pet_members').update({ role }).in('pet_id', [...petIds]).eq('user_id', userId).select('user_id'),
+  );
+  if (rows.length === 0) throw new ApiError({ message: 'Nichts geändert', code: '42501' });
 }
 
 export interface OpenInvite {
   id: string;
+  invitee_name: string;
+  role: GrantRole;
   expires_at: string;
+  /** nur für „Link teilen“; nie protokollieren */
+  token: string;
+  petIds: string[];
 }
 
-/** Offene Einladungen eines Tieres (nur für den Besitzer lesbar). Der Code wird bewusst nicht geladen. */
-export async function listOpenInvites(petId: string): Promise<OpenInvite[]> {
+/** Offene Einladungen, die ich erstellt habe (RLS: nur die einladende Person). */
+export async function listOpenInvites(): Promise<OpenInvite[]> {
   const rows = check(
     await supabase
       .from('pet_invites')
-      .select('id, expires_at, accepted_at')
-      .eq('pet_id', petId)
+      .select('id, invitee_name, role, token, expires_at, accepted_at, pet_invite_pets(pet_id)')
       .is('accepted_at', null)
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: true }),
   );
   // Zusätzlich hier prüfen, falls die Geräte-Uhr und der Server leicht abweichen.
-  return rows.filter((r) => isOpenInvite(r)).map(({ id, expires_at }) => ({ id, expires_at }));
+  return rows.filter((r) => isOpenInvite(r)).map((r) => ({
+    id: r.id,
+    invitee_name: r.invitee_name,
+    role: isGrantRole(r.role) ? r.role : 'viewer',
+    expires_at: r.expires_at,
+    token: r.token,
+    petIds: r.pet_invite_pets.map((p) => p.pet_id),
+  }));
 }
 
-/** Neue Einladung; Code und Ablauf (7 Tage) setzt die Datenbank. */
-export async function createInvite(petId: string): Promise<{ token: string; expires_at: string }> {
-  return check(await supabase.from('pet_invites').insert({ pet_id: petId }).select('token, expires_at').single());
+/** Neue Einladung; Code und Ablauf (7 Tage) setzt die Datenbank. Fehler: ApiError mit message invite_* */
+export async function createInvite(name: string, role: GrantRole, petIds: readonly string[]): Promise<{ id: string; token: string; expires_at: string }> {
+  const rows = check(await supabase.rpc('create_pet_invite', { p_name: name.trim(), p_role: role, p_pet_ids: [...petIds] }));
+  const row = rows[0];
+  if (!row) throw new ApiError({ message: 'Keine Daten erhalten' });
+  return row;
 }
 
 export async function revokeInvite(id: string): Promise<void> {
   checkOk(await supabase.from('pet_invites').delete().eq('id', id));
 }
 
-export interface InvitePreview {
-  pet_name: string;
-  species: string;
-  species_other: string | null;
-  inviter_name: string | null;
-  status: string;
-}
-
 /** Vorschau einer Einladung; null, wenn es den Code nicht gibt. */
 export async function invitePreview(token: string): Promise<InvitePreview | null> {
-  const rows = check(await supabase.rpc('invite_preview', { p_token: token }));
-  return rows[0] ?? null;
+  const res = await supabase.rpc('invite_preview', { p_token: token });
+  if (res.error) throw new ApiError(res.error);
+  return parsePreview(res.data);
 }
 
-/** Einladung annehmen; liefert die ID des Tieres. Fehler: ApiError mit message invite_* */
-export async function acceptInvite(token: string): Promise<string> {
+/** Einladung annehmen; liefert die IDs der Tiere. Fehler: ApiError mit message invite_* */
+export async function acceptInvite(token: string): Promise<string[]> {
   return check(await supabase.rpc('accept_pet_invite', { p_token: token }));
+}
+
+// ---------- Tierfoto (Storage-Bucket pet-photos, Pfad <pet_id>/<datei>) ----------
+
+const PHOTO_BUCKET = 'pet-photos';
+
+/** Foto hochladen, `photo_path` setzen, altes Foto löschen. Liefert das aktualisierte Tier. */
+export async function replacePetPhoto(pet: PetRow, jpeg: Blob): Promise<PetRow> {
+  const path = `${pet.id}/${crypto.randomUUID()}.jpg`;
+  const up = await supabase.storage.from(PHOTO_BUCKET).upload(path, jpeg, { contentType: 'image/jpeg', upsert: false });
+  if (up.error) throw new ApiError({ message: up.error.message, code: 'storage' });
+  let updated: PetRow;
+  try {
+    updated = check(await supabase.from('pets').update({ photo_path: path }).eq('id', pet.id).select('*').single());
+  } catch (e) {
+    await supabase.storage.from(PHOTO_BUCKET).remove([path]);
+    throw e;
+  }
+  if (pet.photo_path && pet.photo_path !== path) await removePhotoFile(pet.photo_path);
+  return updated;
+}
+
+/** Foto entfernen: Feld leeren, dann Datei löschen. */
+export async function clearPetPhoto(pet: PetRow): Promise<PetRow> {
+  const updated = check<PetRow>(await supabase.from('pets').update({ photo_path: null }).eq('id', pet.id).select('*').single());
+  if (pet.photo_path) await removePhotoFile(pet.photo_path);
+  return updated;
+}
+
+/** Datei im Speicher löschen; Fehler nur protokollieren (verwaiste Datei ist kein Datenverlust). */
+export async function removePhotoFile(path: string): Promise<void> {
+  const res = await supabase.storage.from(PHOTO_BUCKET).remove([path]);
+  if (res.error) console.error('Foto konnte nicht gelöscht werden', res.error.message);
+}
+
+export async function signedPhotoUrl(path: string, seconds: number): Promise<string> {
+  const res = await supabase.storage.from(PHOTO_BUCKET).createSignedUrl(path, seconds);
+  if (res.error || !res.data) throw new ApiError({ message: res.error?.message ?? 'Keine Daten erhalten', code: 'storage' });
+  return res.data.signedUrl;
 }

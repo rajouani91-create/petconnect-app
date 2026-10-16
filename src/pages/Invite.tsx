@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
-import type { MessageKey } from '../i18n';
+import { formatDate, type MessageKey } from '../i18n';
 import { usePets } from '../pets/PetsProvider';
-import { ApiError, acceptInvite, invitePreview, type InvitePreview } from '../lib/api';
-import { isSpecies } from '../lib/domain';
-import { clearPendingInvite, inviteErrorKey, inviteStatusKey, isTokenShape } from '../lib/sharing';
+import { ApiError, acceptInvite, invitePreview } from '../lib/api';
+import { ROLE_HINT, ROLE_LABEL, clearPendingInvite, inviteErrorKey, inviteStatusKey, isTokenShape, joinNames, type InvitePreview } from '../lib/sharing';
 import { IconPaw } from '../components/Icons';
 import { Loading } from '../components/Loading';
-import { SPECIES_LABEL } from '../components/SpeciesPicker';
 
 type State = { kind: 'loading' } | { kind: 'error' } | { kind: 'done'; preview: InvitePreview | null };
 
@@ -44,9 +42,9 @@ export function Invite() {
     setBusy(true);
     setAcceptError(null);
     try {
-      const petId = await acceptInvite(token);
-      await reload(petId);
-      navigate('/', { replace: true, state: { flash: t('invAccepted', { pet: preview.pet_name }) } });
+      const petIds = await acceptInvite(token);
+      await reload(petIds[0]);
+      navigate('/', { replace: true, state: { flash: t('invAccepted', { pet: joinNames(preview.pets.map((p) => p.name)) }) } });
     } catch (e) {
       setAcceptError(e instanceof ApiError ? inviteErrorKey(e.message) : 'errGeneric');
       setBusy(false);
@@ -76,13 +74,15 @@ function Body({
   acceptError: MessageKey | null;
   onAccept: (p: InvitePreview) => Promise<void>;
 }) {
-  const { t } = useI18n();
-  const status = inviteStatusKey(preview?.status);
+  const { t, lang } = useI18n();
+  // „empty“ (Tiere gelöscht) und unbekannte Werte gelten als ungültig
+  const status = preview && preview.pets.length > 0 ? inviteStatusKey(preview.status) : 'invInvalid';
+  const petNames = preview ? joinNames(preview.pets.map((p) => p.name)) : '';
 
   if (!preview || (status !== 'open' && status !== 'member')) {
     return (
-      <section className="card stack" aria-live="polite">
-        <p className="notice notice-warn" role="status">{t(preview ? (status as MessageKey) : 'invInvalid')}</p>
+      <section className="card stack">
+        <p className="notice notice-warn" role="status">{t(status as MessageKey)}</p>
         <Link to="/" className="btn btn-secondary">{t('toHome')}</Link>
       </section>
     );
@@ -91,25 +91,28 @@ function Body({
   if (status === 'member') {
     return (
       <section className="card stack">
-        <p role="status">{t('invMember', { pet: preview.pet_name })}</p>
+        <p role="status">{t('invMember', { pet: petNames })}</p>
         <Link to="/" className="btn btn-primary">{t('toHome')}</Link>
       </section>
     );
   }
 
-  const species = isSpecies(preview.species)
-    ? preview.species === 'other' && preview.species_other
-      ? preview.species_other
-      : t(SPECIES_LABEL[preview.species])
-    : preview.species;
   const inviter = preview.inviter_name?.trim() || t('invSomeone');
+  const expires = preview.expires_at
+    ? formatDate(new Date(preview.expires_at), lang, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : '';
 
   return (
     <section className="card stack invite-card">
       <span className="placeholder-icon" aria-hidden="true">
         <IconPaw size={30} />
       </span>
-      <p className="invite-text">{t('invText', { name: inviter, pet: preview.pet_name, species })}</p>
+      <p className="invite-text">{t('invText', { name: inviter, pet: petNames })}</p>
+      <div className="role-summary">
+        <p className="role-title">{t('invRoleIs', { r: t(ROLE_LABEL[preview.role]) })}</p>
+        <p className="muted small">{t(ROLE_HINT[preview.role])}</p>
+      </div>
+      {expires && <p className="muted small">{t('invValidUntil', { d: expires })}</p>}
       {acceptError && <p className="notice notice-crit" role="alert">{t(acceptError)}</p>}
       <div className="actions actions-start">
         <button type="button" className="btn btn-primary" disabled={busy} aria-busy={busy} onClick={() => void onAccept(preview)}>

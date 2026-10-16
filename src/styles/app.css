@@ -331,3 +331,28 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .danger-zone { margin-top: var(--s-5); padding-top: var(--s-5); border-top: 1px dashed var(--line); display: flex; }
 .invite-card { align-items: flex-start; }
 .invite-text { font-size: 1.1rem; font-weight: 600; overflow-wrap: anywhere; }
+
+/* ---------- Familie & Mithalter:innen, Tierfoto ---------- */
+.pet-photo { display: block; flex: none; border-radius: 50%; object-fit: cover; background: var(--surface-2); }
+.pet-photo-sm { box-shadow: 0 0 0 2px var(--surface); }
+.pet-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-4); }
+.pet-head-text { min-width: 0; flex: 1 1 10rem; overflow-wrap: anywhere; }
+.pet-ava-lg { width: 112px; height: 112px; border-radius: 50%; overflow: hidden; }
+.pet-ava-lg .pet-photo { width: 100%; height: 100%; }
+.pet-ava-sm { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 50%; background: var(--brand-soft); color: var(--brand); overflow: hidden; }
+.photo-controls { margin-top: calc(var(--s-3) * -1); }
+.shared-line { overflow-wrap: anywhere; gap: var(--s-1); }
+.row-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.member-row .btn { padding-inline: var(--s-3); }
+.role-options { display: flex; flex-direction: column; gap: var(--s-2); }
+.role-option { align-items: flex-start; width: 100%; }
+.role-option input { margin-top: 2px; flex: none; }
+.role-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.role-title { font-weight: 600; }
+.role-summary { padding: var(--s-3); border-radius: var(--r); background: var(--surface-2); display: flex; flex-direction: column; gap: var(--s-1); }
+.next-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2); }
+.next-pet { display: inline-flex; align-items: center; gap: var(--s-2); font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.em-pet { display: flex; align-items: center; gap: var(--s-3); min-width: 0; }
+.em-pet h2 { min-width: 0; overflow-wrap: anywhere; }
+.species-tile .pet-photo { width: 36px; height: 36px; }
+[aria-disabled="true"] { cursor: not-allowed; opacity: 0.55; }

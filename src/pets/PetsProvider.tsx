@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { listMemberships, listPets } from '../lib/api';
 import type { PetRow } from '../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
+import { toRole, type MemberRole, type Membership } from '../lib/sharing';
 
 const ACTIVE_KEY = 'pc-active-pet';
 
@@ -14,6 +15,10 @@ interface PetsValue {
   memberCount: (petId: string) => number;
   /** Bin ich Besitzer dieses Tieres? */
   isOwner: (pet: PetRow) => boolean;
+  /** Meine Rechte-Stufe bei diesem Tier */
+  myRole: (pet: PetRow) => MemberRole;
+  /** Alle Betreuer-Zeilen meiner Tiere (ohne Namen) */
+  memberships: Membership[];
   setActiveId: (id: string) => void;
   /** Tiere neu laden; `activateId` danach aktiv setzen */
   reload: (activateId?: string) => Promise<void>;
@@ -34,7 +39,7 @@ function readActive(): string | null {
 export function PetsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [pets, setPets] = useState<PetRow[]>([]);
-  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [memberships, setMemberships] = useState<Membership[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const [activeId, setActiveIdState] = useState<string | null>(readActive);
@@ -56,10 +61,7 @@ export function PetsProvider({ children }: { children: ReactNode }) {
         setError(false);
         if (activateId) setActiveId(activateId);
         try {
-          const rows = await listMemberships(list.map((p) => p.id));
-          const next: Record<string, number> = {};
-          for (const r of rows) next[r.pet_id] = (next[r.pet_id] ?? 0) + 1;
-          setCounts(next);
+          setMemberships(await listMemberships(list.map((p) => p.id)));
         } catch (e) {
           // Ohne Betreuer-Zahlen läuft die App weiter, nur ohne „gemeinsam“-Hinweise.
           console.error('Betreuer konnten nicht geladen werden', e);
@@ -78,7 +80,7 @@ export function PetsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setLoaded(false);
     setPets([]);
-    setCounts({});
+    setMemberships([]);
     if (uid) void reload();
   }, [uid, reload]);
 
@@ -90,14 +92,25 @@ export function PetsProvider({ children }: { children: ReactNode }) {
     [setActiveId],
   );
 
-  const memberCount = useCallback((petId: string) => counts[petId] ?? 1, [counts]);
+  const counts = useMemo(() => {
+    const c = new Map<string, number>();
+    for (const m of memberships) c.set(m.pet_id, (c.get(m.pet_id) ?? 0) + 1);
+    return c;
+  }, [memberships]);
+  const memberCount = useCallback((petId: string) => counts.get(petId) ?? 1, [counts]);
   const isOwner = useCallback((pet: PetRow) => pet.owner_id === uid, [uid]);
+  // Unbekannt (z. B. Betreuer-Liste nicht geladen) gilt als „Nur ansehen“: lieber zu wenig Knöpfe als Fehler.
+  const myRole = useCallback(
+    (pet: PetRow): MemberRole =>
+      pet.owner_id === uid ? 'owner' : toRole(memberships.find((m) => m.pet_id === pet.id && m.user_id === uid)?.role ?? 'viewer'),
+    [uid, memberships],
+  );
 
   const active = pets.find((p) => p.id === activeId) ?? pets[0] ?? null;
 
   const value = useMemo<PetsValue>(
-    () => ({ loaded, error, pets, active, memberCount, isOwner, setActiveId, reload, upsertLocal }),
-    [loaded, error, pets, active, memberCount, isOwner, setActiveId, reload, upsertLocal],
+    () => ({ loaded, error, pets, active, memberCount, isOwner, myRole, memberships, setActiveId, reload, upsertLocal }),
+    [loaded, error, pets, active, memberCount, isOwner, myRole, memberships, setActiveId, reload, upsertLocal],
   );
   return <PetsContext.Provider value={value}>{children}</PetsContext.Provider>;
 }

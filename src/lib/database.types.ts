@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      pet_invite_pets: {
+        Row: {
+          invite_id: string
+          pet_id: string
+        }
+        Insert: {
+          invite_id: string
+          pet_id: string
+        }
+        Update: {
+          invite_id?: string
+          pet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_invite_pets_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "pet_invites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pet_invite_pets_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_invites: {
         Row: {
           accepted_at: string | null
@@ -22,7 +52,8 @@ export type Database = {
           created_by: string
           expires_at: string
           id: string
-          pet_id: string
+          invitee_name: string
+          role: string
           token: string
         }
         Insert: {
@@ -32,7 +63,8 @@ export type Database = {
           created_by?: string
           expires_at?: string
           id?: string
-          pet_id: string
+          invitee_name: string
+          role?: string
           token?: string
         }
         Update: {
@@ -42,18 +74,11 @@ export type Database = {
           created_by?: string
           expires_at?: string
           id?: string
-          pet_id?: string
+          invitee_name?: string
+          role?: string
           token?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "pet_invites_pet_id_fkey"
-            columns: ["pet_id"]
-            isOneToOne: false
-            referencedRelation: "pets"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       pet_members: {
         Row: {
@@ -325,17 +350,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      accept_pet_invite: { Args: { p_token: string }; Returns: string }
-      invite_preview: {
-        Args: { p_token: string }
+      accept_pet_invite: { Args: { p_token: string }; Returns: string[] }
+      create_pet_invite: {
+        Args: { p_name: string; p_pet_ids: string[]; p_role: string }
         Returns: {
-          inviter_name: string
-          pet_name: string
-          species: string
-          species_other: string
-          status: string
+          expires_at: string
+          id: string
+          token: string
         }[]
       }
+      invite_preview: { Args: { p_token: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never

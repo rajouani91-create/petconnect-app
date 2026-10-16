@@ -4,6 +4,7 @@ import { usePets } from '../pets/PetsProvider';
 import { extractPhone } from '../lib/validate';
 import { PetSwitcher } from '../components/PetSwitcher';
 import { IconBack, IconEmergency, IconPhone } from '../components/Icons';
+import { PetAvatar } from '../components/PetAvatar';
 
 /** Vorläufige Notfall-Seite: keine erfundenen Praxen oder Nummern, nur der eigene Notfallkontakt. */
 export function Emergency() {
@@ -32,7 +33,10 @@ export function Emergency() {
 
       {active && (
         <section className="card stack" aria-labelledby="ec-h">
-          <h2 id="ec-h">{t('emergContactH', { n: active.name })}</h2>
+          <div className="em-pet">
+            <PetAvatar pet={active} size={48} fallback={false} />
+            <h2 id="ec-h">{t('emergContactH', { n: active.name })}</h2>
+          </div>
           {contact ? (
             <>
               <p className="pre contact-text">{contact}</p>

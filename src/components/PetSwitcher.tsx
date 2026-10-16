@@ -1,7 +1,7 @@
 import { useI18n } from '../i18n/I18nProvider';
 import { usePets } from '../pets/PetsProvider';
-import { isSpecies } from '../lib/domain';
-import { IconPeople, SpeciesIcon } from './Icons';
+import { IconPeople } from './Icons';
+import { PetAvatar } from './PetAvatar';
 
 /** Tier-Umschalter, erscheint nur bei mehreren Tieren. */
 export function PetSwitcher() {
@@ -12,7 +12,7 @@ export function PetSwitcher() {
     <div className="pet-switcher" role="group" aria-label={t('choosePet')}>
       {pets.map((p) => (
         <button key={p.id} type="button" className="chip" aria-pressed={p.id === active.id} onClick={() => setActiveId(p.id)}>
-          <SpeciesIcon species={isSpecies(p.species) ? p.species : 'other'} size={20} />
+          <PetAvatar pet={p} size={28} iconSize={20} className="pet-photo-sm" />
           <span>{p.name}</span>
           {memberCount(p.id) > 1 && (
             <span className="chip-shared" role="img" aria-label={t('sharedPet')}>

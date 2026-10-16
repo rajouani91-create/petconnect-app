@@ -4,6 +4,7 @@ import { formatTime } from '../i18n';
 import { usePets } from '../pets/PetsProvider';
 import { addRoutine, deleteRoutine, isDuplicate, listRoutine, setAllReminders, setReminder } from '../lib/api';
 import type { RoutineRow } from '../lib/supabase';
+import { canEdit } from '../lib/sharing';
 import { KINDS, REPEATS, isKind, isRepeat, type Kind } from '../lib/domain';
 import { KIND_LABEL, REPEAT_LABEL, repeatLabel, routineTitle } from '../lib/labels';
 import { toHHMM, toMinutes } from '../lib/time';
@@ -19,7 +20,7 @@ const EMPTY_FORM: RoutineFormValues = { kind: 'walk', time: '', repeat: 'daily',
 
 export function Routine() {
   const { t, lang } = useI18n();
-  const { active, memberCount } = usePets();
+  const { active, memberCount, myRole } = usePets();
   const [items, setItems] = useState<RoutineRow[] | null>(null);
   const [error, setError] = useState(false);
   const [status, setStatus] = useState('');
@@ -44,6 +45,8 @@ export function Routine() {
 
   if (!active) return null;
 
+  // Nur ansehen: keine Schalter, kein Hinzufügen, kein Löschen
+  const editable = canEdit(myRole(active));
   const sorted = items ? [...items].sort((a, b) => toMinutes(a.time_of_day) - toMinutes(b.time_of_day)) : [];
   const allOn = sorted.length > 0 && sorted.every((i) => i.reminder_on);
 
@@ -107,9 +110,9 @@ export function Routine() {
         <section className="card" aria-labelledby="plan-h">
           <div className="card-head">
             <h2 id="plan-h">{t('tplPlan')}</h2>
-            {sorted.length > 0 && <Switch checked={allOn} onChange={(on) => void toggleAll(on)} label={t('gpAll')} />}
+            {editable && sorted.length > 0 && <Switch checked={allOn} onChange={(on) => void toggleAll(on)} label={t('gpAll')} />}
           </div>
-          {sorted.length > 0 && memberCount(active.id) > 1 && <p className="muted small all-hint">{t('gpAllShared', { n: active.name })}</p>}
+          {editable && sorted.length > 0 && memberCount(active.id) > 1 && <p className="muted small all-hint">{t('gpAllShared', { n: active.name })}</p>}
           {sorted.length === 0 ? (
             <p className="muted">{t('gpEmpty', { n: active.name })}</p>
           ) : (
@@ -128,28 +131,32 @@ export function Routine() {
                         {repeatLabel(item.repeat, t)}
                       </span>
                     </div>
-                    <Switch
-                      checked={item.reminder_on}
-                      onChange={(on) => void toggleOne(item, on)}
-                      label={t('reminder')}
-                      ariaLabel={t('gpSwL', { x: `${title}, ${formatTime(toHHMM(item.time_of_day), lang)}` })}
-                      hideLabel
-                    />
-                    <button
-                      type="button"
-                      className="btn-icon"
-                      aria-label={t('gpDelL', { x: `${title}, ${formatTime(toHHMM(item.time_of_day), lang)}` })}
-                      onClick={() => setToDelete(item)}
-                    >
-                      <IconTrash size={20} />
-                    </button>
+                    {editable && (
+                      <>
+                        <Switch
+                          checked={item.reminder_on}
+                          onChange={(on) => void toggleOne(item, on)}
+                          label={t('reminder')}
+                          ariaLabel={t('gpSwL', { x: `${title}, ${formatTime(toHHMM(item.time_of_day), lang)}` })}
+                          hideLabel
+                        />
+                        <button
+                          type="button"
+                          className="btn-icon"
+                          aria-label={t('gpDelL', { x: `${title}, ${formatTime(toHHMM(item.time_of_day), lang)}` })}
+                          onClick={() => setToDelete(item)}
+                        >
+                          <IconTrash size={20} />
+                        </button>
+                      </>
+                    )}
                   </li>
                 );
               })}
             </ul>
           )}
 
-          {adding ? (
+          {!editable ? null : adding ? (
             <AddForm
               onCancel={() => setAdding(false)}
               isDuplicate={(v) => isDuplicateRoutine(sorted, v)}

@@ -5,20 +5,21 @@ import { formatDate, formatTime } from '../i18n';
 import { useAuth } from '../auth/AuthProvider';
 import { usePets } from '../pets/PetsProvider';
 import { listDone, listMembers, listRoutine, markDone, markUndone } from '../lib/api';
-import { doneByName } from '../lib/sharing';
-import type { RoutineRow } from '../lib/supabase';
+import { canEdit, doneByName } from '../lib/sharing';
+import type { PetRow, RoutineRow } from '../lib/supabase';
 import { itemsForDay, nextDue, splitMinutes, toHHMM, toMinutes, zonedNow, type NextDue } from '../lib/time';
 import { routineTitle } from '../lib/labels';
 import { isKind } from '../lib/domain';
 import { useNow } from '../lib/useNow';
 import { PetSwitcher } from '../components/PetSwitcher';
+import { PetAvatar } from '../components/PetAvatar';
 import { IconCheck, KindIcon } from '../components/Icons';
 import { Loading } from '../components/Loading';
 
 export function Today() {
   const { t, lang } = useI18n();
   const { profile, user } = useAuth();
-  const { active } = usePets();
+  const { active, myRole } = usePets();
   const location = useLocation();
   const navigate = useNavigate();
   const now = useNow();
@@ -96,8 +97,11 @@ export function Today() {
   const todays = items ? itemsForDay(items, zn.weekday) : [];
   const next = items ? nextDue(items, done, zn) : null;
   const name = profile?.display_name?.trim();
+  // Nur ansehen: Abhaken ist gesperrt (die Datenbank verhindert es ohnehin)
+  const readOnly = !canEdit(myRole(active));
 
   async function toggle(item: RoutineRow) {
+    if (readOnly) return;
     const isDone = done.has(item.id);
     const title = routineTitle(item, t);
     const time = formatTime(toHHMM(item.time_of_day), lang);
@@ -136,7 +140,8 @@ export function Today() {
 
       {items && (
         <>
-          <NextCard next={next} hasToday={todays.length > 0} onDone={toggle} pending={pending} />
+          {readOnly && <p className="notice notice-info" id="view-only-hint">{t('viewOnlyHint')}</p>}
+          <NextCard pet={active} next={next} hasToday={todays.length > 0} onDone={toggle} pending={pending} readOnly={readOnly} />
 
           <section className="card" aria-labelledby="today-h">
             <div className="card-head">
@@ -160,6 +165,8 @@ export function Today() {
                         className="check"
                         aria-pressed={isDone}
                         aria-label={t('markDone', { x: title, t: time })}
+                        aria-disabled={readOnly || undefined}
+                        aria-describedby={readOnly ? 'view-only-hint' : undefined}
                         disabled={pending === item.id}
                         onClick={() => void toggle(item)}
                       >
@@ -183,21 +190,34 @@ export function Today() {
 }
 
 function NextCard({
+  pet,
   next,
   hasToday,
   onDone,
   pending,
+  readOnly,
 }: {
+  pet: PetRow;
+  readOnly: boolean;
   next: NextDue<RoutineRow> | null;
   hasToday: boolean;
   onDone: (item: RoutineRow) => Promise<void>;
   pending: string | null;
 }) {
   const { t, lang } = useI18n();
+  const head = (
+    <div className="next-head">
+      <h2 id="next-h" className="label">{t('gpNext')}</h2>
+      <span className="next-pet">
+        <PetAvatar pet={pet} size={28} fallback={false} className="pet-photo-sm" />
+        <span>{pet.name}</span>
+      </span>
+    </div>
+  );
   if (!next) {
     return (
       <section className="card next-card is-empty" aria-labelledby="next-h">
-        <h2 id="next-h" className="label">{t('gpNext')}</h2>
+        {head}
         <p className="next-empty">{hasToday ? t('gpRest') : t('todayEmpty')}</p>
       </section>
     );
@@ -212,7 +232,7 @@ function NextCard({
   const time = formatTime(toHHMM(item.time_of_day), lang);
   return (
     <section className={`card next-card${next.state === 'now' ? ' is-now' : ''}`} aria-labelledby="next-h">
-      <h2 id="next-h" className="label">{t('gpNext')}</h2>
+      {head}
       <div className="next-main">
         {isKind(item.kind) && (
           <span className="next-icon">
@@ -228,7 +248,14 @@ function NextCard({
           </p>
         </div>
       </div>
-      <button type="button" className="btn btn-primary btn-block" disabled={pending === item.id} onClick={() => void onDone(item)}>
+      <button
+        type="button"
+        className="btn btn-primary btn-block"
+        disabled={pending === item.id}
+        aria-disabled={readOnly || undefined}
+        aria-describedby={readOnly ? 'view-only-hint' : undefined}
+        onClick={() => void onDone(item)}
+      >
         <IconCheck size={20} />
         {t('gpDoneBtn')}
       </button>

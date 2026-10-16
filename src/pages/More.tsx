@@ -1,15 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { LANGUAGES, isLang, type Lang } from '../i18n';
 import { useAuth } from '../auth/AuthProvider';
 import { updateLanguage } from '../lib/api';
 import { Field } from '../components/Field';
+import { FamilyCard } from '../components/FamilyCard';
 
 export function More() {
   const { t, lang, setLang } = useI18n();
   const { user, refreshProfile, signOut } = useAuth();
   const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const { hash } = useLocation();
+
+  // „Personen verwalten“ auf der Tier-Seite springt zur Familie-Karte
+  useEffect(() => {
+    if (hash === '#familie') document.getElementById('familie')?.scrollIntoView({ block: 'start' });
+  }, [hash]);
 
   async function changeLang(next: Lang) {
     if (!user) return;
@@ -34,6 +42,8 @@ export function More() {
       <header className="page-head">
         <h1>{t('moreTitle')}</h1>
       </header>
+
+      <FamilyCard />
 
       <section className="card stack" aria-labelledby="lang-h">
         <h2 id="lang-h">{t('langLabel')}</h2>
