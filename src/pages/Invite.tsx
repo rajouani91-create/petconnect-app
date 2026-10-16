@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { formatDate, type MessageKey } from '../i18n';
 import { usePets } from '../pets/PetsProvider';

@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 import { I18nProvider } from './i18n/I18nProvider';
 import { AuthProvider } from './auth/AuthProvider';
 import { RedirectIfAuthed, RequireAuth } from './auth/RequireAuth';
@@ -20,7 +20,7 @@ export function App() {
   return (
     <I18nProvider>
       <AuthProvider>
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <BrowserRouter>
           <Routes>
             <Route path="/login" element={<RedirectIfAuthed><Login /></RedirectIfAuthed>} />
             <Route path="/registrieren" element={<RedirectIfAuthed><Register /></RedirectIfAuthed>} />

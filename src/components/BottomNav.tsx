@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import type { MessageKey } from '../i18n';
 import { IconCalendar, IconHome, IconList, IconMore, IconPaw, LogoMark } from './Icons';

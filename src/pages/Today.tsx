@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { formatDate, formatTime } from '../i18n';
 import { useAuth } from '../auth/AuthProvider';

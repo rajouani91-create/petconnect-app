@@ -1,4 +1,4 @@
-import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { usePets } from '../pets/PetsProvider';
 import { BottomNav } from './BottomNav';

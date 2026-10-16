@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../auth/AuthProvider';
 import { supabase } from '../lib/supabase';
