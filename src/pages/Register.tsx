@@ -83,7 +83,7 @@ export function Register() {
   }
 
   return (
-    <AuthLayout title={t('reg_title')} sub={t('reg_sub')}>
+    <AuthLayout title={t('reg_title')} sub={t('reg_sub')} inviteHint>
       <form className="stack" onSubmit={submit} noValidate>
         <Field id="reg-name" label={t('displayName')} hint={t('displayNameHint')} error={errors.displayName} required>
           {(a) => (

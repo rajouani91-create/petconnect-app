@@ -9,10 +9,11 @@ import { petToForm } from '../lib/validate';
 import type { PetRow } from '../lib/supabase';
 import { PetForm } from '../components/PetForm';
 import { PetSwitcher } from '../components/PetSwitcher';
+import { CareSection } from '../components/CareSection';
 import { IconPlus, SpeciesIcon } from '../components/Icons';
 import { SPECIES_LABEL } from '../components/SpeciesPicker';
 
-/** Stammdaten ansehen und bearbeiten, weiteres Tier anlegen. */
+/** Stammdaten ansehen und bearbeiten, weiteres Tier anlegen, Betreuung verwalten. */
 export function Pet() {
   const { t } = useI18n();
   const { active, upsertLocal } = usePets();
@@ -64,6 +65,8 @@ export function Pet() {
         </>
       )}
       <p className="sr-only" role="status" aria-live="polite">{status}</p>
+
+      <CareSection key={active.id} pet={active} />
     </div>
   );
 }

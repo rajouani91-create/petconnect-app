@@ -113,7 +113,7 @@ export function Login() {
   }
 
   return (
-    <AuthLayout title={t('login_title')} sub={t('login_sub')}>
+    <AuthLayout title={t('login_title')} sub={t('login_sub')} inviteHint>
       <form className="stack" onSubmit={login} noValidate>
         {emailField}
         <Field id="login-pw" label={t('password')} error={errors.password} required>

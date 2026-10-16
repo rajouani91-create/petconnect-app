@@ -87,7 +87,7 @@ export type NextDue<T> =
  * Nächster fälliger, noch offener Eintrag von heute.
  * Bis zu NOW_WINDOW_MIN Minuten überfällige Einträge gelten als „Jetzt“, ältere werden übersprungen.
  */
-export function nextDue<T extends Schedulable>(items: readonly T[], doneIds: ReadonlySet<string>, now: ZonedNow): NextDue<T> | null {
+export function nextDue<T extends Schedulable>(items: readonly T[], doneIds: Pick<ReadonlySet<string>, 'has'>, now: ZonedNow): NextDue<T> | null {
   for (const item of itemsForDay(items, now.weekday)) {
     if (doneIds.has(item.id)) continue;
     const diff = toMinutes(item.time_of_day) - now.minutes;

@@ -1,11 +1,13 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 import { LANGUAGES, isLang } from '../i18n';
+import { readPendingInvite } from '../lib/sharing';
 import { LogoMark } from './Icons';
 
-/** Rahmen für Anmelden/Registrieren: Marke, Sprachwahl, Karte. */
-export function AuthLayout({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
+/** Rahmen für Anmelden/Registrieren: Marke, Sprachwahl, Karte. `inviteHint`: Hinweis, falls eine Einladung wartet. */
+export function AuthLayout({ title, sub, children, inviteHint = false }: { title: string; sub?: string; children: ReactNode; inviteHint?: boolean }) {
   const { t, lang, setLang } = useI18n();
+  const [hasInvite] = useState(() => inviteHint && readPendingInvite() !== null);
   return (
     <div className="auth">
       <header className="auth-top">
@@ -28,6 +30,7 @@ export function AuthLayout({ title, sub, children }: { title: string; sub?: stri
         <div className="card auth-card">
           <h1>{title}</h1>
           {sub && <p className="muted auth-sub">{sub}</p>}
+          {hasInvite && <p className="notice notice-info" role="status">{t('invLoginHint')}</p>}
           {children}
         </div>
       </main>

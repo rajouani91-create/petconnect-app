@@ -27,7 +27,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
 Nur den öffentlichen **Publishable Key** verwenden, niemals `service_role` oder `sb_secret_…`.
-Die Sicherheit kommt aus Row Level Security in der Datenbank: Jede Person sieht nur ihre eigenen Zeilen.
+Die Sicherheit kommt aus Row Level Security in der Datenbank: Jede Person sieht nur ihre eigenen Zeilen und die der Tiere, die sie mitbetreut.
 Nach einer Änderung an `.env.local` den Dev-Server neu starten.
 
 ## Befehle
@@ -48,14 +48,34 @@ src/
   i18n/       index.ts (t, Fallback), I18nProvider.tsx, de.ts … no.ts (11 Sprachen)
   auth/       AuthProvider.tsx, RequireAuth.tsx, authErrors.ts
   pets/       PetsProvider.tsx (Tierliste, aktives Tier)
-  pages/      Login, Register, ResetPassword, Today, Routine, Pet, PetNew, More, Appointments, Emergency
-  components/ AppShell, BottomNav, Switch, SpeciesPicker, Dialog, Field, PetForm, PetSwitcher, Icons
+  pages/      Login, Register, ResetPassword, Today, Routine, Pet, PetNew, More, Appointments, Emergency, Invite
+  components/ AppShell, BottomNav, Switch, SpeciesPicker, Dialog, Field, PetForm, PetSwitcher, CareSection, Icons
   styles/     tokens.css (aus dem Prototyp), app.css, fonts.css + lokale Schriften
 public/       manifest.webmanifest, Icons
 ```
 
 Seiten: `/login`, `/registrieren`, `/passwort-neu`, `/` (Heute), `/termine`, `/tier`, `/tier/neu`,
-`/alltag`, `/mehr`, `/notfall`.
+`/alltag`, `/mehr`, `/notfall`, `/einladung/:token`.
+
+## Gemeinsam betreuen
+
+Ein Tier hat genau einen **Besitzer** und beliebig viele **Mitbetreuer**. Alle sehen und ändern
+dasselbe Tier, denselben Tagesplan und dieselben Häkchen. Schema:
+`..\Technik\supabase\migrations\20261016150000_gemeinsam_betreuen.sql`.
+
+- **Einladen** (`/tier`, Abschnitt „Betreuung“, nur Besitzer): „Person einladen“ erzeugt einen Link
+  `/einladung/<code>`, gültig 7 Tage, für eine Person. Teilen über `navigator.share` oder Kopieren.
+  Offene Einladungen lassen sich zurückziehen, Mitbetreuer entfernen, das Tier löschen.
+- **Annehmen** (`/einladung/:token`): Ohne Anmeldung merkt sich die App den Code in
+  `localStorage` (`pc-pending-invite`) und springt nach Anmeldung/Registrierung automatisch zurück.
+  Die Seite ist auch ohne eigenes Tier erreichbar.
+- **Mitbetreuer** können die Betreuung selbst beenden; danach verschwindet das Tier.
+- **Heute** zeigt „erledigt von {Name}“, wenn jemand anderes abgehakt hat, und lädt Plan und Häkchen
+  beim Zurückkehren ins Fenster sowie jede Minute neu (noch ohne Realtime).
+- Geteilte Tiere tragen im Tier-Umschalter ein Personen-Symbol.
+- Code: `src/lib/sharing.ts` (Link, Fehlertexte, „erledigt von“), `src/lib/api.ts` (Betreuer,
+  Einladungen), `src/components/CareSection.tsx`, `src/pages/Invite.tsx`.
+- Der Einladungscode wird nie in der Konsole ausgegeben und für offene Einladungen nicht geladen.
 
 ## Hinweise
 

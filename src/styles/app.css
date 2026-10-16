@@ -310,3 +310,24 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   .spinner { animation: none; border-top-color: var(--line); }
 }
+
+/* ---------- Gemeinsam betreuen ---------- */
+.today-row .pill { white-space: normal; overflow-wrap: anywhere; min-width: 0; flex: 0 1 auto; text-align: end; }
+.chip-shared { display: inline-flex; align-items: center; opacity: 0.85; }
+.all-hint { margin-top: calc(var(--s-2) * -1); }
+.member-list { display: flex; flex-direction: column; }
+.member-row {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-3);
+  padding: var(--s-2) 0; border-top: 1px solid var(--line); min-width: 0;
+}
+.member-row:first-child { border-top: 0; }
+.member-text { display: flex; flex-direction: column; min-width: 0; flex: 1 1 10rem; overflow-wrap: anywhere; }
+.member-name { font-weight: 600; }
+.invite-box { border-top: 1px solid var(--line); padding-top: var(--s-4); }
+.invite-url {
+  padding: var(--s-2) var(--s-3); border-radius: var(--r); background: var(--surface-2);
+  font-size: 0.85rem; overflow-wrap: anywhere; word-break: break-all; user-select: all;
+}
+.danger-zone { margin-top: var(--s-5); padding-top: var(--s-5); border-top: 1px dashed var(--line); display: flex; }
+.invite-card { align-items: flex-start; }
+.invite-text { font-size: 1.1rem; font-weight: 600; overflow-wrap: anywhere; }

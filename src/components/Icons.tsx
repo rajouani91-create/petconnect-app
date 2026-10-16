@@ -78,6 +78,28 @@ export const IconEmergency = (p: IconProps) => (
     <path d="M12 9.5v4.5M12 17h.01" />
   </Svg>
 );
+export const IconPeople = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="9" cy="8" r="3.2" />
+    <path d="M3 19.5c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" />
+    <circle cx="17" cy="9" r="2.6" />
+    <path d="M16.5 14.1c2.6.2 4.5 2.1 4.5 4.9" />
+  </Svg>
+);
+export const IconShare = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="18" cy="5.5" r="2.5" />
+    <circle cx="6" cy="12" r="2.5" />
+    <circle cx="18" cy="18.5" r="2.5" />
+    <path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1" />
+  </Svg>
+);
+export const IconCopy = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="8.5" y="8.5" width="12" height="12" rx="2.2" />
+    <path d="M15.5 8.5V5.7c0-1.2-1-2.2-2.2-2.2H5.7c-1.2 0-2.2 1-2.2 2.2v7.6c0 1.2 1 2.2 2.2 2.2h2.8" />
+  </Svg>
+);
 export const IconCheck = (p: IconProps) => (
   <Svg {...p}>
     <path d="m5 12.5 4.5 4.5L19 7.5" />

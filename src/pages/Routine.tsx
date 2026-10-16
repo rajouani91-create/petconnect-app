@@ -19,7 +19,7 @@ const EMPTY_FORM: RoutineFormValues = { kind: 'walk', time: '', repeat: 'daily',
 
 export function Routine() {
   const { t, lang } = useI18n();
-  const { active } = usePets();
+  const { active, memberCount } = usePets();
   const [items, setItems] = useState<RoutineRow[] | null>(null);
   const [error, setError] = useState(false);
   const [status, setStatus] = useState('');
@@ -109,6 +109,7 @@ export function Routine() {
             <h2 id="plan-h">{t('tplPlan')}</h2>
             {sorted.length > 0 && <Switch checked={allOn} onChange={(on) => void toggleAll(on)} label={t('gpAll')} />}
           </div>
+          {sorted.length > 0 && memberCount(active.id) > 1 && <p className="muted small all-hint">{t('gpAllShared', { n: active.name })}</p>}
           {sorted.length === 0 ? (
             <p className="muted">{t('gpEmpty', { n: active.name })}</p>
           ) : (

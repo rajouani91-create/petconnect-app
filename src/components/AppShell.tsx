@@ -12,7 +12,9 @@ export function AppShell() {
   const { pathname } = useLocation();
 
   const needsFirstPet = loaded && !error && pets.length === 0;
-  if (needsFirstPet && pathname !== '/tier/neu' && pathname !== '/mehr' && pathname !== '/notfall') {
+  // Einladungen müssen auch ohne eigenes Tier erreichbar sein.
+  const exempt = pathname === '/tier/neu' || pathname === '/mehr' || pathname === '/notfall' || pathname.startsWith('/einladung/');
+  if (needsFirstPet && !exempt) {
     return <Navigate to="/tier/neu" replace />;
   }
 

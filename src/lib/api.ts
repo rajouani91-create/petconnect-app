@@ -2,6 +2,7 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { Lang } from '../i18n';
 import { supabase, type PetRow, type ProfileRow, type RoutineRow } from './supabase';
+import { isOpenInvite, type MemberRole } from './sharing';
 import type { TemplateEntry } from './templates';
 import type { PetFormValues, RoutineFormValues } from './validate';
 import { petFormToRow } from './validate';
@@ -55,8 +56,10 @@ export async function updatePet(id: string, values: PetFormValues): Promise<PetR
   return check(await supabase.from('pets').update(petFormToRow(values)).eq('id', id).select('*').single());
 }
 
+/** Nur der Besitzer darf löschen; RLS löscht sonst stillschweigend nichts – dann Fehler. */
 export async function deletePet(id: string): Promise<void> {
-  checkOk(await supabase.from('pets').delete().eq('id', id));
+  const rows = check(await supabase.from('pets').delete().eq('id', id).select('id'));
+  if (rows.length === 0) throw new ApiError({ message: 'Nichts gelöscht', code: '42501' });
 }
 
 /** Legt ein Tier an und übernimmt optional den Tagesplan. Scheitert der Plan, wird das Tier wieder entfernt. */
@@ -100,13 +103,13 @@ export async function setAllReminders(petId: string, on: boolean): Promise<void>
   checkOk(await supabase.from('routine_items').update({ reminder_on: on }).eq('pet_id', petId));
 }
 
-/** IDs der am Tag `date` (YYYY-MM-DD, Europe/Berlin) erledigten Einträge. */
-export async function listDone(itemIds: readonly string[], date: string): Promise<Set<string>> {
-  if (itemIds.length === 0) return new Set();
+/** Am Tag `date` (YYYY-MM-DD, Europe/Berlin) erledigte Einträge: Eintrags-ID → Person, die abgehakt hat. */
+export async function listDone(itemIds: readonly string[], date: string): Promise<Map<string, string>> {
+  if (itemIds.length === 0) return new Map();
   const rows = check(
-    await supabase.from('routine_done').select('routine_item_id').eq('done_on', date).in('routine_item_id', [...itemIds]),
+    await supabase.from('routine_done').select('routine_item_id, owner_id').eq('done_on', date).in('routine_item_id', [...itemIds]),
   );
-  return new Set(rows.map((r) => r.routine_item_id));
+  return new Map(rows.map((r) => [r.routine_item_id, r.owner_id]));
 }
 
 export async function markDone(itemId: string, date: string): Promise<void> {
@@ -119,4 +122,92 @@ export async function markDone(itemId: string, date: string): Promise<void> {
 
 export async function markUndone(itemId: string, date: string): Promise<void> {
   checkOk(await supabase.from('routine_done').delete().eq('routine_item_id', itemId).eq('done_on', date));
+}
+
+// ---------- Gemeinsam betreuen ----------
+
+export interface Member {
+  petId: string;
+  userId: string;
+  role: MemberRole;
+  name: string;
+}
+
+/** Betreuer der Tiere `petIds` (RLS: nur Tiere, die man selbst betreut). Ohne Namen. */
+export async function listMemberships(petIds: readonly string[]): Promise<{ pet_id: string; user_id: string; role: string }[]> {
+  if (petIds.length === 0) return [];
+  return check(await supabase.from('pet_members').select('pet_id, user_id, role').in('pet_id', [...petIds]));
+}
+
+/** Betreuer eines Tieres mit Anzeigenamen, Besitzer zuerst. */
+export async function listMembers(petId: string): Promise<Member[]> {
+  const rows = check(
+    await supabase.from('pet_members').select('pet_id, user_id, role, created_at').eq('pet_id', petId).order('created_at', { ascending: true }),
+  );
+  const names = await profileNames(rows.map((r) => r.user_id));
+  return rows
+    .map((r) => ({ petId: r.pet_id, userId: r.user_id, role: (r.role === 'owner' ? 'owner' : 'carer') as MemberRole, name: names.get(r.user_id) ?? '' }))
+    .sort((a, b) => (a.role === b.role ? 0 : a.role === 'owner' ? -1 : 1));
+}
+
+/** Anzeigenamen zu Personen-IDs (RLS: eigenes Profil und Mitbetreuer). */
+export async function profileNames(userIds: readonly string[]): Promise<Map<string, string>> {
+  const ids = [...new Set(userIds)];
+  if (ids.length === 0) return new Map();
+  const rows = check(await supabase.from('profiles').select('id, display_name').in('id', ids));
+  return new Map(rows.map((r) => [r.id, r.display_name ?? '']));
+}
+
+/** Mitbetreuer entfernen oder selbst gehen. Wirft, wenn RLS nichts gelöscht hat. */
+export async function removeMember(petId: string, userId: string): Promise<void> {
+  const rows = check(await supabase.from('pet_members').delete().eq('pet_id', petId).eq('user_id', userId).select('user_id'));
+  if (rows.length === 0) throw new ApiError({ message: 'Nichts gelöscht', code: '42501' });
+}
+
+export interface OpenInvite {
+  id: string;
+  expires_at: string;
+}
+
+/** Offene Einladungen eines Tieres (nur für den Besitzer lesbar). Der Code wird bewusst nicht geladen. */
+export async function listOpenInvites(petId: string): Promise<OpenInvite[]> {
+  const rows = check(
+    await supabase
+      .from('pet_invites')
+      .select('id, expires_at, accepted_at')
+      .eq('pet_id', petId)
+      .is('accepted_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: true }),
+  );
+  // Zusätzlich hier prüfen, falls die Geräte-Uhr und der Server leicht abweichen.
+  return rows.filter((r) => isOpenInvite(r)).map(({ id, expires_at }) => ({ id, expires_at }));
+}
+
+/** Neue Einladung; Code und Ablauf (7 Tage) setzt die Datenbank. */
+export async function createInvite(petId: string): Promise<{ token: string; expires_at: string }> {
+  return check(await supabase.from('pet_invites').insert({ pet_id: petId }).select('token, expires_at').single());
+}
+
+export async function revokeInvite(id: string): Promise<void> {
+  checkOk(await supabase.from('pet_invites').delete().eq('id', id));
+}
+
+export interface InvitePreview {
+  pet_name: string;
+  species: string;
+  species_other: string | null;
+  inviter_name: string | null;
+  status: string;
+}
+
+/** Vorschau einer Einladung; null, wenn es den Code nicht gibt. */
+export async function invitePreview(token: string): Promise<InvitePreview | null> {
+  const rows = check(await supabase.rpc('invite_preview', { p_token: token }));
+  return rows[0] ?? null;
+}
+
+/** Einladung annehmen; liefert die ID des Tieres. Fehler: ApiError mit message invite_* */
+export async function acceptInvite(token: string): Promise<string> {
+  return check(await supabase.rpc('accept_pet_invite', { p_token: token }));
 }

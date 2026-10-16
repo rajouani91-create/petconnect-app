@@ -14,6 +14,76 @@ export type Database = {
   }
   public: {
     Tables: {
+      pet_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          pet_id: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          pet_id: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          pet_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_invites_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_members: {
+        Row: {
+          created_at: string
+          pet_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          pet_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          pet_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_members_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pets: {
         Row: {
           allergies: string | null
@@ -255,7 +325,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      accept_pet_invite: { Args: { p_token: string }; Returns: string }
+      invite_preview: {
+        Args: { p_token: string }
+        Returns: {
+          inviter_name: string
+          pet_name: string
+          species: string
+          species_other: string
+          status: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

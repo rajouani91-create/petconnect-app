@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n/I18nProvider';
 import { formatDate, formatTime } from '../i18n';
 import { useAuth } from '../auth/AuthProvider';
 import { usePets } from '../pets/PetsProvider';
-import { listDone, listRoutine, markDone, markUndone } from '../lib/api';
+import { listDone, listMembers, listRoutine, markDone, markUndone } from '../lib/api';
+import { doneByName } from '../lib/sharing';
 import type { RoutineRow } from '../lib/supabase';
 import { itemsForDay, nextDue, splitMinutes, toHHMM, toMinutes, zonedNow, type NextDue } from '../lib/time';
 import { routineTitle } from '../lib/labels';
@@ -16,22 +17,36 @@ import { Loading } from '../components/Loading';
 
 export function Today() {
   const { t, lang } = useI18n();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { active } = usePets();
+  const location = useLocation();
+  const navigate = useNavigate();
   const now = useNow();
   const zn = zonedNow(now);
   const [items, setItems] = useState<RoutineRow[] | null>(null);
-  const [done, setDone] = useState<Set<string>>(new Set());
+  // Eintrags-ID → Person, die heute abgehakt hat
+  const [done, setDone] = useState<Map<string, string>>(new Map());
+  const [names, setNames] = useState<Map<string, string>>(new Map());
+  const [flash] = useState(() => {
+    const f = (location.state as { flash?: unknown } | null)?.flash;
+    return typeof f === 'string' ? f : '';
+  });
   const [error, setError] = useState(false);
   const [status, setStatus] = useState('');
   const [pending, setPending] = useState<string | null>(null);
 
+  // Meldung nur einmal zeigen: aus dem Verlauf entfernen, damit sie beim Neuladen nicht wiederkommt.
+  useEffect(() => {
+    if (flash) navigate(location.pathname, { replace: true, state: null });
+  }, []);
+
   const load = useCallback(async (petId: string, date: string) => {
     try {
-      setError(false);
       const rows = await listRoutine(petId);
+      const doneMap = await listDone(rows.map((r) => r.id), date);
       setItems(rows);
-      setDone(await listDone(rows.map((r) => r.id), date));
+      setDone(doneMap);
+      setError(false);
     } catch (e) {
       console.error(e);
       setError(true);
@@ -44,6 +59,37 @@ export function Today() {
     setItems(null);
     if (petId) void load(petId, zn.date);
   }, [petId, zn.date, load]);
+
+  // Andere Betreuer haken auch ab: beim Zurückkehren ins Fenster und jede Minute still neu laden.
+  const latest = useRef({ petId, date: zn.date });
+  latest.current = { petId, date: zn.date };
+  useEffect(() => {
+    const refresh = () => {
+      const { petId: id, date } = latest.current;
+      if (id && document.visibilityState === 'visible') void load(id, date);
+    };
+    const timer = setInterval(refresh, 60_000);
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('focus', refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', refresh);
+      window.removeEventListener('focus', refresh);
+    };
+  }, [load]);
+
+  // Namen der Betreuer für „erledigt von …“: einmal pro Tier
+  useEffect(() => {
+    setNames(new Map());
+    if (!petId) return;
+    let alive = true;
+    listMembers(petId)
+      .then((ms) => alive && setNames(new Map(ms.map((m) => [m.userId, m.name]))))
+      .catch((e: unknown) => console.error(e));
+    return () => {
+      alive = false;
+    };
+  }, [petId]);
 
   if (!active) return null;
 
@@ -60,10 +106,10 @@ export function Today() {
       if (isDone) await markUndone(item.id, zn.date);
       else await markDone(item.id, zn.date);
       setDone((prev) => {
-        const s = new Set(prev);
-        if (isDone) s.delete(item.id);
-        else s.add(item.id);
-        return s;
+        const m = new Map(prev);
+        if (isDone) m.delete(item.id);
+        else if (user) m.set(item.id, user.id);
+        return m;
       });
       setStatus(t(isDone ? 'gpUndone' : 'gpDoneSaved', { k: title, t: time }));
     } catch (e) {
@@ -80,6 +126,8 @@ export function Today() {
         <p className="label">{formatDate(now, lang)}</p>
         <h1>{name ? t('helloName', { name }) : t('hello')}</h1>
       </header>
+
+      {flash && <p className="notice notice-ok" role="status">{flash}</p>}
 
       <PetSwitcher />
 
@@ -101,6 +149,7 @@ export function Today() {
               <ul className="today-list">
                 {todays.map((item) => {
                   const isDone = done.has(item.id);
+                  const by = isDone ? doneByName(done.get(item.id), user?.id, names) : null;
                   const title = routineTitle(item, t);
                   const time = formatTime(toHHMM(item.time_of_day), lang);
                   const past = toMinutes(item.time_of_day) < zn.minutes;
@@ -119,7 +168,7 @@ export function Today() {
                       <span className="time mono">{time}</span>
                       {isKind(item.kind) && <KindIcon kind={item.kind} size={20} className="kind-icon" />}
                       <span className="today-title">{title}</span>
-                      {isDone && <span className="pill pill-ok">{t('isDone')}</span>}
+                      {isDone && <span className="pill pill-ok">{by ? t('doneBy', { name: by }) : t('isDone')}</span>}
                     </li>
                   );
                 })}
