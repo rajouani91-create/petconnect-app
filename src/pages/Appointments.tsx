@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { Link } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { localeOf } from '../i18n';
 import {
@@ -329,6 +330,7 @@ function AppointmentForm({
   return (
     <form ref={formRef} className="stack" onSubmit={submit} noValidate aria-labelledby={`${uid}-h`}>
       <h2 id={`${uid}-h`}>{editing ? t('apEditTitle') : t('apAdd')}</h2>
+      <p className="small"><Link to="/praxen" className="link">{t('psFindLink')}</Link></p>
       <Field id={`${uid}-petId`} label={t('schedPet')} error={fe('petId')} required>
         {(a) => <PetSelect a={a} pets={pets} value={v.petId} disabled={editing} onChange={(x) => set('petId', x)} />}
       </Field>

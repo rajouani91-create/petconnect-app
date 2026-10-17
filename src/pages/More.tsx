@@ -6,6 +6,8 @@ import { useAuth } from '../auth/AuthProvider';
 import { updateLanguage } from '../lib/api';
 import { Field } from '../components/Field';
 import { FamilyCard } from '../components/FamilyCard';
+import { Link } from 'react-router';
+import { IconBell, IconEmergency, IconList } from '../components/Icons';
 
 export function More() {
   const { t, lang, setLang } = useI18n();
@@ -42,6 +44,15 @@ export function More() {
       <header className="page-head">
         <h1>{t('moreTitle')}</h1>
       </header>
+
+      <nav className="card stack more-areas" aria-labelledby="more-areas-h">
+        <h2 id="more-areas-h">{t('moreAreas')}</h2>
+        <ul className="more-grid">
+          <li><Link to="/erinnerungen" className="btn btn-secondary more-btn"><IconBell size={20} />{t('nav_reminders')}</Link></li>
+          <li><Link to="/alltag" className="btn btn-secondary more-btn"><IconList size={20} />{t('nav_routine')}</Link></li>
+          <li><Link to="/notfall" className="btn btn-secondary more-btn"><IconEmergency size={20} />{t('nav_notfall')}</Link></li>
+        </ul>
+      </nav>
 
       <FamilyCard />
 

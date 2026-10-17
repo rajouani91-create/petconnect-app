@@ -21,6 +21,7 @@ import { Insurance } from './pages/more/Insurance';
 import { Sitting } from './pages/more/Sitting';
 import { HealthRecord } from './pages/more/HealthRecord';
 import { SitterPublic } from './pages/SitterPublic';
+import { Practices } from './pages/Practices';
 
 export function App() {
   return (
@@ -50,6 +51,7 @@ export function App() {
               <Route path="tier/:petId/versicherung" element={<Insurance />} />
               <Route path="tier/:petId/betreuung" element={<Sitting />} />
               <Route path="tier/:petId/gesundheitsakte" element={<HealthRecord />} />
+              <Route path="praxen" element={<Practices />} />
               <Route path="erinnerungen" element={<Reminders />} />
               <Route path="alltag" element={<Routine />} />
               <Route path="mehr" element={<More />} />

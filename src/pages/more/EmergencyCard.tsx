@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { Link } from 'react-router';
 import { useI18n } from '../../i18n/I18nProvider';
 import { useAuth } from '../../auth/AuthProvider';
 import { usePets } from '../../pets/PetsProvider';
@@ -96,6 +97,7 @@ function EmergencyCardView({ pet, editable }: { pet: PetRow; editable: boolean }
         ) : (
           <p className="notice notice-warn">{t('sosNoPrac')}</p>
         )}
+        <Link to="/praxen" className="link no-print">{t('psFindLink')}</Link>
       </section>
 
       <div className="actions actions-start no-print">

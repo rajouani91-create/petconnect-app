@@ -125,6 +125,12 @@ export const IconBack = (p: IconProps) => (
     <path d="M15 5 8 12l7 7" />
   </Svg>
 );
+export const IconPin = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z" />
+    <circle cx="12" cy="10" r="2.4" />
+  </Svg>
+);
 export const IconBell = (p: IconProps) => (
   <Svg {...p}>
     <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16ZM10 20.5a2 2 0 0 0 4 0" />

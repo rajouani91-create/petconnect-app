@@ -5,6 +5,7 @@ import type { Database } from './database.types';
 import { docExt, type DocCategory, type DocMime } from './record';
 import type { ApptKind, ApptStatus, RemKind } from './schedule';
 import { parseSitterView, type ClaimStatus, type SitterView, type Submission } from './care';
+import type { toRpcParams } from './practices';
 import { supabase, type PetRow, type ProfileRow, type RoutineRow } from './supabase';
 import { isGrantRole, isOpenInvite, parsePreview, toRole, type GrantRole, type InvitePreview, type MemberRole, type Membership } from './sharing';
 import type { TemplateEntry } from './templates';
@@ -568,4 +569,73 @@ export async function sitterView(token: string): Promise<SitterView> {
   const res = await supabase.rpc('sitter_view', { p_token: token });
   if (res.error) throw new ApiError({ message: res.error.message, code: res.error.code });
   return parseSitterView(res.data);
+}
+
+// ---------- Praxissuche (Praxisdaten: © OpenStreetMap-Mitwirkende, ODbL) ----------
+
+export type PracticeHit = Database['public']['Functions']['search_practices']['Returns'][number];
+export type PlaceHit = Database['public']['Functions']['geocode_place']['Returns'][number];
+
+/** Ort oder PLZ → bis zu 10 Treffer (5-stellige PLZ exakt, sonst Ortsanfang) */
+export async function geocodePlace(q: string): Promise<PlaceHit[]> {
+  const s = q.trim();
+  if (!s) return [];
+  return check(await supabase.rpc('geocode_place', { p_q: s }));
+}
+
+/** Praxen im Umkreis mit Angebot, Trefferkennzeichen und Favorit; der Standort wird nicht gespeichert */
+export async function searchPractices(params: ReturnType<typeof toRpcParams>): Promise<PracticeHit[]> {
+  return check(await supabase.rpc('search_practices', params));
+}
+
+export interface FavoritePractice {
+  id: string;
+  name: string;
+  street: string | null;
+  housenumber: string | null;
+  postcode: string | null;
+  city: string | null;
+  lat: number;
+  lon: number;
+  phone: string | null;
+  website: string | null;
+  opening_hours: string | null;
+  registered: boolean;
+}
+
+/** Meine Favoriten (mit Grunddaten der Praxis) */
+export async function listFavoritePractices(): Promise<FavoritePractice[]> {
+  const fav = check(await supabase.from('practice_favorites').select('practice_id, created_at').order('created_at', { ascending: true }));
+  if (fav.length === 0) return [];
+  const rows = check(
+    await supabase
+      .from('practices')
+      .select('id, name, street, housenumber, postcode, city, lat, lon, phone, website, opening_hours, registered')
+      .in('id', fav.map((f) => f.practice_id)),
+  );
+  const order = new Map(fav.map((f, i) => [f.practice_id, i]));
+  return [...rows].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+}
+
+export async function addFavoritePractice(practiceId: string): Promise<void> {
+  const res = await supabase.from('practice_favorites').upsert({ practice_id: practiceId }, { onConflict: 'user_id,practice_id', ignoreDuplicates: true });
+  if (res.error) throw new ApiError(res.error);
+}
+export async function removeFavoritePractice(practiceId: string): Promise<void> {
+  checkOk(await supabase.from('practice_favorites').delete().eq('practice_id', practiceId));
+}
+
+/** Eigene Einladungswünsche (nur gespeichert, es wird nichts versendet) */
+export async function listInviteRequests(): Promise<Set<string>> {
+  const rows = check(await supabase.from('practice_invite_requests').select('practice_id'));
+  return new Set(rows.map((r) => r.practice_id));
+}
+export async function requestPracticeInvite(practiceId: string): Promise<void> {
+  const res = await supabase.from('practice_invite_requests').upsert({ practice_id: practiceId }, { onConflict: 'user_id,practice_id', ignoreDuplicates: true });
+  if (res.error) throw new ApiError(res.error);
+}
+
+/** „Als Stammpraxis übernehmen“: Name und Telefon in die Notfallkarte des Tiers */
+export async function setVetPractice(petId: string, vetName: string, vetPhone: string | null): Promise<PetRow> {
+  return checkChanged(await supabase.from('pets').update({ vet_name: vetName.slice(0, 120), vet_phone: vetPhone ? vetPhone.slice(0, 40) : null }).eq('id', petId).select('*'));
 }
