@@ -508,5 +508,10 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .oh-open { background: var(--ok-soft); color: var(--ok-ink); }
 .oh-closed { background: var(--crit-soft); color: var(--crit); }
 .oh-unknown { background: var(--surface-2); color: var(--fg); }
+.oh-closing { background: var(--warn-soft); color: var(--warn-ink); }
+.oh-comment { font-style: italic; }
+.name-hint { margin: 0; }
+.combo-list mark { background: transparent; color: inherit; font-weight: 700; }
+.empty-hint { gap: var(--s-2); }
 .fav-btn[aria-pressed="true"] { color: var(--accent-ink); border-color: var(--accent-ink); }
 .osm-credit { color: var(--fg); }

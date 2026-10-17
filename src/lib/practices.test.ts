@@ -59,7 +59,7 @@ describe('URL ↔ Filter', () => {
 });
 
 describe('Zählen und Listen', () => {
-  const p = (name: string, d: number, has_profile: boolean, matches: boolean) => ({ name, distance_km: d, has_profile, matches, services: [], species: [], titles: [] });
+  const p = (name: string, d: number, has_profile: boolean, matches: boolean) => ({ name, distance_km: d, has_profile, matches, services: [], species: [], titles: [], registered: false, titles_verified: false });
   const rows = [p('Zoo', 3, true, true), p('Ader', 1, true, false), p('Berg', 2, false, false), p('Cäsar', 0.5, true, true)];
   it('nur matches zählen; ohne Angebots-Filter alle', () => {
     expect(countMatches(rows, true)).toBe(2);
@@ -116,14 +116,16 @@ describe('Jetzt geöffnet', () => {
   const fri13 = new Date(2026, 9, 16, 13, 0);
   it('geöffnet, geschlossen, Zeiten heute', () => {
     const v = 'Mo-Fr 08:00-12:00,15:00-18:00; Sa 09:00-12:00';
-    expect(openingInfo(Oh, v, fri10)).toEqual({ state: 'open', today: [['08:00', '12:00'], ['15:00', '18:00']] });
+    expect(openingInfo(Oh, v, fri10)).toMatchObject({ state: 'open', today: [['08:00', '12:00'], ['15:00', '18:00']] });
     expect(openingInfo(Oh, v, fri13).state).toBe('closed');
-    expect(openingInfo(Oh, '24/7', fri13)).toEqual({ state: 'open', today: [['00:00', '24:00']] });
-    expect(openingInfo(Oh, 'Sa 09:00-12:00', fri10)).toEqual({ state: 'closed', today: [] });
+    expect(openingInfo(Oh, '24/7', fri13)).toMatchObject({ state: 'open', today: [['00:00', '24:00']], change: null });
+    expect(openingInfo(Oh, 'Sa 09:00-12:00', fri10)).toMatchObject({ state: 'closed', today: [] });
   });
   it('ohne oder mit unlesbaren Zeiten: unbekannt', () => {
-    expect(openingInfo(Oh, null, fri10)).toEqual({ state: 'unknown', today: null });
-    expect(openingInfo(Oh, '', fri10)).toEqual({ state: 'unknown', today: null });
+    const unknown = { state: 'unknown', today: null, change: null, comment: null };
+    expect(openingInfo(Oh, null, fri10)).toEqual(unknown);
+    expect(openingInfo(Oh, '', fri10)).toEqual(unknown);
+    expect(openingInfo(Oh, 'Mo-Zz 99:00-ab', fri10)).toEqual(unknown); // ungültig: kein Fehler
     expect(openingInfo(Oh, 'nach Vereinbarung', fri10).state).toBe('unknown');
     expect(openingInfo(Oh, '"nach Vereinbarung"', fri10).state).toBe('unknown');
     expect(openingInfo(Oh, 'Mo-Fr 08:00-18:00; PH off', fri10).state).toBe('open');

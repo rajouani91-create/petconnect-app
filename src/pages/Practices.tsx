@@ -5,6 +5,7 @@ import type { MessageKey } from '../i18n';
 import { usePets } from '../pets/PetsProvider';
 import {
   addFavoritePractice,
+  countPracticesByRadius,
   geocodePlace,
   listFavoritePractices,
   listInviteRequests,
@@ -26,11 +27,15 @@ import {
   TITLE_TEXT,
   isPracticeSpecies,
 } from '../lib/practiceCatalog';
+import { INPUT_DELAY_MS, searchText } from '../lib/debounce';
 import {
   EMPTY_FILTERS,
   RADII,
   countKey,
   countMatches,
+  emptyState,
+  expandCountKey,
+  osmNoteLink,
   filtersToQuery,
   hasOfferFilters,
   queryToFilters,
@@ -41,6 +46,7 @@ import {
   toggle,
   type PracticeFilters,
   type Radius,
+  type RadiusCount,
 } from '../lib/practices';
 import { canEdit } from '../lib/sharing';
 import { useNow } from '../lib/useNow';
@@ -67,6 +73,7 @@ export function Practices() {
   const [center, setCenter] = useState<Center | null>(null);
   const [rows, setRows] = useState<PracticeHit[] | null>(null);
   const [rowsKey, setRowsKey] = useState('');
+  const [counts, setCounts] = useState<RadiusCount[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [geoMsg, setGeoMsg] = useState<MessageKey | null>(null);
@@ -178,10 +185,19 @@ export function Practices() {
     let alive = true;
     setLoading(true);
     setError(false);
-    searchPractices(JSON.parse(rpcKey) as ReturnType<typeof toRpcParams>)
-      .then((r) => {
+    const rpcParams = JSON.parse(rpcKey) as ReturnType<typeof toRpcParams>;
+    Promise.all([
+      searchPractices(rpcParams),
+      // Zähler je Umkreis für ehrliche Leer-Zustände; fehlt er, bleibt der einfache Hinweis
+      countPracticesByRadius(rpcParams).catch((e: unknown) => {
+        console.error(e);
+        return null;
+      }),
+    ])
+      .then(([r, c]) => {
         if (!alive) return;
         setRows(r);
+        setCounts(c);
         setRowsKey(rpcKey);
         setLoading(false);
         if (focusCounter.current) {
@@ -203,16 +219,22 @@ export function Practices() {
   const fresh = rowsKey === rpcKey;
   const busy = loading || (!!rpcKey && !fresh && !error);
 
-  // Namenssuche: kurz warten
+  // Namenssuche: kurz warten, ab 2 Zeichen; Text nur trimmen (Umlaute/Füllwörter löst die Datenbank)
   useEffect(() => {
-    if (nameInput === filters.q) return;
-    const timer = setTimeout(() => setFilters({ q: nameInput }), 300);
+    const q = searchText(nameInput);
+    if (q === filters.q) return;
+    const timer = setTimeout(() => setFilters({ q }), INPUT_DELAY_MS);
     return () => clearTimeout(timer);
   }, [nameInput, filters.q, setFilters]);
 
   const offer = hasOfferFilters(filters);
-  const infoOf = useCallback((p: { opening_hours: string | null }): OpeningInfo => (Oh ? openingInfo(Oh, p.opening_hours, now) : { state: 'unknown', today: null }), [Oh, now]);
-  const split = rows ? splitResults(rows, offer, filters.sort) : { matches: [], unknown: [] };
+  const infoOf = useCallback(
+    (p: { opening_hours: string | null; postcode: string | null }): OpeningInfo =>
+      Oh ? openingInfo(Oh, p.opening_hours, now, p.postcode) : { state: 'unknown', today: null, change: null, comment: null },
+    [Oh, now],
+  );
+  const split = rows ? splitResults(rows, offer, filters.sort, filters.species) : { matches: [], unknown: [], hinted: new Set<PracticeHit>() };
+  const hintText = filters.species ? t(SPECIES_TEXT[filters.species]) : null;
   const openMatches = applyOpenNow(split.matches, infoOf, filters.openNow);
   const openUnknown = applyOpenNow(split.unknown, infoOf, filters.openNow);
   // Mit „Jetzt geöffnet“: geöffnete Treffer plus Treffer mit unbekannten Zeiten (sie werden ja angezeigt)
@@ -220,6 +242,16 @@ export function Practices() {
   const ck = countKey(count);
   const favIds = new Set(favorites.map((f) => f.id));
   const anyFilter = offer || filters.openNow || filters.q.trim() !== '' || filters.radius !== EMPTY_FILTERS.radius;
+  const empty = emptyState(count, counts, filters);
+
+  function expandTo(r: Radius) {
+    focusCounter.current = true;
+    setFilters({ radius: r });
+  }
+  const resetFilters = () => {
+    setNameInput('');
+    setFilters({ ...EMPTY_FILTERS, place: filters.place });
+  };
 
   async function toggleFavorite(p: PracticeView) {
     const isFav = favIds.has(p.id);
@@ -263,7 +295,7 @@ export function Practices() {
     focusLater(`vet-${p.id}`);
   }
 
-  const card = (p: PracticeView & { opening_hours: string | null }, showUnknown: boolean) => (
+  const card = (p: PracticeView & { opening_hours: string | null }, showUnknown: boolean, hinted = false) => (
     <PracticeCard
       key={p.id}
       p={p}
@@ -272,6 +304,8 @@ export function Practices() {
       invited={invited.has(p.id)}
       canSetVet={editablePets.length > 0}
       showOfferUnknown={showUnknown}
+      nameHint={hinted ? hintText : null}
+      now={now}
       onFavorite={() => void toggleFavorite(p)}
       onSetVet={() => setVetFor(p)}
       onInvite={() => setInviteFor(p)}
@@ -299,7 +333,7 @@ export function Practices() {
 
       <section className="card stack" aria-labelledby={`${uid}-where`}>
         <h2 id={`${uid}-where`}>{t('psWhere')}</h2>
-        <PlaceCombobox value={placeInput} onValue={setPlaceInput} onPick={(h) => choosePlace(h)} onError={() => setError(true)} />
+        <PlaceCombobox value={placeInput} onValue={setPlaceInput} onPick={(h, auto) => choosePlace(h, !auto)} onError={() => setError(true)} />
         <div className="actions actions-start">
           <button type="button" className="btn btn-secondary" onClick={locateMe}>{t('psMyLocation')}</button>
         </div>
@@ -353,7 +387,7 @@ export function Practices() {
             </select>
           </div>
           {anyFilter && (
-            <button type="button" className="btn btn-ghost" onClick={() => { setNameInput(''); setFilters({ ...EMPTY_FILTERS, place: filters.place }); }}>
+            <button type="button" className="btn btn-ghost" onClick={resetFilters}>
               {t('psReset')}
             </button>
           )}
@@ -370,14 +404,30 @@ export function Practices() {
         </p>
         {center && rows && !busy && (
           <>
-            {count === 0 && (
-              <div className="stack">
+            {empty.kind === 'expand' && (
+              <div className="stack empty-hint">
                 <p>{t('psNone')}</p>
-                {anyFilter && (
-                  <button type="button" className="btn btn-secondary btn-start" onClick={() => { setNameInput(''); setFilters({ ...EMPTY_FILTERS, place: filters.place }); }}>
-                    {t('psReset')}
-                  </button>
-                )}
+                <button type="button" className="btn btn-primary btn-start" onClick={() => expandTo(empty.radius)}>{t('psExpand', { n: empty.radius })}</button>
+                <p className="muted small">{t(expandCountKey(empty.n), { n: empty.n, k: empty.radius })}</p>
+              </div>
+            )}
+            {empty.kind === 'noProfiles' && <p className="notice notice-info">{t('psNoProfiles')}</p>}
+            {empty.kind === 'noMatch' && (
+              <div className="stack empty-hint">
+                <p>{t('psNone')}</p>
+                {anyFilter && <button type="button" className="btn btn-secondary btn-start" onClick={resetFilters}>{t('psReset')}</button>}
+              </div>
+            )}
+            {empty.kind === 'nothing' && (
+              <div className="stack empty-hint">
+                <p>{t('psNothing50')}</p>
+                <a className="link" href={center.fromDevice ? 'https://www.openstreetmap.org/note/new' : osmNoteLink(center.lat, center.lon)} target="_blank" rel="noopener noreferrer">{t('psOsmAdd')}</a>
+              </div>
+            )}
+            {empty.kind === 'nameNone' && (
+              <div className="stack empty-hint">
+                <p>{t('psNameNone')}</p>
+                {empty.radius && <button type="button" className="btn btn-primary btn-start" onClick={() => expandTo(empty.radius!)}>{t('psExpand', { n: empty.radius })}</button>}
               </div>
             )}
             {openMatches.shown.length > 0 && <ul className="practice-list">{openMatches.shown.map((p) => card(p, !offer))}</ul>}
@@ -390,7 +440,7 @@ export function Practices() {
             {offer && openUnknown.shown.length + openUnknown.unknownTimes.length > 0 && (
               <div className="stack">
                 <h3>{t('psUnknownH')}</h3>
-                <ul className="practice-list">{[...openUnknown.shown, ...openUnknown.unknownTimes].map((p) => card(p, true))}</ul>
+                <ul className="practice-list">{[...openUnknown.shown, ...openUnknown.unknownTimes].map((p) => card(p, true, split.hinted.has(p)))}</ul>
               </div>
             )}
           </>

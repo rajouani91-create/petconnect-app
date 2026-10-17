@@ -50,3 +50,36 @@ export const isPracticeTitle = (v: unknown): v is PracticeTitle => typeof v === 
 
 /** Alle Übersetzungsschlüssel des Katalogs (für den Vollständigkeitstest) */
 export const CATALOG_KEYS: MessageKey[] = [...Object.values(SPECIES_TEXT), ...Object.values(SERVICE_TEXT), ...Object.values(TITLE_TEXT)];
+
+/**
+ * Schlüsselwörter im Praxisnamen je Tierart (klein, ohne Umlaute). Nur für Praxen OHNE Profil:
+ * Sie dürfen damit im Abschnitt „Angebot unbekannt“ weiter oben stehen – nie als Treffer.
+ */
+export const SPECIES_NAME_HINTS: Record<PracticeSpecies, readonly string[]> = {
+  dog: ['hund'],
+  cat: ['katze'],
+  rabbit: ['kaninchen', 'kleinsauger', 'nager'],
+  guinea: ['meerschwein', 'kleinsauger', 'nager'],
+  bird: ['vogel', 'exoten', 'aviar'],
+  reptile: ['exoten', 'reptil', 'herpeto'],
+  horse: ['pferd', 'pferde', 'equi'],
+};
+
+/** Name vereinfachen: klein, ohne Akzente, ä/ae → a, ö/oe → o, ü/ue → u, ß → s */
+export function simpleName(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ß/g, 's')
+    .replace(/ae/g, 'a')
+    .replace(/oe/g, 'o')
+    .replace(/ue/g, 'u');
+}
+
+/** Deutet der Praxisname auf die Tierart hin? (z. B. „Exotenpraxis“ → Reptil) */
+export function nameHintsSpecies(name: string, species: PracticeSpecies | null): boolean {
+  if (!species) return false;
+  const n = simpleName(name);
+  return SPECIES_NAME_HINTS[species].some((w) => n.includes(w));
+}

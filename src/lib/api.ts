@@ -5,7 +5,7 @@ import type { Database } from './database.types';
 import { docExt, type DocCategory, type DocMime } from './record';
 import type { ApptKind, ApptStatus, RemKind } from './schedule';
 import { parseSitterView, type ClaimStatus, type SitterView, type Submission } from './care';
-import type { toRpcParams } from './practices';
+import type { RadiusCount, toRpcParams } from './practices';
 import { supabase, type PetRow, type ProfileRow, type RoutineRow } from './supabase';
 import { isGrantRole, isOpenInvite, parsePreview, toRole, type GrantRole, type InvitePreview, type MemberRole, type Membership } from './sharing';
 import type { TemplateEntry } from './templates';
@@ -638,4 +638,10 @@ export async function requestPracticeInvite(practiceId: string): Promise<void> {
 /** „Als Stammpraxis übernehmen“: Name und Telefon in die Notfallkarte des Tiers */
 export async function setVetPractice(petId: string, vetName: string, vetPhone: string | null): Promise<PetRow> {
   return checkChanged(await supabase.from('pets').update({ vet_name: vetName.slice(0, 120), vet_phone: vetPhone ? vetPhone.slice(0, 40) : null }).eq('id', petId).select('*'));
+}
+
+/** Praxen je Umkreisstufe (5/10/25/50 km) mit denselben Filtern – für ehrliche Leer-Zustände und den Radius-Vorschlag */
+export async function countPracticesByRadius(params: ReturnType<typeof toRpcParams>): Promise<RadiusCount[]> {
+  const { p_lat, p_lon, p_species, p_services, p_titles, p_q } = params;
+  return check(await supabase.rpc('count_practices_by_radius', { p_lat, p_lon, p_species, p_services, p_titles, p_q }));
 }

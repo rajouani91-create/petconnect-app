@@ -1,12 +1,16 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
 import { geocodePlace, type PlaceHit } from '../../lib/api';
+import { INPUT_DELAY_MS, MIN_QUERY, debounce, latestOnly } from '../../lib/debounce';
+import { highlightParts } from '../../lib/practices';
 
 export const placeLabel = (h: PlaceHit) => [h.postcode, h.place].filter(Boolean).join(' ');
 
 /**
  * „Ort oder PLZ“ als Combobox (WAI-ARIA 1.2, Liste mit Vorschlägen aus geocode_place).
+ * Vorschläge 250 ms nach dem letzten Tastendruck, ab 2 Zeichen; ältere Antworten werden verworfen.
  * Pfeiltasten wählen, Enter übernimmt (ohne Auswahl: erster Vorschlag), Escape schließt.
+ * Genau 5 Ziffern mit genau einem Treffer: automatisch übernehmen (`auto = true`) und ansagen.
  */
 export function PlaceCombobox({
   value,
@@ -16,62 +20,87 @@ export function PlaceCombobox({
 }: {
   value: string;
   onValue: (v: string) => void;
-  onPick: (hit: PlaceHit) => void;
+  onPick: (hit: PlaceHit, auto: boolean) => void;
   onError: () => void;
 }) {
   const { t } = useI18n();
   const uid = useId();
   const listId = `${uid}-list`;
   const [hits, setHits] = useState<PlaceHit[]>([]);
+  const [hitsFor, setHitsFor] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [noHit, setNoHit] = useState(false);
+  const [announce, setAnnounce] = useState('');
   const typed = useRef(false);
-  const seq = useRef(0);
+  const latest = useMemo(() => latestOnly(), []);
+  // Props in Refs, damit die verzögerte Abfrage immer die aktuellen Rückrufe nutzt
+  const cb = useRef({ onPick, onError, t });
+  cb.current = { onPick, onError, t };
 
-  // Vorschläge laden, sobald getippt wird (kurz warten, damit nicht jeder Buchstabe eine Abfrage auslöst)
+  function pick(h: PlaceHit, auto = false) {
+    typed.current = false;
+    latest.cancel();
+    lookup.cancel();
+    setOpen(false);
+    setActive(-1);
+    setHits([]);
+    setNoHit(false);
+    setAnnounce(cb.current.t('psPlacePicked', { p: h.place ?? h.postcode, z: h.postcode }));
+    cb.current.onPick(h, auto);
+  }
+
+  const lookup = useMemo(
+    () =>
+      debounce((q: string) => {
+        const isCurrent = latest.start();
+        geocodePlace(q)
+          .then((h) => {
+            if (!isCurrent()) return;
+            if (/^\d{5}$/.test(q) && h.length === 1) {
+              pick(h[0]!, true);
+              return;
+            }
+            setHits(h);
+            setHitsFor(q);
+            setOpen(h.length > 0);
+            setActive(-1);
+            setNoHit(h.length === 0);
+          })
+          .catch((e: unknown) => {
+            if (!isCurrent()) return;
+            console.error(e);
+            cb.current.onError();
+          });
+      }, INPUT_DELAY_MS),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pick nutzt nur Setter und Refs
+    [latest],
+  );
+  useEffect(() => () => lookup.cancel(), [lookup]);
+
+  // Vorschläge laden, sobald getippt wird; ein einzelnes Zeichen sucht nicht
   useEffect(() => {
     if (!typed.current) return;
     const q = value.trim();
-    if (q.length < 2 || /^\d{1,4}$/.test(q)) {
+    if (q.length < MIN_QUERY) {
+      lookup.cancel();
+      latest.cancel();
       setHits([]);
       setOpen(false);
       setNoHit(false);
       return;
     }
-    const my = ++seq.current;
-    const timer = setTimeout(() => {
-      geocodePlace(q)
-        .then((h) => {
-          if (my !== seq.current) return;
-          setHits(h);
-          setOpen(h.length > 0);
-          setActive(-1);
-          setNoHit(h.length === 0);
-        })
-        .catch((e: unknown) => {
-          console.error(e);
-          if (my === seq.current) onError();
-        });
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [value, onError]);
-
-  function pick(h: PlaceHit) {
-    typed.current = false;
-    seq.current++;
-    setOpen(false);
-    setActive(-1);
-    setHits([]);
-    setNoHit(false);
-    onPick(h);
-  }
+    lookup(q);
+  }, [value, lookup, latest]);
 
   async function pickFirst() {
     const q = value.trim();
     if (!q) return;
+    lookup.cancel();
+    const isCurrent = latest.start();
     try {
-      const h = hits.length > 0 ? hits : await geocodePlace(q);
+      const h = hits.length > 0 && hitsFor === q ? hits : await geocodePlace(q);
+      if (!isCurrent()) return;
       if (h[0]) pick(h[0]);
       else {
         setNoHit(true);
@@ -123,6 +152,7 @@ export function PlaceCombobox({
           value={value}
           onChange={(e) => {
             typed.current = true;
+            setAnnounce('');
             onValue(e.target.value);
           }}
           onKeyDown={onKey}
@@ -138,17 +168,19 @@ export function PlaceCombobox({
             role="option"
             tabIndex={-1}
             aria-selected={i === active}
+            aria-label={placeLabel(h)}
             className={i === active ? 'is-active' : undefined}
             onMouseDown={(e) => {
               e.preventDefault();
               pick(h);
             }}
           >
-            {placeLabel(h)}
+            {highlightParts(placeLabel(h), hitsFor).map((part, k) => (part.hit ? <mark key={k}>{part.text}</mark> : <span key={k}>{part.text}</span>))}
           </div>
         ))}
       </div>
       {noHit && <p className="error" id={`${uid}-none`}>{t('psPlaceNone')}</p>}
+      <p className="sr-only" role="status" aria-live="polite">{announce}</p>
     </div>
   );
 }

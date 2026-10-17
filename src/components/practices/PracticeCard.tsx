@@ -1,7 +1,7 @@
 import { useI18n } from '../../i18n/I18nProvider';
 import { localeOf } from '../../i18n';
 import { telHref } from '../../lib/care';
-import type { OpeningInfo } from '../../lib/openingHours';
+import { openingText, type OpeningInfo } from '../../lib/openingHours';
 import { SERVICE_TEXT, SPECIES_TEXT, TITLE_TEXT, isPracticeService, isPracticeSpecies, isPracticeTitle } from '../../lib/practiceCatalog';
 import { formatAddress, formatKm, isAppleDevice, osmNoteLink, routeLinks, safeWebsite } from '../../lib/practices';
 import { IconPhone } from '../Icons';
@@ -35,6 +35,8 @@ export function PracticeCard({
   invited,
   canSetVet,
   showOfferUnknown,
+  nameHint = null,
+  now,
   onFavorite,
   onSetVet,
   onInvite,
@@ -46,6 +48,10 @@ export function PracticeCard({
   invited: boolean;
   canSetVet: boolean;
   showOfferUnknown: boolean;
+  /** Name deutet auf die gewählte Tierart hin (nur Praxen ohne Profil) – Text der Tierart */
+  nameHint?: string | null;
+  /** Für „öffnet {Tag}“ */
+  now: Date;
   onFavorite: () => void;
   onSetVet: () => void;
   onInvite: () => void;
@@ -64,6 +70,11 @@ export function PracticeCard({
   const offers = label(p.services, isPracticeService, SERVICE_TEXT);
   const titles = (p.titles ?? []).filter(isPracticeTitle);
   const headingId = `pr-${p.id}`;
+  const badge = (i: OpeningInfo) => {
+    const o = openingText(i, now);
+    if (o.key === 'psOpensDay') return t(o.key, { x: o.x, d: new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(o.day) });
+    return 'x' in o ? t(o.key, { x: o.x }) : t(o.key);
+  };
 
   return (
     <li className="card stack practice-card" aria-labelledby={headingId}>
@@ -76,9 +87,10 @@ export function PracticeCard({
 
       {info && (
         <p className="small">
-          <span className={`pill oh-${info.state}`}>{t(info.state === 'open' ? 'psOpenNow' : info.state === 'closed' ? 'psClosedNow' : 'psHoursUnknown')}</span>
+          <span className={`pill oh-${info.state}`}>{badge(info)}</span>
           {info.today && info.today.length > 0 && <span className="muted"> {t('psToday', { x: info.today.map(([a, b]) => `${a}–${b}`).join(', ') })}</span>}
           {info.today && info.today.length === 0 && info.state !== 'unknown' && <span className="muted"> {t('psTodayClosed')}</span>}
+          {info.comment && <span className="oh-comment"> {t('psHoursNote', { x: info.comment })}</span>}
         </p>
       )}
 
@@ -100,6 +112,7 @@ export function PracticeCard({
       ) : (
         showOfferUnknown && <p className="small muted">{t('psUnknown')}</p>
       )}
+      {!p.has_profile && nameHint && <p className="small notice notice-info name-hint">{t('psNameHint', { a: nameHint })}</p>}
 
       <div className="row-actions practice-actions">
         {tel && (

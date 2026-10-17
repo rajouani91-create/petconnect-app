@@ -4,6 +4,7 @@ import {
   PRACTICE_SERVICES,
   PRACTICE_TITLES,
   isPracticeSpecies,
+  nameHintsSpecies,
   type PracticeService,
   type PracticeSpecies,
   type PracticeTitle,
@@ -88,6 +89,8 @@ export interface PracticeLike {
   distance_km: number;
   has_profile: boolean;
   matches: boolean;
+  registered: boolean;
+  titles_verified: boolean;
   services: string[];
   species: string[];
   titles: string[];
@@ -105,15 +108,124 @@ export function countKey(n: number): { key: MessageKey; n: number } {
   return { key: 'psCount', n };
 }
 
+const byName = (a: PracticeLike, b: PracticeLike) => a.name.localeCompare(b.name, 'de') || a.distance_km - b.distance_km;
+const byDistance = (a: PracticeLike, b: PracticeLike) => a.distance_km - b.distance_km || a.name.localeCompare(b.name, 'de');
+
+/** „Empfohlen (Entfernung)“: bei PetConnect zuerst, dann geprüfte Fachtitel, dann Entfernung */
+export function byRecommended(a: PracticeLike, b: PracticeLike): number {
+  return Number(b.registered) - Number(a.registered) || Number(b.titles_verified) - Number(a.titles_verified) || byDistance(a, b);
+}
+
 /**
  * Treffer und Praxen ohne Profil trennen.
  * Mit Angebots-Filtern: Treffer = matches; zweiter Abschnitt = Praxen ohne Profil (Angebot unbekannt).
  * Ohne Angebots-Filter: alle in einer Liste (`unknown` leer).
+ * Im Abschnitt „Angebot unbekannt“ stehen Praxen, deren Name zur Tierart passt, weiter oben (`hinted`) –
+ * sie bleiben aber Praxen mit unbekanntem Angebot, nie Treffer.
  */
-export function splitResults<T extends PracticeLike>(rows: readonly T[], offerFilters: boolean, sort: SortBy): { matches: T[]; unknown: T[] } {
-  const by = (a: T, b: T) => (sort === 'name' ? a.name.localeCompare(b.name, 'de') || a.distance_km - b.distance_km : a.distance_km - b.distance_km || a.name.localeCompare(b.name, 'de'));
-  if (!offerFilters) return { matches: [...rows].sort(by), unknown: [] };
-  return { matches: rows.filter((r) => r.matches).sort(by), unknown: rows.filter((r) => !r.has_profile).sort(by) };
+export function splitResults<T extends PracticeLike>(
+  rows: readonly T[],
+  offerFilters: boolean,
+  sort: SortBy,
+  species: PracticeSpecies | null = null,
+): { matches: T[]; unknown: T[]; hinted: Set<T> } {
+  const main = sort === 'name' ? byName : byRecommended;
+  const side = sort === 'name' ? byName : byDistance;
+  if (!offerFilters) return { matches: [...rows].sort(main), unknown: [], hinted: new Set() };
+  const unknown = rows.filter((r) => !r.has_profile);
+  const hinted = new Set(unknown.filter((r) => nameHintsSpecies(r.name, species)));
+  return {
+    matches: rows.filter((r) => r.matches).sort(main),
+    unknown: unknown.sort((a, b) => Number(hinted.has(b)) - Number(hinted.has(a)) || side(a, b)),
+    hinted,
+  };
+}
+
+// ---------- Leer-Zustände und Radius-Vorschlag ----------
+
+/** Eine Zeile aus count_practices_by_radius */
+export interface RadiusCount {
+  radius_km: number;
+  total: number;
+  with_profile: number;
+  matches: number;
+}
+
+export type EmptyState =
+  /** Treffer vorhanden – nichts Besonderes anzeigen */
+  | { kind: 'results' }
+  /** Im größeren Umkreis gibt es echte Treffer */
+  | { kind: 'expand'; radius: Radius; n: number }
+  /** Praxen im Umkreis, aber keine hat Angaben zum Angebot */
+  | { kind: 'noProfiles' }
+  /** Es gibt Praxen mit Angebot, aber keine passt */
+  | { kind: 'noMatch' }
+  /** Bis 50 km gar keine Praxis */
+  | { kind: 'nothing' }
+  /** Namenssuche ohne Ergebnis; `radius` = nächste Stufe, in der es Praxen mit dem Namen gibt */
+  | { kind: 'nameNone'; radius: Radius | null };
+
+/**
+ * Was zeigen wir, wenn im gewählten Umkreis nichts passt?
+ * `shown` = Zahl der angezeigten Treffer (nach „Jetzt geöffnet“), `counts` = Ergebnis von count_practices_by_radius.
+ * Ohne Zähler (noch nicht geladen/Fehler) gilt der einfache Hinweis „Keine Praxis passt“.
+ */
+export function emptyState(
+  shown: number,
+  counts: readonly RadiusCount[] | null,
+  f: Pick<PracticeFilters, 'radius' | 'species' | 'services' | 'titles' | 'q' | 'openNow'>,
+): EmptyState {
+  if (shown > 0) return { kind: 'results' };
+  if (!counts || counts.length === 0) return { kind: 'noMatch' };
+  const at = (k: number) => counts.find((c) => c.radius_km === k) ?? { radius_km: k, total: 0, with_profile: 0, matches: 0 };
+  const offer = hasOfferFilters(f);
+  const here = at(f.radius);
+  const larger = RADII.filter((r) => r > f.radius);
+  // Nur „Jetzt geöffnet“ blendet aus: der Umkreis ist nicht das Problem
+  if (f.openNow && (offer ? here.matches : here.total) > 0) return { kind: 'noMatch' };
+  if (f.q.trim() && here.total === 0) return { kind: 'nameNone', radius: larger.find((r) => at(r).total > 0) ?? null };
+  if (at(50).total === 0) return { kind: 'nothing' };
+  if (!offer) {
+    const r = larger.find((k) => at(k).total > 0);
+    return r ? { kind: 'expand', radius: r, n: at(r).total } : { kind: 'noMatch' };
+  }
+  const r = larger.find((k) => at(k).matches > 0);
+  if (r) return { kind: 'expand', radius: r, n: at(r).matches };
+  if (RADII.every((k) => at(k).matches === 0) && at(50).with_profile === 0) return { kind: 'noProfiles' };
+  return { kind: 'noMatch' };
+}
+
+/** „1 passende Praxis …“ / „{n} passende Praxen …“ */
+export const expandCountKey = (n: number): MessageKey => (n === 1 ? 'psExpandN1' : 'psExpandN');
+
+// ---------- Hervorhebung im Vorschlag ----------
+
+/**
+ * Text in Teile zerlegen, damit die getippte Stelle fett erscheint. Liefert nur Text –
+ * gerendert wird über React (kein innerHTML), Eingaben wie „<script>“ bleiben Text.
+ * Groß/Klein und Umlaute (ü = ue = u) werden toleriert, solange die Länge Zeichen für Zeichen passt.
+ */
+export function highlightParts(label: string, query: string): { text: string; hit: boolean }[] {
+  const q = query.trim();
+  if (!q) return [{ text: label, hit: false }];
+  const fold = (c: string) => simpleChar(c);
+  const L = [...label].map(fold).join('');
+  const Q = [...q].map(fold).join('');
+  const i = L.indexOf(Q);
+  if (i < 0 || L.length !== label.length) return [{ text: label, hit: false }];
+  return [
+    { text: label.slice(0, i), hit: false },
+    { text: label.slice(i, i + q.length), hit: true },
+    { text: label.slice(i + q.length), hit: false },
+  ].filter((part) => part.text !== '');
+}
+
+/** Ein Zeichen vereinfachen (gleiche Länge): klein, ä → a, ö → o, ü → u, ß → s */
+function simpleChar(c: string): string {
+  const l = c.toLowerCase();
+  if (l === 'ß') return 's';
+  const base = l.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return base.length === 1 ? base : l;
 }
 
 /** „2,3 km“ / „unter 0,1 km“ */
