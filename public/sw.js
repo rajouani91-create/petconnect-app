@@ -1,0 +1,133 @@
+/* PetConnect Service Worker – bewusst ohne Bibliothek.
+ * - App-Shell offline: "/", "/index.html" und die gebauten Dateien aus index.html beim Installieren,
+ *   danach /assets/* und Icons „stale-while-revalidate“.
+ * - Antworten von Supabase (andere Origin) werden nie angefasst oder gespeichert.
+ * - Push: Nachricht anzeigen; Klick öffnet die passende Seite (nur gleiche Origin).
+ */
+const VERSION = 'pc-v1';
+const SHELL = `${VERSION}-shell`;
+const RUNTIME = `${VERSION}-runtime`;
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(SHELL);
+      try {
+        const res = await fetch('/index.html', { cache: 'no-store' });
+        if (res.ok) {
+          const html = await res.clone().text();
+          await cache.put('/index.html', res.clone());
+          await cache.put('/', res);
+          const assets = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]);
+          await cache.addAll([...new Set(assets)]);
+        }
+      } catch {
+        // offline beim Installieren: beim nächsten Besuch erneut
+      }
+      await self.skipWaiting();
+    })(),
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => !k.startsWith(VERSION)).map((k) => caches.delete(k)));
+      await self.clients.claim();
+    })(),
+  );
+});
+
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(RUNTIME);
+  const cached = await cache.match(request);
+  const network = fetch(request)
+    .then((res) => {
+      if (res.ok) cache.put(request, res.clone());
+      return res;
+    })
+    .catch(() => cached);
+  return cached || network;
+}
+
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  // Nur eigene Origin; Supabase und alles andere geht immer ins Netz
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname === '/sw.js') return;
+  if (req.mode === 'navigate') {
+    // Seiten: Netz zuerst, offline die App-Shell
+    event.respondWith(
+      fetch(req).catch(async () => (await caches.match('/index.html')) || (await caches.match('/')) || Response.error()),
+    );
+    return;
+  }
+  if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/icons/') || /\.(?:svg|png|woff2?|webmanifest)$/.test(url.pathname)) {
+    event.respondWith(staleWhileRevalidate(req));
+  }
+});
+
+const FALLBACK_TITLE = 'PetConnect – Neue Benachrichtigung';
+
+/** Nachricht lesen; leer oder kaputt → neutrale Meldung */
+function readPush(data) {
+  let msg = null;
+  try {
+    msg = data ? data.json() : null;
+  } catch {
+    msg = null;
+  }
+  const ok = msg && typeof msg === 'object' && typeof msg.title === 'string' && msg.title.trim();
+  if (!ok) return { title: FALLBACK_TITLE, options: { body: '', tag: 'petconnect', data: { url: '/' } } };
+  return {
+    title: msg.title.slice(0, 120),
+    options: {
+      body: typeof msg.body === 'string' ? msg.body.slice(0, 300) : '',
+      tag: typeof msg.tag === 'string' ? msg.tag.slice(0, 100) : 'petconnect',
+      data: { url: safeUrl(msg.url) },
+    },
+  };
+}
+
+/** Nur Pfade der eigenen Origin zulassen */
+function safeUrl(u) {
+  try {
+    const url = new URL(typeof u === 'string' ? u : '/', self.location.origin);
+    return url.origin === self.location.origin ? url.pathname + url.search + url.hash : '/';
+  } catch {
+    return '/';
+  }
+}
+
+self.addEventListener('push', (event) => {
+  const { title, options } = readPush(event.data);
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      ...options,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/badge-96.png',
+      renotify: true,
+    }),
+  );
+});
+
+async function openUrl(path) {
+  const target = new URL(safeUrl(path), self.location.origin).href;
+  const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  const win = wins.find((c) => new URL(c.url).origin === self.location.origin);
+  if (win) {
+    const nav = win.url === target ? win : await win.navigate(target).catch(() => win);
+    await (nav || win).focus().catch(() => undefined);
+    return;
+  }
+  await self.clients.openWindow(target);
+}
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data && event.notification.data.url;
+  event.waitUntil(openUrl(url));
+});

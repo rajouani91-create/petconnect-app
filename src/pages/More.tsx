@@ -8,12 +8,15 @@ import { Field } from '../components/Field';
 import { FamilyCard } from '../components/FamilyCard';
 import { Link } from 'react-router';
 import { IconBell, IconEmergency, IconList } from '../components/Icons';
+import { Dialog } from '../components/Dialog';
+import { LEGAL, deleteAccountMailto } from '../lib/legal';
 
 export function More() {
   const { t, lang, setLang } = useI18n();
   const { user, refreshProfile, signOut } = useAuth();
   const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [askDelete, setAskDelete] = useState(false);
   const { hash } = useLocation();
 
   // „Personen verwalten“ auf der Tier-Seite springt zur Familie-Karte
@@ -51,6 +54,7 @@ export function More() {
           <li><Link to="/erinnerungen" className="btn btn-secondary more-btn"><IconBell size={20} />{t('nav_reminders')}</Link></li>
           <li><Link to="/alltag" className="btn btn-secondary more-btn"><IconList size={20} />{t('nav_routine')}</Link></li>
           <li><Link to="/notfall" className="btn btn-secondary more-btn"><IconEmergency size={20} />{t('nav_notfall')}</Link></li>
+          <li><Link to="/mehr/benachrichtigungen" className="btn btn-secondary more-btn"><IconBell size={20} />{t('pnTitle')}</Link></li>
         </ul>
       </nav>
 
@@ -78,7 +82,40 @@ export function More() {
         <button type="button" className="btn btn-secondary" onClick={() => void signOut()}>
           {t('logout')}
         </button>
+        <button type="button" className="btn btn-ghost btn-start" onClick={() => setAskDelete(true)}>
+          {t('accDelete')}
+        </button>
       </section>
+
+      <section className="card stack" aria-labelledby="legal-h">
+        <h2 id="legal-h">{t('legalH')}</h2>
+        <p className="row-actions">
+          <Link to="/datenschutz" className="link">{t('legalPrivacy')}</Link>
+          <Link to="/impressum" className="link">{t('legalImprint')}</Link>
+        </p>
+      </section>
+
+      <Dialog
+        open={askDelete}
+        title={t('accDeleteTitle')}
+        onClose={() => setAskDelete(false)}
+        actions={
+          <>
+            <button type="button" className="btn btn-ghost" onClick={() => setAskDelete(false)}>{t('cancelBtn')}</button>
+            <a
+              className="btn btn-danger"
+              href={deleteAccountMailto(LEGAL.email, user?.email ?? '', t('accDeleteSubject'), t('accDeleteBody'))}
+              onClick={() => setAskDelete(false)}
+            >
+              {t('accDeleteMail')}
+            </a>
+          </>
+        }
+      >
+        <p>{t('accDeleteWhat')}</p>
+        <p>{t('accDeleteHow')}</p>
+        {!LEGAL.email && <p className="notice notice-warn">{t('accDeleteNoMail')}</p>}
+      </Dialog>
     </div>
   );
 }

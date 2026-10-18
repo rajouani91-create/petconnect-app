@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 import { LANGUAGES, isLang } from '../i18n';
 import { readPendingInvite } from '../lib/sharing';
+import { Link } from 'react-router';
 import { LogoMark } from './Icons';
 
 /** Rahmen für Anmelden/Registrieren: Marke, Sprachwahl, Karte. `inviteHint`: Hinweis, falls eine Einladung wartet. */
@@ -33,6 +34,10 @@ export function AuthLayout({ title, sub, children, inviteHint = false }: { title
           {hasInvite && <p className="notice notice-info" role="status">{t('invLoginHint')}</p>}
           {children}
         </div>
+        <p className="auth-foot">
+          <Link to="/impressum" className="link">{t('legalImprint')}</Link>
+          <Link to="/datenschutz" className="link">{t('legalPrivacy')}</Link>
+        </p>
       </main>
     </div>
   );

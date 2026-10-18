@@ -22,6 +22,9 @@ import { Sitting } from './pages/more/Sitting';
 import { HealthRecord } from './pages/more/HealthRecord';
 import { SitterPublic } from './pages/SitterPublic';
 import { Practices } from './pages/Practices';
+import { Notifications } from './pages/more/Notifications';
+import { Imprint, Privacy } from './pages/Legal';
+import { UpdateBanner } from './components/UpdateBanner';
 
 export function App() {
   return (
@@ -34,6 +37,9 @@ export function App() {
             <Route path="/passwort-neu" element={<ResetPassword />} />
             {/* Öffentlich, ohne Anmeldung: Betreuungsinfos über einen Sitter-Link */}
             <Route path="/betreuung/:token" element={<SitterPublic />} />
+            {/* Öffentlich: Pflichtangaben (Play Store) */}
+            <Route path="/datenschutz" element={<Privacy />} />
+            <Route path="/impressum" element={<Imprint />} />
             <Route
               element={
                 <RequireAuth>
@@ -55,11 +61,13 @@ export function App() {
               <Route path="erinnerungen" element={<Reminders />} />
               <Route path="alltag" element={<Routine />} />
               <Route path="mehr" element={<More />} />
+              <Route path="mehr/benachrichtigungen" element={<Notifications />} />
               <Route path="notfall" element={<Emergency />} />
               <Route path="einladung/:token" element={<Invite />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          <UpdateBanner />
         </BrowserRouter>
       </AuthProvider>
     </I18nProvider>

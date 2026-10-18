@@ -45,6 +45,7 @@ import { Field } from '../Field';
 import { IconPlus, IconTrash } from '../Icons';
 import { Loading } from '../Loading';
 import { ConfirmDelete, StatusLine, useFocusAfter, useStatus } from './shared';
+import { PushHint } from '../PushHint';
 
 type Mode = { kind: 'add' } | { kind: 'edit'; row: MedicationRow } | null;
 const NOTES_MAX = 1000;
@@ -64,6 +65,8 @@ export function MedicationCard({ pet, editable }: { pet: PetRow; editable: boole
   const [loadError, setLoadError] = useState(false);
   const [mode, setMode] = useState<Mode>(null);
   const [toDelete, setToDelete] = useState<MedicationRow | null>(null);
+  // Nach dem ersten gespeicherten Medikament: Hinweis auf Benachrichtigungen
+  const [firstSaved, setFirstSaved] = useState(false);
   const [status, setStatus] = useStatus();
   const { register, focusLater } = useFocusAfter();
 
@@ -97,6 +100,7 @@ export function MedicationCard({ pet, editable }: { pet: PetRow; editable: boole
       focusLater(`edit-${row.id}`);
     } else {
       const row = await addMedication(pet.id, input);
+      if ((rows ?? []).length === 0) setFirstSaved(true);
       setRows((cur) => [...(cur ?? []), row]);
       setMode(null);
       setStatus(t('omSaved', { n: row.name }));
@@ -216,6 +220,7 @@ export function MedicationCard({ pet, editable }: { pet: PetRow; editable: boole
         </>
       )}
 
+      {firstSaved && <PushHint />}
       <MedNotes pet={pet} editable={editable} onStatus={setStatus} />
       <StatusLine status={status} />
 

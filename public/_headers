@@ -1,0 +1,12 @@
+# Service Worker immer frisch (Updates kommen sofort an)
+/sw.js
+  Cache-Control: no-cache
+  Service-Worker-Allowed: /
+
+# Digital Asset Links für die Android-App (Trusted Web Activity)
+/.well-known/assetlinks.json
+  Content-Type: application/json
+  Access-Control-Allow-Origin: *
+
+/manifest.webmanifest
+  Content-Type: application/manifest+json

@@ -533,3 +533,13 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .dose-given { background: var(--ok-soft); color: var(--ok-ink); }
 .med-list-plain { margin: 0; padding-inline-start: 1.2em; }
 .med-list-plain li + li { margin-top: var(--s-1); }
+
+/* ---------- PWA und Benachrichtigungen (Auftrag 10) ---------- */
+.update-banner { position: fixed; inset-inline: var(--s-3); bottom: calc(var(--s-3) + 72px); z-index: 50; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2); padding: var(--s-3); background: var(--surface); color: var(--fg); border: 2px solid var(--brand); border-radius: var(--r); box-shadow: 0 6px 24px rgb(0 0 0 / 0.18); }
+.push-state { font-weight: 600; }
+.push-state-active { color: var(--ok-ink); }
+.push-state-blocked { color: var(--crit); }
+.device-row .record-title { font-weight: 600; }
+.legal-page h2 { margin-top: var(--s-4); }
+.legal-todo { background: var(--warn-soft); color: var(--warn-ink); padding: 0 var(--s-1); border-radius: 4px; font-weight: 600; }
+.auth-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-3); margin-top: var(--s-4); }

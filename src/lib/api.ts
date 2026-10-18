@@ -6,6 +6,7 @@ import { docExt, type DocCategory, type DocMime } from './record';
 import type { ApptKind, ApptStatus, RemKind } from './schedule';
 import { parseSitterView, type ClaimStatus, type SitterView, type Submission } from './care';
 import type { RadiusCount, toRpcParams } from './practices';
+import { prefsWrite, type NotificationPrefs } from './push';
 import { supabase, type PetRow, type ProfileRow, type RoutineRow } from './supabase';
 import { isGrantRole, isOpenInvite, parsePreview, toRole, type GrantRole, type InvitePreview, type MemberRole, type Membership } from './sharing';
 import type { TemplateEntry } from './templates';
@@ -693,4 +694,43 @@ export async function undoDose(id: string): Promise<void> {
 /** „Weitere Hinweise zur Medikation“ (bisheriges Freitextfeld pets.medications) */
 export async function updateMedNotes(petId: string, text: string | null): Promise<PetRow> {
   return checkChanged(await supabase.from('pets').update({ medications: text }).eq('id', petId).select('*'));
+}
+
+// ---------- Push-Benachrichtigungen ----------
+
+export type PushDeviceRow = Pick<Database['public']['Tables']['push_subscriptions']['Row'], 'id' | 'endpoint' | 'device_label' | 'created_at' | 'last_ok_at'>;
+
+/** Öffentlicher VAPID-Schlüssel; beim allerersten Aufruf evtl. noch null (Edge Function legt ihn an) */
+export async function vapidPublicKey(): Promise<string | null> {
+  return checkMaybe(await supabase.rpc('vapid_public_key'));
+}
+
+export async function registerPush(endpoint: string, p256dh: string, auth: string, label: string): Promise<string> {
+  return check(await supabase.rpc('register_push', { p_endpoint: endpoint, p_p256dh: p256dh, p_auth: auth, p_label: label.slice(0, 80) }));
+}
+
+export async function listPushDevices(): Promise<PushDeviceRow[]> {
+  return check(await supabase.from('push_subscriptions').select('id, endpoint, device_label, created_at, last_ok_at').order('created_at', { ascending: true }));
+}
+
+export async function removePushDevice(id: string): Promise<void> {
+  checkChanged(await supabase.from('push_subscriptions').delete().eq('id', id).select('id'));
+}
+
+export async function removePushEndpoint(endpoint: string): Promise<void> {
+  checkOk(await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint));
+}
+
+/** Eigene Einstellungen; null = noch keine Zeile (alles an) */
+export async function getNotificationPrefs(): Promise<NotificationPrefs | null> {
+  type Row = Database['public']['Tables']['notification_prefs']['Row'];
+  const row = checkMaybe<Row>(await supabase.from('notification_prefs').select('*').maybeSingle());
+  return row ? { medication: row.medication, reminders: row.reminders, appointments: row.appointments, reminder_time: row.reminder_time.slice(0, 5) } : null;
+}
+
+/** Erstes Speichern legt die Zeile an, danach nur noch ändern */
+export async function saveNotificationPrefs(userId: string, stored: boolean, next: NotificationPrefs): Promise<void> {
+  const w = prefsWrite(stored, next);
+  if (w.op === 'insert') checkOk(await supabase.from('notification_prefs').insert(w.values));
+  else checkChanged(await supabase.from('notification_prefs').update(w.values).eq('user_id', userId).select('user_id'));
 }
