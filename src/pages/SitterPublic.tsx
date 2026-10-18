@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
-import { formatIsoDateShort } from '../i18n';
+import { formatIsoDateShort, localeOf } from '../i18n';
+import { doseText } from '../lib/medication';
 import { sitterView } from '../lib/api';
 import { isSitterToken, telHref, type SitterView } from '../lib/care';
 import { LogoMark, IconPhone } from '../components/Icons';
@@ -89,6 +90,22 @@ export function SitterPublic() {
               <h2 id="sv-feed">{t('sitFeed')}</h2>
               <p><Val v={view.feeding} pre /></p>
             </section>
+            <section className="card stack" aria-labelledby="sv-meds">
+              <h2 id="sv-meds">{t('medications')}</h2>
+              <p className="med-safe" role="note">{t('svMedsNote')}</p>
+              {view.active_medications.length === 0 ? (
+                <p className="muted">{t('nothingSet')}</p>
+              ) : (
+                <ul className="med-list-plain">
+                  {view.active_medications.map((m, i) => (
+                    <li key={`${m.name}-${i}`}>
+                      <strong>{m.name}</strong> – {doseText(m, t, localeOf(lang))}
+                      {m.ends_on && <> · {t('mdUntil', { d: date(m.ends_on) })}</>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
             <section className="card stack" aria-labelledby="sv-care">
               <h2 id="sv-care">{t('sitMeds')}</h2>
               <p><Val v={view.care_notes} pre /></p>
@@ -99,7 +116,7 @@ export function SitterPublic() {
               <dl className="kv">
                 <dt>{t('cAllergies')}</dt>
                 <dd><Val v={view.pet.allergies} pre /></dd>
-                <dt>{t('svMedsRecord')}</dt>
+                <dt>{t('medNotes')}</dt>
                 <dd><Val v={view.pet.medications} pre /></dd>
                 <dt>{t('chip')}</dt>
                 <dd className="mono"><Val v={view.pet.chip_no} /></dd>

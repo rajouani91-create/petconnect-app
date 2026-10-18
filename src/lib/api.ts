@@ -645,3 +645,52 @@ export async function countPracticesByRadius(params: ReturnType<typeof toRpcPara
   const { p_lat, p_lon, p_species, p_services, p_titles, p_q } = params;
   return check(await supabase.rpc('count_practices_by_radius', { p_lat, p_lon, p_species, p_services, p_titles, p_q }));
 }
+
+// ---------- Medikation ----------
+// Die App legt nur eigene Einträge an (source = 'owner'); Einträge der Praxis sind nicht änderbar (RLS).
+
+export type MedicationRow = Database['public']['Tables']['pet_medications']['Row'];
+export type DoseRow = Database['public']['Tables']['medication_doses']['Row'];
+export type MedicationInput = Omit<Database['public']['Tables']['pet_medications']['Update'], 'stopped_on'>;
+
+export async function listMedications(petIds: readonly string[]): Promise<MedicationRow[]> {
+  if (petIds.length === 0) return [];
+  return check(await supabase.from('pet_medications').select('*').in('pet_id', [...petIds]).order('starts_on', { ascending: true }));
+}
+
+export async function addMedication(petId: string, v: MedicationInput): Promise<MedicationRow> {
+  return check(await supabase.from('pet_medications').insert({ pet_id: petId, ...v, name: v.name ?? '', amount: v.amount ?? 0, unit: v.unit ?? 'tablet' }).select('*').single());
+}
+
+export async function updateMedication(id: string, v: MedicationInput): Promise<MedicationRow> {
+  return checkChanged(await supabase.from('pet_medications').update(v).eq('id', id).eq('source', 'owner').select('*'));
+}
+
+/** „Beenden“: letzter Tag der Gabe = heute */
+export async function stopMedication(id: string, today: string): Promise<MedicationRow> {
+  return checkChanged(await supabase.from('pet_medications').update({ stopped_on: today }).eq('id', id).eq('source', 'owner').select('*'));
+}
+
+/** Löscht auch die abgehakten Gaben (Fremdschlüssel mit Kaskade) */
+export async function deleteMedication(id: string): Promise<void> {
+  checkChanged(await supabase.from('pet_medications').delete().eq('id', id).eq('source', 'owner').select('id'));
+}
+
+export async function listDoses(petIds: readonly string[], day: string): Promise<DoseRow[]> {
+  if (petIds.length === 0) return [];
+  return check(await supabase.from('medication_doses').select('*').in('pet_id', [...petIds]).eq('scheduled_on', day));
+}
+
+/** „Gegeben“: Person und Zeitpunkt setzt die Datenbank. Doppelt → 23505 (isDuplicate). */
+export async function giveDose(medicationId: string, petId: string, day: string, time: string): Promise<DoseRow> {
+  return check(await supabase.from('medication_doses').insert({ medication_id: medicationId, pet_id: petId, scheduled_on: day, scheduled_time: time }).select('*').single());
+}
+
+export async function undoDose(id: string): Promise<void> {
+  checkChanged(await supabase.from('medication_doses').delete().eq('id', id).select('id'));
+}
+
+/** „Weitere Hinweise zur Medikation“ (bisheriges Freitextfeld pets.medications) */
+export async function updateMedNotes(petId: string, text: string | null): Promise<PetRow> {
+  return checkChanged(await supabase.from('pets').update({ medications: text }).eq('id', petId).select('*'));
+}

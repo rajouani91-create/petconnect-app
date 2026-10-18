@@ -14,6 +14,9 @@ import { IconEmergency, IconPhone } from '../../components/Icons';
 import { PetAvatar } from '../../components/PetAvatar';
 import { BackToRecord, PetSubpage, Phone, Val, speciesName } from '../../components/more/shared';
 import { StatusLine, useFocusAfter, useStatus } from '../../components/record/shared';
+import { RunningMeds, usePetMedications } from '../../components/more/RunningMeds';
+import { zonedNow } from '../../lib/time';
+import { useNow } from '../../lib/useNow';
 
 /** Notfallkarte: das Wichtigste auf einen Blick, druckbar im Kartenformat. */
 export function EmergencyCard() {
@@ -45,6 +48,8 @@ function EmergencyCardView({ pet, editable }: { pet: PetRow; editable: boolean }
   }, [pet.owner_id, user?.id, profile?.display_name]);
 
   const vetHref = pet.vet_phone ? telHref(pet.vet_phone) : null;
+  const meds = usePetMedications(pet.id);
+  const today = zonedNow(useNow()).date;
 
   return (
     <div className="page stack-lg">
@@ -80,7 +85,13 @@ function EmergencyCardView({ pet, editable }: { pet: PetRow; editable: boolean }
           <dt>{t('cAllergies')}</dt>
           <dd><Val v={pet.allergies} pre /></dd>
           <dt>{t('medications')}</dt>
-          <dd><Val v={pet.medications} pre /></dd>
+          <dd>{meds ? <RunningMeds rows={meds} today={today} /> : '…'}</dd>
+          {pet.medications?.trim() && (
+            <>
+              <dt>{t('medNotes')}</dt>
+              <dd><Val v={pet.medications} pre /></dd>
+            </>
+          )}
           <dt>{t('cVet')}</dt>
           <dd><Val v={pet.vet_name} /></dd>
           <dt>{t('cVetPhone')}</dt>
@@ -223,7 +234,7 @@ function EmergencyForm({ pet, onSaved, onCancel }: { pet: PetRow; onSaved: (p: P
       {text('ownerPhone', 'cOwnerPhone', { type: 'tel', max: PHONE_MAX, inputMode: 'tel' })}
       {text('chip', 'chip', { inputMode: 'numeric', hint: 'cChipHint' })}
       {text('allergies', 'cAllergies', { area: true })}
-      {text('medications', 'medications', { area: true })}
+      {text('medications', 'medNotes', { area: true })}
       {text('vetName', 'cVet', { max: VET_NAME_MAX })}
       {text('vetPhone', 'cVetPhone', { type: 'tel', max: PHONE_MAX, inputMode: 'tel' })}
       {text('contact', 'emergencyContact', { area: true, hint: 'emergencyContactHint' })}

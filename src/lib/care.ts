@@ -265,12 +265,39 @@ export interface SitterViewPet {
   allergies: string | null;
   medications: string | null;
 }
+/** Laufendes Medikament aus sitter_view (Uhrzeiten schon als HH:MM) */
+export interface SitterMed {
+  name: string;
+  amount: number;
+  unit: string;
+  frequency: string;
+  times: string[];
+  intake_hint: string;
+  note: string | null;
+  ends_on: string | null;
+}
 export type SitterView =
-  | { status: 'ok'; sitter_name: string; valid_from: string; valid_to: string; feeding: string | null; care_notes: string | null; pet: SitterViewPet; owner_name: string | null; owner_phone: string | null; emergency_contact: string | null; vet_name: string | null; vet_phone: string | null }
+  | { status: 'ok'; sitter_name: string; valid_from: string; valid_to: string; feeding: string | null; care_notes: string | null; pet: SitterViewPet; active_medications: SitterMed[]; owner_name: string | null; owner_phone: string | null; emergency_contact: string | null; vet_name: string | null; vet_phone: string | null }
   | { status: 'not_yet'; valid_from: string; pet_name: string }
   | { status: 'invalid' };
 
 const str = (v: unknown): string | null => (typeof v === 'string' ? v : null);
+
+/** Medikamentenliste sicher lesen: Unvollständiges wird übersprungen */
+function parseMeds(v: unknown): SitterMed[] {
+  if (!Array.isArray(v)) return [];
+  const out: SitterMed[] = [];
+  for (const x of v) {
+    if (!x || typeof x !== 'object') continue;
+    const m = x as Record<string, unknown>;
+    const name = str(m.name);
+    const amount = Number(m.amount);
+    if (!name || !Number.isFinite(amount) || amount <= 0) continue;
+    const times = Array.isArray(m.times) ? m.times.filter((y): y is string => typeof y === 'string' && /^\d{2}:\d{2}/.test(y)).map((y) => y.slice(0, 5)) : [];
+    out.push({ name, amount, unit: str(m.unit) ?? '', frequency: str(m.frequency) ?? 'daily', times, intake_hint: str(m.intake_hint) ?? 'none', note: str(m.note), ends_on: str(m.ends_on) });
+  }
+  return out;
+}
 
 /** JSON sicher lesen; abgelaufen, widerrufen, unbekannt und alles Unerwartete → „invalid“ (ein Text für alle) */
 export function parseSitterView(json: unknown): SitterView {
@@ -291,6 +318,7 @@ export function parseSitterView(json: unknown): SitterView {
     feeding: str(o.feeding),
     care_notes: str(o.care_notes),
     pet: { name, species: str(p.species) ?? 'other', species_other: str(p.species_other), breed: str(p.breed), chip_no: str(p.chip_no), allergies: str(p.allergies), medications: str(p.medications) },
+    active_medications: parseMeds(o.active_medications),
     owner_name: str(o.owner_name),
     owner_phone: str(o.owner_phone),
     emergency_contact: str(o.emergency_contact),

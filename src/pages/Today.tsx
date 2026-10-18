@@ -14,6 +14,7 @@ import { useNow } from '../lib/useNow';
 import { PetSwitcher } from '../components/PetSwitcher';
 import { PetAvatar } from '../components/PetAvatar';
 import { UpcomingCard } from '../components/schedule/UpcomingCard';
+import { NextDoseCard } from '../components/schedule/TodayMeds';
 import { EmergencyButton } from '../components/more/EmergencyButton';
 import { IconCheck, KindIcon } from '../components/Icons';
 import { Loading } from '../components/Loading';
@@ -194,6 +195,7 @@ export function Today() {
           </section>
         </>
       )}
+      <NextDoseCard />
       <UpcomingCard onStatus={setStatus} />
       <p className="sr-only" role="status" aria-live="polite">{status}</p>
     </div>

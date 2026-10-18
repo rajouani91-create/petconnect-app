@@ -2,7 +2,8 @@ import { useEffect, useId, useState } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
 import { formatIsoDateShort, localeOf } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
-import { listInsurances, listVaccinations, listWeights, profileNames, type InsuranceRow, type VaccinationRow, type WeightRow } from '../../lib/api';
+import { listInsurances, listMedications, listVaccinations, listWeights, profileNames, type InsuranceRow, type MedicationRow, type VaccinationRow, type WeightRow } from '../../lib/api';
+import { MED_STATUS_LABEL, doseText, lastDay, medStatus, recordMeds } from '../../lib/medication';
 import { SUBMISSION_LABEL, formatEuro, isSubmission } from '../../lib/care';
 import { VACC_STATUS_LABEL, chartPoints, formatKg, sortVaccinations, sortWeightsDesc, vaccStatus } from '../../lib/record';
 import { zonedNow } from '../../lib/time';
@@ -21,6 +22,7 @@ interface Data {
   vaccs: VaccinationRow[];
   weights: WeightRow[];
   insurances: InsuranceRow[];
+  meds: MedicationRow[];
   owner: string | null;
 }
 
@@ -40,9 +42,10 @@ function HealthRecordView({ pet }: { pet: PetRow }) {
       listVaccinations(pet.id),
       listWeights(pet.id),
       listInsurances(pet.id),
+      listMedications([pet.id]),
       pet.owner_id === user?.id ? Promise.resolve(new Map([[pet.owner_id, profile?.display_name ?? '']])) : profileNames([pet.owner_id]).catch(() => new Map<string, string>()),
     ])
-      .then(([vaccs, weights, insurances, names]) => alive && setData({ vaccs: sortVaccinations(vaccs), weights: sortWeightsDesc(weights), insurances, owner: names.get(pet.owner_id) ?? null }))
+      .then(([vaccs, weights, insurances, meds, names]) => alive && setData({ vaccs: sortVaccinations(vaccs), weights: sortWeightsDesc(weights), insurances, meds, owner: names.get(pet.owner_id) ?? null }))
       .catch((e: unknown) => {
         console.error(e);
         if (alive) setError(true);
@@ -132,11 +135,13 @@ function HealthRecordView({ pet }: { pet: PetRow }) {
             )}
           </section>
 
+          <MedPlan meds={data.meds} today={today} petName={pet.name} />
+
           <section className="vault-section" aria-labelledby={`${uid}-med`}>
             <h3 id={`${uid}-med`}>{t('vltMeds')}</h3>
             <dl className="kv">
               <dt>{t('cAllergies')}</dt><dd><Val v={pet.allergies} pre /></dd>
-              <dt>{t('medications')}</dt><dd><Val v={pet.medications} pre /></dd>
+              <dt>{t('medNotes')}</dt><dd><Val v={pet.medications} pre /></dd>
             </dl>
           </section>
 
@@ -214,5 +219,63 @@ function MiniChart({ rows }: { rows: WeightRow[] }) {
       <polyline points={pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')} fill="none" className="chart-line" />
       {pts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="3.5" className="chart-dot" />)}
     </svg>
+  );
+}
+
+/** Medikationsplan: laufende zuerst, darunter beendete der letzten 12 Monate. Abgehakte Gaben gehören nicht in die Akte. */
+function MedPlan({ meds, today, petName }: { meds: MedicationRow[]; today: string; petName: string }) {
+  const { t, lang } = useI18n();
+  const locale = localeOf(lang);
+  const uid = useId();
+  const { current, ended } = recordMeds(meds, today);
+  const d = (iso: string) => formatIsoDateShort(iso, lang);
+  const period = (m: MedicationRow) => {
+    const end = lastDay(m);
+    return [t('mdSince', { d: d(m.starts_on) }), end ? t('mdUntil', { d: d(end) }) : null].filter(Boolean).join(' · ');
+  };
+  const table = (rows: MedicationRow[], caption: string) => (
+    <div className="table-wrap">
+      <table className="vault-table">
+        <caption className="sr-only">{caption}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{t('mdName')}</th>
+            <th scope="col">{t('omDose')}</th>
+            <th scope="col">{t('omPeriod')}</th>
+            <th scope="col">{t('vltStatus')}</th>
+            <th scope="col">{t('vltSource')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((m) => (
+            <tr key={m.id}>
+              <td>{m.name}</td>
+              <td>{doseText(m, t, locale)}</td>
+              <td>{period(m)}</td>
+              <td>{t(MED_STATUS_LABEL[medStatus(m, today)])}</td>
+              <td>{m.source === 'practice' ? t('vltSrcPractice') : t('vltSrcOwner')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+  return (
+    <section className="vault-section" aria-labelledby={`${uid}-plan`}>
+      <h3 id={`${uid}-plan`}>{t('mdPlan')}</h3>
+      {current.length === 0 && ended.length === 0 ? (
+        <p className="muted">{t('mdNone')}</p>
+      ) : (
+        <>
+          {current.length > 0 ? table(current, `${t('mdPlan')} – ${petName}`) : <p className="muted">{t('mdNone')}</p>}
+          {ended.length > 0 && (
+            <>
+              <h4>{t('omEndedRecent')}</h4>
+              {table(ended, `${t('omEndedRecent')} – ${petName}`)}
+            </>
+          )}
+        </>
+      )}
+    </section>
   );
 }

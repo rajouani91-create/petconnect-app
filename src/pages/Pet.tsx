@@ -15,6 +15,7 @@ import { PetAvatar } from '../components/PetAvatar';
 import { PetPhotoControls } from '../components/PetPhotoControls';
 import { PetSharedWith } from '../components/PetSharedWith';
 import { PetRecord } from '../components/record/PetRecord';
+import { MedicationCard } from '../components/record/MedicationCard';
 import { MoreAboutPet } from '../components/more/MoreAboutPet';
 import { IconPlus } from '../components/Icons';
 import { SPECIES_LABEL } from '../components/SpeciesPicker';
@@ -101,6 +102,7 @@ export function Pet() {
       <p className="sr-only" role="status" aria-live="polite">{status}</p>
 
       {!editing && <PetRecord key={`record-${pet.id}`} pet={pet} />}
+      {!editing && <MedicationCard key={`med-${pet.id}`} pet={pet} editable={editable} />}
       {!editing && <MoreAboutPet pet={pet} />}
 
       {role === 'owner' && (
@@ -173,8 +175,6 @@ function PetDetails({ pet }: { pet: PetRow }) {
         <dl className="kv">
           <dt>{t('allergies')}</dt>
           <dd>{val(pet.allergies)}</dd>
-          <dt>{t('medications')}</dt>
-          <dd>{val(pet.medications)}</dd>
           <dt>{t('emergencyContact')}</dt>
           <dd className="pre">{val(pet.emergency_contact)}</dd>
         </dl>

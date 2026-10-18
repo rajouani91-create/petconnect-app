@@ -515,3 +515,21 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .empty-hint { gap: var(--s-2); }
 .fav-btn[aria-pressed="true"] { color: var(--accent-ink); border-color: var(--accent-ink); }
 .osm-credit { color: var(--fg); }
+
+/* ---------- Medikation (Auftrag 09) ---------- */
+.med-safe { margin: 0; padding: var(--s-2) var(--s-3); border-inline-start: 4px solid var(--warn); background: var(--warn-soft); color: var(--fg); border-radius: var(--r); }
+.med-times { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: var(--s-3); }
+.med-times input[type="time"] { max-width: 100%; }
+.med-dose { font-weight: 500; }
+.med-longterm, .med-active { background: var(--ok-soft); color: var(--ok-ink); }
+.med-ending { background: var(--warn-soft); color: var(--warn-ink); }
+.med-ended { background: var(--surface-2); color: var(--fg); }
+.med-notes h3 { font-size: 1rem; }
+.dose-row .record-title { font-weight: 600; }
+.dose-time { font-variant-numeric: tabular-nums; }
+.dose-open { background: var(--surface-2); color: var(--fg); }
+.dose-due { background: var(--warn-soft); color: var(--warn-ink); }
+.dose-overdue { background: var(--crit-soft); color: var(--crit); }
+.dose-given { background: var(--ok-soft); color: var(--ok-ink); }
+.med-list-plain { margin: 0; padding-inline-start: 1.2em; }
+.med-list-plain li + li { margin-top: var(--s-1); }

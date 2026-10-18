@@ -161,7 +161,7 @@ export function PetForm({ initial, withTemplate, submitLabel, onSubmit, onCancel
         <Field id={id('allergies')} label={t('allergies')} optional>
           {(a) => <textarea {...a} rows={2} value={v.allergies} onChange={(e) => set('allergies', e.target.value)} />}
         </Field>
-        <Field id={id('medications')} label={t('medications')} optional>
+        <Field id={id('medications')} label={t('medNotes')} optional>
           {(a) => <textarea {...a} rows={2} value={v.medications} onChange={(e) => set('medications', e.target.value)} />}
         </Field>
         <Field id={id('emergencyContact')} label={t('emergencyContact')} hint={t('emergencyContactHint')} optional>

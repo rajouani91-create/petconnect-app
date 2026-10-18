@@ -46,6 +46,7 @@ import { IconCalendar, IconCheck, IconPlus, IconTrash } from '../components/Icon
 import { Loading } from '../components/Loading';
 import { ConfirmDelete, StatusLine, useFocusAfter, useStatus } from '../components/record/shared';
 import { ALL_PETS, PetFilter, PetSelect, useLocalToday, usePetAccess } from '../components/schedule/shared';
+import { TodayMeds } from '../components/schedule/TodayMeds';
 
 type Mode = { kind: 'add' } | { kind: 'edit'; row: ReminderRow } | null;
 
@@ -157,6 +158,7 @@ export function Reminders() {
       </header>
 
       {!anyEditable && pets.length > 0 && <p className="notice notice-info">{t('rmViewOnly')}</p>}
+      <TodayMeds />
       <PetFilter pets={pets} value={filter} onChange={setFilter} />
 
       {loadError && <p className="notice notice-crit" role="alert">{t('errGeneric')}</p>}
