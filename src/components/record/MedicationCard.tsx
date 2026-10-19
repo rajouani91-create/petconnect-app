@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useLocation } from 'react-router';
 import { useI18n } from '../../i18n/I18nProvider';
 import { formatIsoDateShort, localeOf } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
@@ -46,9 +47,13 @@ import { IconPlus, IconTrash } from '../Icons';
 import { Loading } from '../Loading';
 import { ConfirmDelete, StatusLine, useFocusAfter, useStatus } from './shared';
 import { PushHint } from '../PushHint';
+import { useMedsSync } from '../schedule/DosesProvider';
 
 type Mode = { kind: 'add' } | { kind: 'edit'; row: MedicationRow } | null;
 const NOTES_MAX = 1000;
+
+/** Erscheint das Medikament im Tagesplan (täglich mit Uhrzeit und Erinnerung)? Dann sagt der Toast es dazu. */
+export const inPlan = (m: Pick<MedicationRow, 'frequency' | 'remind' | 'times'>) => m.frequency === 'daily' && m.remind && m.times.length > 0;
 
 /**
  * Tierakte → „Medikation“: strukturierte Medikamente (Präparat, Menge, Einheit, Uhrzeiten, Hinweis, Zeitraum).
@@ -69,6 +74,8 @@ export function MedicationCard({ pet, editable }: { pet: PetRow; editable: boole
   const [firstSaved, setFirstSaved] = useState(false);
   const [status, setStatus] = useStatus();
   const { register, focusLater } = useFocusAfter();
+  const sync = useMedsSync();
+  const { hash, key: locKey } = useLocation();
 
   const load = useCallback(async () => {
     try {
@@ -86,9 +93,21 @@ export function MedicationCard({ pet, editable }: { pet: PetRow; editable: boole
     void load();
   }, [load]);
 
+  // Aus dem Tagesplan: „#med-<id>“ → dieses Medikament in den Blick nehmen
+  const loaded = rows !== null;
+  useEffect(() => {
+    if (!loaded || !hash.startsWith('#med-')) return;
+    const el = document.getElementById(hash.slice(1));
+    el?.scrollIntoView({ block: 'center' });
+    el?.focus();
+  }, [loaded, hash, locKey]);
+
   const { current, ended } = splitMeds(rows ?? [], today);
   const date = (iso: string) => formatIsoDateShort(iso, lang);
-  const replace = (row: MedicationRow) => setRows((cur) => (cur ?? []).map((r) => (r.id === row.id ? row : r)));
+  const replace = (row: MedicationRow) => {
+    setRows((cur) => (cur ?? []).map((r) => (r.id === row.id ? row : r)));
+    sync.put(row);
+  };
 
   async function save(v: MedFormValues) {
     const input = formToMed(v);
@@ -96,14 +115,15 @@ export function MedicationCard({ pet, editable }: { pet: PetRow; editable: boole
       const row = await updateMedication(mode.row.id, input);
       replace(row);
       setMode(null);
-      setStatus(t('omUpdated', { n: row.name }));
+      setStatus(t(inPlan(row) ? 'omUpdatedPlan' : 'omUpdated', { n: row.name }));
       focusLater(`edit-${row.id}`);
     } else {
       const row = await addMedication(pet.id, input);
       if ((rows ?? []).length === 0) setFirstSaved(true);
       setRows((cur) => [...(cur ?? []), row]);
+      sync.put(row);
       setMode(null);
-      setStatus(t('omSaved', { n: row.name }));
+      setStatus(t(inPlan(row) ? 'omSavedPlan' : 'omSaved', { n: row.name }));
       focusLater('add');
     }
   }
@@ -124,6 +144,7 @@ export function MedicationCard({ pet, editable }: { pet: PetRow; editable: boole
     try {
       await deleteMedication(row.id);
       setRows((cur) => (cur ?? []).filter((r) => r.id !== row.id));
+      sync.drop(row.id);
       setStatus(t('mdDeleted'));
     } catch (e) {
       console.error(e);
@@ -143,7 +164,7 @@ export function MedicationCard({ pet, editable }: { pet: PetRow; editable: boole
       .filter(Boolean)
       .join(' · ');
     return (
-      <li key={m.id} className="record-row med-row">
+      <li key={m.id} id={`med-${m.id}`} tabIndex={-1} className={`record-row med-row${hash === `#med-${m.id}` ? ' is-focus' : ''}`}>
         <div className="record-main">
           <span className="record-title">
             {m.name}
@@ -284,7 +305,7 @@ function MedNotes({ pet, editable, onStatus }: { pet: PetRow; editable: boolean;
   );
 }
 
-function MedicationForm({ initial, title, onSave, onCancel }: { initial: MedFormValues; title: string; onSave: (v: MedFormValues) => Promise<void>; onCancel: () => void }) {
+export function MedicationForm({ initial, title, onSave, onCancel }: { initial: MedFormValues; title: string; onSave: (v: MedFormValues) => Promise<void>; onCancel: () => void }) {
   const { t } = useI18n();
   const uid = useId();
   const [v, setV] = useState<MedFormValues>(initial);

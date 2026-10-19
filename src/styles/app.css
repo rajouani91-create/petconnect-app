@@ -542,3 +542,14 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .device-row .record-title { font-weight: 600; }
 .legal-page h2 { margin-top: var(--s-4); }
 .auth-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-3); margin-top: var(--s-4); }
+/* Tagesplan: Medikamente aus der Medikation, alte Medikamenten-Einträge */
+.plan-med-link { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; min-height: 44px; display: inline-flex; align-items: center; }
+.plan-med-meta { display: flex; flex-wrap: wrap; gap: var(--s-1); margin-top: var(--s-1); }
+.pill-med { background: var(--brand-soft); color: var(--brand); }
+.routine-row.plan-med.is-done .plan-med-link { color: var(--muted); }
+.legacy-note { color: var(--warn-ink); background: var(--warn-soft); padding: var(--s-1) var(--s-2); border-radius: var(--r); margin-top: var(--s-1); }
+.push-note { margin-top: var(--s-3); }
+.radio-col { display: flex; flex-direction: column; gap: var(--s-2); }
+.plan-time { display: flex; align-items: flex-end; gap: var(--s-2); }
+.plan-time .field { flex: 1; min-width: 0; }
+.med-row.is-focus { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: var(--r); }

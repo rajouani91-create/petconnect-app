@@ -1,86 +1,30 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { useI18n } from '../../i18n/I18nProvider';
 import { localeOf } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
-import { giveDose, isDuplicate, listDoses, listMedications, profileNames, undoDose, type DoseRow, type MedicationRow } from '../../lib/api';
+import { giveDose, isDuplicate, undoDose, type DoseRow, type MedicationRow } from '../../lib/api';
 import {
   HINT_TEXT,
   amountText,
   berlinHHMM,
   doseKey,
   doseState,
-  dosesForDay,
   nextOpenDose,
   type DoseState,
   type PlannedDose,
 } from '../../lib/medication';
 import { recordErrorKey } from '../../lib/record';
-import { zonedNow } from '../../lib/time';
-import { useNow } from '../../lib/useNow';
 import { IconCheck } from '../Icons';
 import { StatusLine, useFocusAfter, useStatus } from '../record/shared';
-import { usePetAccess } from './shared';
+import { useTodayDoses } from './DosesProvider';
 
-interface Data {
-  meds: MedicationRow[];
-  doses: Map<string, DoseRow>;
-  names: Map<string, string>;
-}
+export { useTodayDoses } from './DosesProvider';
 
-/** Heutige Gaben aller betreuten Tiere (Kalendertag in Europe/Berlin), mit abgehakten Gaben und Namen */
-export function useTodayDoses() {
-  const { pets, names: petNames, editable } = usePetAccess();
-  const now = useNow();
-  const day = zonedNow(now).date;
-  const [data, setData] = useState<Data | null>(null);
-  const [loadError, setLoadError] = useState(false);
-  const petKey = pets.map((p) => p.id).join(',');
+export type Doses = ReturnType<typeof useTodayDoses>;
 
-  const load = useCallback(async (): Promise<Data | null> => {
-    const ids = petKey ? petKey.split(',') : [];
-    try {
-      const [meds, doses] = await Promise.all([listMedications(ids), listDoses(ids, day)]);
-      const names = await profileNames(doses.map((d) => d.given_by)).catch(() => new Map<string, string>());
-      const d: Data = { meds, doses: new Map(doses.map((x) => [doseKey(x.medication_id, x.scheduled_on, x.scheduled_time), x])), names };
-      setData(d);
-      setLoadError(false);
-      return d;
-    } catch (e) {
-      console.error(e);
-      setLoadError(true);
-      return null;
-    }
-  }, [petKey, day]);
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  // Andere Betreuer haken auch ab: beim Zurückkehren ins Fenster still neu laden
-  const latest = useRef(load);
-  useEffect(() => {
-    latest.current = load;
-  }, [load]);
-  useEffect(() => {
-    const refresh = () => {
-      if (document.visibilityState === 'visible') void latest.current();
-    };
-    document.addEventListener('visibilitychange', refresh);
-    window.addEventListener('focus', refresh);
-    return () => {
-      document.removeEventListener('visibilitychange', refresh);
-      window.removeEventListener('focus', refresh);
-    };
-  }, []);
-
-  const planned = useMemo(() => (data ? dosesForDay(data.meds, day, (id) => petNames.get(id) ?? '') : []), [data, day, petNames]);
-  return { data, setData, planned, day, now, loadError, reload: load, petNames, editable };
-}
-
-type Doses = ReturnType<typeof useTodayDoses>;
-
-/** Abhaken und Zurücknehmen – gemeinsam für Liste und kompakte Karte */
-function useDoseActions(d: Doses, setStatus: (text: string, ok?: boolean) => void, focusLater: (key: string) => void, focusAfter?: string) {
+/** Abhaken und Zurücknehmen – gemeinsam für Liste, kompakte Karte und Tagesplan */
+export function useDoseActions(d: Doses, setStatus: (text: string, ok?: boolean) => void, focusLater: (key: string) => void, focusAfter?: string) {
   const { t } = useI18n();
   const { user } = useAuth();
   const [pending, setPending] = useState<string | null>(null);
@@ -138,7 +82,7 @@ function useDoseActions(d: Doses, setStatus: (text: string, ok?: boolean) => voi
   return { give, undo, pending };
 }
 
-function stateText(s: DoseState, myId: string | undefined, names: ReadonlyMap<string, string>, t: ReturnType<typeof useI18n>['t']): string {
+export function stateText(s: DoseState, myId: string | undefined, names: ReadonlyMap<string, string>, t: ReturnType<typeof useI18n>['t']): string {
   switch (s.kind) {
     case 'open':
       return t('odOpen');

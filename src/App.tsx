@@ -3,6 +3,7 @@ import { I18nProvider } from './i18n/I18nProvider';
 import { AuthProvider } from './auth/AuthProvider';
 import { RedirectIfAuthed, RequireAuth } from './auth/RequireAuth';
 import { PetsProvider } from './pets/PetsProvider';
+import { DosesProvider } from './components/schedule/DosesProvider';
 import { AppShell } from './components/AppShell';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -44,7 +45,9 @@ export function App() {
               element={
                 <RequireAuth>
                   <PetsProvider>
-                    <AppShell />
+                    <DosesProvider>
+                      <AppShell />
+                    </DosesProvider>
                   </PetsProvider>
                 </RequireAuth>
               }

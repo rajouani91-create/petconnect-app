@@ -1,20 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
-import { formatDate, formatTime } from '../i18n';
+import { formatDate, formatTime, localeOf } from '../i18n';
 import { useAuth } from '../auth/AuthProvider';
 import { usePets } from '../pets/PetsProvider';
 import { listDone, listMembers, listRoutine, markDone, markUndone } from '../lib/api';
 import { canEdit, doneByName } from '../lib/sharing';
 import type { PetRow, RoutineRow } from '../lib/supabase';
-import { itemsForDay, nextDue, splitMinutes, toHHMM, toMinutes, zonedNow, type NextDue } from '../lib/time';
+import type { MedicationRow } from '../lib/api';
+import { nextDue, splitMinutes, toHHMM, toMinutes, zonedNow, type NextDue } from '../lib/time';
+import { amountText, doseState } from '../lib/medication';
+import { doneIds, planForDay, type PlanEntry } from '../lib/plan';
 import { routineTitle } from '../lib/labels';
-import { isKind } from '../lib/domain';
+import { isKind, type Kind } from '../lib/domain';
 import { useNow } from '../lib/useNow';
 import { PetSwitcher } from '../components/PetSwitcher';
 import { PetAvatar } from '../components/PetAvatar';
 import { UpcomingCard } from '../components/schedule/UpcomingCard';
-import { NextDoseCard } from '../components/schedule/TodayMeds';
+import { NextDoseCard, stateText, useDoseActions, useTodayDoses } from '../components/schedule/TodayMeds';
 import { EmergencyButton } from '../components/more/EmergencyButton';
 import { IconCheck, KindIcon } from '../components/Icons';
 import { Loading } from '../components/Loading';
@@ -38,6 +41,9 @@ export function Today() {
   const [error, setError] = useState(false);
   const [status, setStatus] = useState('');
   const [pending, setPending] = useState<string | null>(null);
+  // Medikamente im Plan: gemeinsamer Stand mit „Heute: Medikamente“ und dem Tagesplan
+  const doses = useTodayDoses();
+  const doseActions = useDoseActions(doses, (text) => setStatus(text), () => undefined);
 
   // Meldung nur einmal zeigen: aus dem Verlauf entfernen, damit sie beim Neuladen nicht wiederkommt.
   const flashCleared = useRef(false);
@@ -103,11 +109,22 @@ export function Today() {
 
   if (!active) return null;
 
-  const todays = items ? itemsForDay(items, zn.weekday) : [];
-  const next = items ? nextDue(items, done, zn) : null;
+  const todays = items ? planForDay(items, doses.data?.meds ?? [], active.id, zn.date, zn.weekday) : [];
+  const allDone = doneIds(done, doses.data?.doses ?? new Map());
+  const next = items ? nextDue(todays, allDone, zn) : null;
   const name = profile?.display_name?.trim();
   // Nur ansehen: Abhaken ist gesperrt (die Datenbank verhindert es ohnehin)
   const readOnly = !canEdit(myRole(active));
+
+  /** Abhaken: Tagesplan über routine_done, Medikamente als Gabe (wie unter „Heute: Medikamente“) */
+  async function toggleEntry(e: Entry) {
+    if (readOnly) return;
+    if (e.type === 'routine') return toggle(e.item);
+    const given = doses.data?.doses.get(e.id);
+    const p = { med: e.med, time: e.time };
+    if (given) await doseActions.undo(p, given);
+    else await doseActions.give(p);
+  }
 
   async function toggle(item: RoutineRow) {
     if (readOnly) return;
@@ -152,7 +169,7 @@ export function Today() {
       {items && (
         <>
           {readOnly && <p className="notice notice-info" id="view-only-hint">{t('viewOnlyHint')}</p>}
-          <NextCard pet={active} next={next} hasToday={todays.length > 0} onDone={toggle} pending={pending} readOnly={readOnly} />
+          <NextCard pet={active} next={next} hasToday={todays.length > 0} onDone={toggleEntry} pending={next?.item.type === 'med' ? doseActions.pending : pending} readOnly={readOnly} />
 
           <section className="card" aria-labelledby="today-h">
             <div className="card-head">
@@ -163,14 +180,22 @@ export function Today() {
               <p className="muted">{t('todayEmpty')}</p>
             ) : (
               <ul className="today-list">
-                {todays.map((item) => {
-                  const isDone = done.has(item.id);
-                  const by = isDone ? doneByName(done.get(item.id), user?.id, names) : null;
-                  const title = routineTitle(item, t);
-                  const time = formatTime(toHHMM(item.time_of_day), lang);
-                  const past = toMinutes(item.time_of_day) < zn.minutes;
+                {todays.map((e) => {
+                  const isDone = allDone.has(e.id);
+                  const title = entryTitle(e, t, lang);
+                  const time = formatTime(toHHMM(e.time_of_day), lang);
+                  const past = toMinutes(e.time_of_day) < zn.minutes;
+                  const kind = e.type === 'med' ? 'med' : e.item.kind;
+                  let pill: string | null = null;
+                  if (isDone && e.type === 'routine') {
+                    const by = doneByName(done.get(e.id), user?.id, names);
+                    pill = by ? t('doneBy', { name: by }) : t('isDone');
+                  } else if (isDone && e.type === 'med') {
+                    pill = stateText(doseState(zn.date, e.time, now, doses.data?.doses.get(e.id)), user?.id, doses.data?.names ?? new Map(), t);
+                  }
+                  const busy = e.type === 'med' ? doseActions.pending === e.id : pending === e.id;
                   return (
-                    <li key={item.id} className={`today-row${isDone ? ' is-done' : ''}${past && !isDone ? ' is-past' : ''}`}>
+                    <li key={e.id} className={`today-row${isDone ? ' is-done' : ''}${past && !isDone ? ' is-past' : ''}${e.type === 'med' ? ' plan-med' : ''}`}>
                       <button
                         type="button"
                         className="check"
@@ -178,15 +203,15 @@ export function Today() {
                         aria-label={t('markDone', { x: title, t: time })}
                         aria-disabled={readOnly || undefined}
                         aria-describedby={readOnly ? 'view-only-hint' : undefined}
-                        disabled={pending === item.id}
-                        onClick={() => void toggle(item)}
+                        disabled={busy}
+                        onClick={() => void toggleEntry(e)}
                       >
                         <IconCheck size={20} />
                       </button>
                       <span className="time mono">{time}</span>
-                      {isKind(item.kind) && <KindIcon kind={item.kind} size={20} className="kind-icon" />}
+                      {isKind(kind) && <KindIcon kind={kind} size={20} className="kind-icon" />}
                       <span className="today-title">{title}</span>
-                      {isDone && <span className="pill pill-ok">{by ? t('doneBy', { name: by }) : t('isDone')}</span>}
+                      {pill && <span className="pill pill-ok">{pill}</span>}
                     </li>
                   );
                 })}
@@ -212,9 +237,9 @@ function NextCard({
 }: {
   pet: PetRow;
   readOnly: boolean;
-  next: NextDue<RoutineRow> | null;
+  next: NextDue<Entry> | null;
   hasToday: boolean;
-  onDone: (item: RoutineRow) => Promise<void>;
+  onDone: (e: Entry) => Promise<void>;
   pending: string | null;
 }) {
   const { t, lang } = useI18n();
@@ -247,13 +272,13 @@ function NextCard({
     <section className={`card next-card${next.state === 'now' ? ' is-now' : ''}`} aria-labelledby="next-h">
       {head}
       <div className="next-main">
-        {isKind(item.kind) && (
+        {(item.type === 'med' || isKind(item.item.kind)) && (
           <span className="next-icon">
-            <KindIcon kind={item.kind} size={28} />
+            <KindIcon kind={item.type === 'med' ? 'med' : (item.item.kind as Kind)} size={28} />
           </span>
         )}
         <div className="next-text">
-          <p className="next-title">{routineTitle(item, t)}</p>
+          <p className="next-title">{entryTitle(item, t, lang)}</p>
           <p className="next-meta">
             <span className="mono">{t('gpAt', { t: time })}</span>
             <span className={`pill${next.state === 'now' ? ' pill-accent' : ''}`}>{rel}</span>
@@ -274,4 +299,11 @@ function NextCard({
       </button>
     </section>
   );
+}
+
+type Entry = PlanEntry<RoutineRow, MedicationRow>;
+
+/** Tagesplan: Art oder eigene Bezeichnung; Medikament: „Meloxicam · 0,5 ml“ */
+function entryTitle(e: Entry, t: ReturnType<typeof useI18n>['t'], lang: Parameters<typeof localeOf>[0]): string {
+  return e.type === 'routine' ? routineTitle(e.item, t) : `${e.med.name} · ${amountText(e.med, t, localeOf(lang))}`;
 }

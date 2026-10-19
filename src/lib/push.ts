@@ -92,12 +92,14 @@ export function pushStatus(e: PushEnv): PushStatus {
 
 export interface NotificationPrefs {
   medication: boolean;
+  /** Tagesplan (Gassi, Füttern …) */
+  routine: boolean;
   reminders: boolean;
   appointments: boolean;
   /** HH:MM */
   reminder_time: string;
 }
-export const DEFAULT_PREFS: NotificationPrefs = { medication: true, reminders: true, appointments: true, reminder_time: '09:00' };
+export const DEFAULT_PREFS: NotificationPrefs = { medication: true, routine: true, reminders: true, appointments: true, reminder_time: '09:00' };
 
 /** Zeile fehlt = alles an → beim ersten Speichern anlegen, danach nur ändern */
 export function prefsWrite(stored: boolean, next: NotificationPrefs): { op: 'insert' | 'update'; values: NotificationPrefs } {

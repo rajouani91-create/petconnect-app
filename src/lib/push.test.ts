@@ -67,8 +67,8 @@ describe('Status dieses Geräts', () => {
 
 describe('Einstellungen speichern', () => {
   it('ohne Zeile anlegen, danach ändern; Uhrzeit HH:MM', () => {
-    expect(prefsWrite(false, DEFAULT_PREFS)).toEqual({ op: 'insert', values: { medication: true, reminders: true, appointments: true, reminder_time: '09:00' } });
-    expect(prefsWrite(true, { ...DEFAULT_PREFS, reminders: false, reminder_time: '07:30:00' })).toEqual({ op: 'update', values: { medication: true, reminders: false, appointments: true, reminder_time: '07:30' } });
+    expect(prefsWrite(false, DEFAULT_PREFS)).toEqual({ op: 'insert', values: { medication: true, routine: true, reminders: true, appointments: true, reminder_time: '09:00' } });
+    expect(prefsWrite(true, { ...DEFAULT_PREFS, reminders: false, reminder_time: '07:30:00' })).toEqual({ op: 'update', values: { medication: true, routine: true, reminders: false, appointments: true, reminder_time: '07:30' } });
   });
 });
 

@@ -23,6 +23,8 @@ export class ApiError extends Error {
 }
 /** Postgres: unique_violation */
 export const isDuplicate = (e: unknown): boolean => e instanceof ApiError && e.code === '23505';
+/** Tagesplan lehnt neue Einträge „Medikament“ ab (Trigger routine_no_med): Medikamente gehören in die Medikation */
+export const isUseMedication = (e: unknown): boolean => e instanceof ApiError && e.code === '23514' && /routine_use_medication/.test(e.message);
 
 /** Ergebnis mit Daten: Fehler werfen, fehlende Daten ebenfalls. */
 function check<T>(res: { data: T | null; error: PostgrestError | null }): T {
@@ -725,7 +727,7 @@ export async function removePushEndpoint(endpoint: string): Promise<void> {
 export async function getNotificationPrefs(): Promise<NotificationPrefs | null> {
   type Row = Database['public']['Tables']['notification_prefs']['Row'];
   const row = checkMaybe<Row>(await supabase.from('notification_prefs').select('*').maybeSingle());
-  return row ? { medication: row.medication, reminders: row.reminders, appointments: row.appointments, reminder_time: row.reminder_time.slice(0, 5) } : null;
+  return row ? { medication: row.medication, routine: row.routine, reminders: row.reminders, appointments: row.appointments, reminder_time: row.reminder_time.slice(0, 5) } : null;
 }
 
 /** Erstes Speichern legt die Zeile an, danach nur noch ändern */
