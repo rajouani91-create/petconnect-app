@@ -6,7 +6,6 @@ export const nl: Messages = {
   accDeleteBody: "Verwijder alstublieft mijn PetConnect-account ({email}) met alle bijbehorende gegevens.",
   accDeleteHow: "Verwijderen gebeurt op verzoek: wij bereiden een e-mail voor, u hoeft die alleen te verzenden.",
   accDeleteMail: "E-mail voorbereiden",
-  accDeleteNoMail: "Het e-mailadres voor verzoeken is nog niet ingevuld. Vul de ontvanger uit het colofon in.",
   accDeleteSubject: "PetConnect: account verwijderen",
   accDeleteTitle: "Account verwijderen",
   accDeleteWhat: "Verwijderd worden uw account en alle dieren waarvan u eigenaar bent – met dossier, medicijnen, afspraken, herinneringen, foto’s en documenten. Bij dieren die u alleen mee verzorgt, wordt alleen uw toegang verwijderd.",

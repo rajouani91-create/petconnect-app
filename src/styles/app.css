@@ -541,5 +541,4 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .push-state-blocked { color: var(--crit); }
 .device-row .record-title { font-weight: 600; }
 .legal-page h2 { margin-top: var(--s-4); }
-.legal-todo { background: var(--warn-soft); color: var(--warn-ink); padding: 0 var(--s-1); border-radius: 4px; font-weight: 600; }
 .auth-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-3); margin-top: var(--s-4); }

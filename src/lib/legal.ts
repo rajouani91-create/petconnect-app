@@ -1,23 +1,32 @@
-// Angaben für Impressum, Datenschutz und „Konto löschen“.
-// WICHTIG: Vor der Einreichung im Play Store von Ahmed ausfüllen und rechtlich prüfen lassen.
-// Solange ein Wert null ist, zeigen die Seiten gut sichtbar „[BITTE ERGÄNZEN: …]“.
+// Angaben für Impressum, Datenschutz und „Konto löschen“ (aus dem Prototyp übernommen, Stand Oktober 2026).
+// RECHTLICH PRÜFEN: Impressum und Datenschutzerklärung vor der Einreichung im Play Store prüfen lassen.
 
 export interface LegalInfo {
-  /** Name der verantwortlichen Person oder Firma */
-  name: string | null;
-  /** Anschrift (Straße, PLZ Ort) */
-  address: string | null;
+  /** Name der verantwortlichen Person */
+  name: string;
+  /** Anschrift, Zeilen mit \n getrennt */
+  address: string;
   /** E-Mail für Kontakt, Datenschutz und Konto-Löschung */
-  email: string | null;
-  /** Telefon (optional) */
+  email: string;
+  /** Telefon (optional; ohne Angabe entfällt die Zeile im Impressum) */
   phone: string | null;
+  /** Stand der Datenschutzerklärung */
+  updated: string;
 }
 
-export const LEGAL: LegalInfo = { name: null, address: null, email: null, phone: null };
+export const LEGAL: LegalInfo = {
+  name: 'Ahmed Rajouani',
+  address: 'Hessenring 104\n65428 Rüsselsheim am Main\nDeutschland',
+  email: 'info@petconnect24.com',
+  phone: null,
+  updated: 'Oktober 2026',
+};
 
-/** Fest stehende technische Fakten (keine Rechtstexte) */
+/** Fest stehende technische Fakten */
 export const FACTS = {
+  // RECHTLICH PRÜFEN: Anschrift von Netlify und Link zu dessen Datenschutzerklärung ergänzen?
   hosting: 'Netlify, Inc. (Webseite und App-Dateien)',
+  // RECHTLICH PRÜFEN: Angaben zu Supabase (Anschrift, Auftragsverarbeitungsvertrag) ergänzen?
   database: 'Supabase (Datenbank und Anmeldung), Region eu-central-1 (Frankfurt am Main, Deutschland)',
   push: 'Push-Dienst des jeweiligen Browsers; bei Android: Google Firebase Cloud Messaging',
   maps: '© OpenStreetMap-Mitwirkende, Datenbanklizenz ODbL',

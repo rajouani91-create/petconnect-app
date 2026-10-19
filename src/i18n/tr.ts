@@ -6,7 +6,6 @@ export const tr: Messages = {
   accDeleteBody: "Lütfen PetConnect hesabımı ({email}) tüm ilgili verilerle birlikte silin.",
   accDeleteHow: "Silme işlemi talep üzerine yapılır: bir e-posta hazırlarız, sizin sadece göndermeniz gerekir.",
   accDeleteMail: "E-posta hazırla",
-  accDeleteNoMail: "Talepler için e-posta adresi henüz girilmedi. Lütfen künyedeki alıcıyı girin.",
   accDeleteSubject: "PetConnect: hesabı sil",
   accDeleteTitle: "Hesabı sil",
   accDeleteWhat: "Hesabınız ve sahibi olduğunuz tüm hayvanlar silinir – sağlık dosyası, ilaçlar, randevular, hatırlatmalar, fotoğraflar ve belgelerle birlikte. Yalnızca bakımına yardım ettiğiniz hayvanlarda sadece erişiminiz kaldırılır.",

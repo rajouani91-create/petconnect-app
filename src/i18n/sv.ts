@@ -6,7 +6,6 @@ export const sv: Messages = {
   accDeleteBody: "Radera mitt PetConnect-konto ({email}) med alla tillhörande uppgifter.",
   accDeleteHow: "Raderingen sker på begäran: vi förbereder ett e-postmeddelande som du bara behöver skicka.",
   accDeleteMail: "Förbered e-post",
-  accDeleteNoMail: "E-postadressen för förfrågningar är inte inlagd ännu. Ange mottagaren från utgivaruppgifterna.",
   accDeleteSubject: "PetConnect: radera konto",
   accDeleteTitle: "Radera konto",
   accDeleteWhat: "Ditt konto och alla djur du äger raderas – med journal, läkemedel, tider, påminnelser, foton och dokument. För djur som du bara hjälper till att ta hand om tas bara din åtkomst bort.",

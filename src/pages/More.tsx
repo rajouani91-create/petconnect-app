@@ -114,7 +114,6 @@ export function More() {
       >
         <p>{t('accDeleteWhat')}</p>
         <p>{t('accDeleteHow')}</p>
-        {!LEGAL.email && <p className="notice notice-warn">{t('accDeleteNoMail')}</p>}
       </Dialog>
     </div>
   );

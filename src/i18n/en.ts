@@ -6,7 +6,6 @@ export const en: Messages = {
   accDeleteBody: "Please delete my PetConnect account ({email}) and all related data.",
   accDeleteHow: "Deletion is done on request: we prepare an email, you only need to send it.",
   accDeleteMail: "Prepare email",
-  accDeleteNoMail: "The email address for requests has not been added yet. Please enter the recipient from the legal notice.",
   accDeleteSubject: "PetConnect: delete account",
   accDeleteTitle: "Delete account",
   accDeleteWhat: "This deletes your account and all pets you own – including records, medication, appointments, reminders, photos and documents. For pets you only help care for, only your access is removed.",

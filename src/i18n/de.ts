@@ -5,7 +5,6 @@ export const de = {
   accDeleteBody: "Bitte löschen Sie mein PetConnect-Konto ({email}) mit allen zugehörigen Daten.",
   accDeleteHow: "Die Löschung erfolgt auf Anfrage: Wir bereiten eine E-Mail vor, Sie müssen sie nur noch absenden.",
   accDeleteMail: "E-Mail vorbereiten",
-  accDeleteNoMail: "Die E-Mail-Adresse für Anfragen ist noch nicht hinterlegt. Bitte tragen Sie den Empfänger aus dem Impressum ein.",
   accDeleteSubject: "PetConnect: Konto löschen",
   accDeleteTitle: "Konto löschen",
   accDeleteWhat: "Gelöscht werden Ihr Konto und alle Tiere, deren Besitzer:in Sie sind – mit Tierakte, Medikamenten, Terminen, Erinnerungen, Fotos und Dokumenten. Bei Tieren, die Sie nur mitbetreuen, wird nur Ihr Zugang entfernt.",

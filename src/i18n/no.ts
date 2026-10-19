@@ -6,7 +6,6 @@ export const no: Messages = {
   accDeleteBody: "Vennligst slett PetConnect-kontoen min ({email}) med alle tilhørende data.",
   accDeleteHow: "Slettingen skjer på forespørsel: vi forbereder en e-post som du bare må sende.",
   accDeleteMail: "Forbered e-post",
-  accDeleteNoMail: "E-postadressen for forespørsler er ikke lagt inn ennå. Skriv inn mottakeren fra kolofonen.",
   accDeleteSubject: "PetConnect: slett konto",
   accDeleteTitle: "Slett konto",
   accDeleteWhat: "Kontoen din og alle dyr du eier slettes – med journal, medisiner, avtaler, påminnelser, bilder og dokumenter. For dyr du bare hjelper til med, fjernes bare tilgangen din.",
