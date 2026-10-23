@@ -28,6 +28,7 @@ import { Notifications } from './pages/more/Notifications';
 import { MonthlyReport } from './pages/more/MonthlyReport';
 import { Imprint, Privacy } from './pages/Legal';
 import { UpdateBanner } from './components/UpdateBanner';
+import { Admin } from './pages/admin/Admin';
 
 export function App() {
   return (
@@ -69,6 +70,7 @@ export function App() {
               <Route path="mehr" element={<More />} />
               <Route path="mehr/benachrichtigungen" element={<Notifications />} />
               <Route path="mehr/monatsuebersicht" element={<MonthlyReport />} />
+              <Route path="admin" element={<Admin />} />
               <Route path="notfall" element={<Emergency />} />
               <Route path="einladung/:token" element={<Invite />} />
             </Route>

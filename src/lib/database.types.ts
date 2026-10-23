@@ -903,6 +903,30 @@ export type Database = {
           },
         ]
       }
+      staff_roles: {
+        Row: { user_id: string; role: string; created_at: string }
+        Insert: { user_id: string; role: string; created_at?: string }
+        Update: { user_id?: string; role?: string; created_at?: string }
+        Relationships: []
+      }
+      staff_audit: {
+        Row: { id: number; staff_id: string | null; action: string; target_user_id: string | null; reason: string | null; created_at: string }
+        Insert: { id?: number; staff_id?: string | null; action: string; target_user_id?: string | null; reason?: string | null; created_at?: string }
+        Update: { id?: number; staff_id?: string | null; action?: string; target_user_id?: string | null; reason?: string | null; created_at?: string }
+        Relationships: []
+      }
+      support_tickets: {
+        Row: { id: string; user_id: string | null; subject: string; body: string; status: string; created_by_staff: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id?: string | null; subject: string; body: string; status?: string; created_by_staff?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string | null; subject?: string; body?: string; status?: string; created_by_staff?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
+      account_status: {
+        Row: { user_id: string; status: string; reason: string | null; changed_by: string | null; changed_at: string }
+        Insert: { user_id: string; status?: string; reason?: string | null; changed_by?: string | null; changed_at?: string }
+        Update: { user_id?: string; status?: string; reason?: string | null; changed_by?: string | null; changed_at?: string }
+        Relationships: []
+      }
       pet_history: {
         Row: {
           allergies: string | null
@@ -996,6 +1020,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      staff_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: { accounts: number; profiles: number; accounts_with_pets: number; pets: number; pets_by_species: Record<string, number>; locked_accounts: number; tickets_open: number; tickets_in_progress: number; tickets_closed: number }
+      }
+      staff_search_accounts: {
+        Args: { q: string }
+        Returns: { user_id: string; email: string; display_name: string | null; created_at: string; status: string; pets: { name: string; species: string }[] }[]
+      }
+      staff_set_account_status: {
+        Args: { target: string; new_status: string; reason: string }
+        Returns: undefined
+      }
       accept_pet_invite: { Args: { p_token: string }; Returns: string[] }
       complete_reminder: {
         Args: { p_done_on?: string; p_id: string }
