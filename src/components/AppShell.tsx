@@ -12,8 +12,8 @@ export function AppShell() {
   const { pathname } = useLocation();
 
   const needsFirstPet = loaded && !error && pets.length === 0;
-  // Einladungen müssen auch ohne eigenes Tier erreichbar sein.
-  const exempt = pathname === '/tier/neu' || pathname === '/mehr' || pathname === '/mehr/benachrichtigungen' || pathname === '/notfall' || pathname.startsWith('/einladung/');
+  // Einladungen und der Support-Bereich müssen auch ohne eigenes Tier erreichbar sein (Rolle prüft die Seite selbst).
+  const exempt = pathname === '/tier/neu' || pathname === '/mehr' || pathname === '/mehr/benachrichtigungen' || pathname === '/notfall' || pathname === '/admin' || pathname.startsWith('/einladung/');
   if (needsFirstPet && !exempt) {
     return <Navigate to="/tier/neu" replace />;
   }
