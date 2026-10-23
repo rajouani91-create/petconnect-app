@@ -587,7 +587,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 
 /* Druckansicht Monatsübersicht (Als PDF speichern über den Browser) */
 @media print {
-  body * { visibility: hidden; }
+  body:has(.mo-print) * { visibility: hidden; }
   .mo-print, .mo-print * { visibility: visible; }
   .mo-print { position: absolute; left: 0; top: 0; width: 100%; padding: 1rem; }
   .no-print { display: none !important; }
