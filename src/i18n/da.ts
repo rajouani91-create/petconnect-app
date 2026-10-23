@@ -1091,4 +1091,7 @@ export const da: Messages = {
   adminStatSpecies: "Dyr efter art",
   adminStatLocked: "Låste konti",
   adminStatTickets: "Sager åbne / i gang / lukkede",
+  adminResetSend: "Send nulstillingslink",
+  adminResetDone: "Nulstillingslinket er sendt. Adgangskoden er ikke synlig.",
+  adminResetFail: "Linket kunne ikke sendes.",
 };

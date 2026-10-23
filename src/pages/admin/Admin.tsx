@@ -9,6 +9,7 @@ import {
   isSearchable,
   reasonError,
   searchAccounts,
+  sendResetLink,
   setAccountStatus,
   staffRoleFor,
   staffStats,
@@ -96,6 +97,19 @@ export function Admin() {
       setMessage(pending === 'locked' ? t('adminLockedDone') : t('adminUnlockedDone'));
     } catch {
       setMessage(t('adminSaveFail'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onResetLink() {
+    if (!selected) return;
+    setBusy(true);
+    try {
+      await sendResetLink(selected.user_id);
+      setMessage(t('adminResetDone'));
+    } catch {
+      setMessage(t('adminResetFail'));
     } finally {
       setBusy(false);
     }
@@ -193,6 +207,9 @@ export function Admin() {
           ) : (
             <p>{t('adminOnlyAdmin')}</p>
           )}
+          <button type="button" onClick={onResetLink} disabled={busy}>
+            {t('adminResetSend')}
+          </button>
         </section>
       )}
     </main>

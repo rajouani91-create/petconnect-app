@@ -1091,4 +1091,7 @@ export const fr: Messages = {
   adminStatSpecies: "Animaux par espèce",
   adminStatLocked: "Comptes verrouillés",
   adminStatTickets: "Tickets ouverts / en cours / fermés",
+  adminResetSend: "Envoyer le lien de réinitialisation",
+  adminResetDone: "Le lien de réinitialisation a été envoyé. Le mot de passe n’est pas visible.",
+  adminResetFail: "Le lien n’a pas pu être envoyé.",
 };

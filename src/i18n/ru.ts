@@ -1091,4 +1091,7 @@ export const ru: Messages = {
   adminStatSpecies: "Питомцы по видам",
   adminStatLocked: "Заблокированные аккаунты",
   adminStatTickets: "Тикеты открыто / в работе / закрыто",
+  adminResetSend: "Отправить ссылку для сброса",
+  adminResetDone: "Ссылка для сброса отправлена. Пароль не виден.",
+  adminResetFail: "Не удалось отправить ссылку.",
 };

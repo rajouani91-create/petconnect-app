@@ -1090,6 +1090,9 @@ export const de = {
   adminStatSpecies: "Tiere nach Art",
   adminStatLocked: "Gesperrte Konten",
   adminStatTickets: "Tickets offen / in Bearbeitung / geschlossen",
+  adminResetSend: "Reset-Link senden",
+  adminResetDone: "Der Reset-Link wurde gesendet. Das Passwort sehen Sie nicht.",
+  adminResetFail: "Der Reset-Link konnte nicht gesendet werden.",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;

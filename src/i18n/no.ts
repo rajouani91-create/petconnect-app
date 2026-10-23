@@ -1091,4 +1091,7 @@ export const no: Messages = {
   adminStatSpecies: "Dyr etter art",
   adminStatLocked: "Sperrede kontoer",
   adminStatTickets: "Saker åpne / under behandling / lukket",
+  adminResetSend: "Send tilbakestillingslenke",
+  adminResetDone: "Tilbakestillingslenken er sendt. Passordet er ikke synlig.",
+  adminResetFail: "Lenken kunne ikke sendes.",
 };

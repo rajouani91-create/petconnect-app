@@ -1091,4 +1091,7 @@ export const en: Messages = {
   adminStatSpecies: "Pets by species",
   adminStatLocked: "Locked accounts",
   adminStatTickets: "Tickets open / in progress / closed",
+  adminResetSend: "Send reset link",
+  adminResetDone: "The reset link was sent. The password is not visible to you.",
+  adminResetFail: "The reset link could not be sent.",
 };

@@ -1091,4 +1091,7 @@ export const ar: Messages = {
   adminStatSpecies: "الحيوانات حسب النوع",
   adminStatLocked: "الحسابات المقفلة",
   adminStatTickets: "تذاكر مفتوحة / قيد المعالجة / مغلقة",
+  adminResetSend: "إرسال رابط إعادة التعيين",
+  adminResetDone: "تم إرسال رابط إعادة التعيين. لا يظهر لك كلمة المرور.",
+  adminResetFail: "تعذّر إرسال رابط إعادة التعيين.",
 };

@@ -1091,4 +1091,7 @@ export const es: Messages = {
   adminStatSpecies: "Animales por especie",
   adminStatLocked: "Cuentas bloqueadas",
   adminStatTickets: "Tickets abiertos / en curso / cerrados",
+  adminResetSend: "Enviar enlace de restablecimiento",
+  adminResetDone: "El enlace de restablecimiento se ha enviado. La contraseña no es visible para usted.",
+  adminResetFail: "No se pudo enviar el enlace.",
 };

@@ -66,3 +66,9 @@ export async function staffStats(): Promise<StaffStats> {
   if (error) throw error;
   return data as StaffStats;
 }
+
+/** Löst den bestehenden Passwort-Reset für ein Konto aus. Das Passwort sieht niemand, die Funktion protokolliert den Versand. */
+export async function sendResetLink(target: string): Promise<void> {
+  const { error } = await supabase.functions.invoke('staff-reset-link', { body: { target } });
+  if (error) throw error;
+}

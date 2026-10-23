@@ -1091,4 +1091,7 @@ export const nl: Messages = {
   adminStatSpecies: "Dieren per soort",
   adminStatLocked: "Geblokkeerde accounts",
   adminStatTickets: "Tickets open / in behandeling / gesloten",
+  adminResetSend: "Resetlink versturen",
+  adminResetDone: "De resetlink is verstuurd. Het wachtwoord is voor u niet zichtbaar.",
+  adminResetFail: "De resetlink kon niet worden verstuurd.",
 };

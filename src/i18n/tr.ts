@@ -1091,4 +1091,7 @@ export const tr: Messages = {
   adminStatSpecies: "Türe göre hayvanlar",
   adminStatLocked: "Kilitli hesaplar",
   adminStatTickets: "Açık / işlemde / kapalı destek talepleri",
+  adminResetSend: "Sıfırlama bağlantısı gönder",
+  adminResetDone: "Sıfırlama bağlantısı gönderildi. Parola görünmez.",
+  adminResetFail: "Bağlantı gönderilemedi.",
 };

@@ -1091,4 +1091,7 @@ export const sv: Messages = {
   adminStatSpecies: "Djur per art",
   adminStatLocked: "Låsta konton",
   adminStatTickets: "Ärenden öppna / pågår / stängda",
+  adminResetSend: "Skicka återställningslänk",
+  adminResetDone: "Återställningslänken har skickats. Lösenordet syns inte.",
+  adminResetFail: "Länken kunde inte skickas.",
 };
