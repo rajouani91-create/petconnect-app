@@ -788,8 +788,7 @@ export interface LabValueRow {
 
 export async function listLabValues(petId: string): Promise<LabValueRow[]> {
   return check(
-    await supabase
-      .from('lab_values')
+    await (supabase as any).from('lab_values')
       .select('*')
       .eq('pet_id', petId)
       .order('measured_on', { ascending: false })
@@ -803,8 +802,7 @@ export async function addLabValue(
 ): Promise<LabValueRow> {
   const { data: { user } } = await supabase.auth.getUser();
   return check(
-    await supabase
-      .from('lab_values')
+    await (supabase as any).from('lab_values')
       .insert({ pet_id: petId, owner_id: user!.id, ...data })
       .select('*')
       .single(),
@@ -816,10 +814,10 @@ export async function updateLabValue(
   data: Omit<LabValueRow, 'id' | 'pet_id' | 'owner_id' | 'created_at'>,
 ): Promise<LabValueRow> {
   return checkChanged(
-    await supabase.from('lab_values').update(data).eq('id', id).select('*'),
+    await (supabase as any).from('lab_values').update(data).eq('id', id).select('*'),
   );
 }
 
 export async function deleteLabValue(id: string): Promise<void> {
-  checkChanged(await supabase.from('lab_values').delete().eq('id', id).select('id'));
+  checkChanged(await (supabase as any).from('lab_values').delete().eq('id', id).select('id'));
 }

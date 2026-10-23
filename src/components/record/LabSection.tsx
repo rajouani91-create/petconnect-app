@@ -13,6 +13,7 @@ import { Field } from '../Field';
 import { IconPlus, IconTrash } from '../Icons';
 import { Loading } from '../Loading';
 import { ByLine, ConfirmDelete, StatusLine, useFocusAfter, useStatus } from './shared';
+import type { FieldError } from '../../lib/validate';
 
 type Mode = { kind: 'add' } | { kind: 'edit'; row: LabValueRow } | null;
 
@@ -283,7 +284,7 @@ function LabForm({
   const { t } = useI18n();
   const uid = useId();
   const [v, setV] = useState<LabFormValues>(initial);
-  const [errors, setErrors] = useState<Partial<Record<keyof LabFormValues, { key: string }>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof LabFormValues, FieldError>>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const paramRef = useRef<HTMLInputElement>(null);

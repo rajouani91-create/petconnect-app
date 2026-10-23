@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Trash2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { IconTrash, IconCheck } from '../components/Icons';
 
 const DeleteAccount: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
@@ -27,7 +27,7 @@ const DeleteAccount: React.FC = () => {
       <div className="max-w-2xl mx-auto px-6 py-12">
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-red-900/30 rounded-full mb-4">
-            <Trash2 className="w-8 h-8 text-red-400" />
+            <IconTrash className="w-8 h-8 text-red-400" />
           </div>
           <h1 className="text-3xl font-bold mb-2">Konto löschen</h1>
           <p className="text-gray-400">Delete Account / Supprimer le compte</p>
@@ -37,7 +37,7 @@ const DeleteAccount: React.FC = () => {
           <>
             <div className="bg-[#1a2520] border border-yellow-600/30 rounded-xl p-5 mb-8">
               <div className="flex gap-3">
-                <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                ⚠️ 
                 <div>
                   <p className="font-semibold text-yellow-300 mb-2">Was wird gelöscht?</p>
                   <ul className="text-sm text-gray-300 space-y-1">
@@ -57,7 +57,7 @@ const DeleteAccount: React.FC = () => {
 
             <div className="bg-[#1a2520] rounded-xl p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Mail className="w-5 h-5 text-[#4CAF82]" />
+                ✉️ 
                 Löschanfrage senden
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -78,7 +78,7 @@ const DeleteAccount: React.FC = () => {
                   type="submit"
                   className="w-full bg-red-700 hover:bg-red-600 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <IconTrash className="w-4 h-4" />
                   Konto unwiderruflich löschen
                 </button>
                 <p className="text-xs text-gray-500 text-center">
@@ -96,7 +96,7 @@ const DeleteAccount: React.FC = () => {
           </>
         ) : (
           <div className="text-center bg-[#1a2520] rounded-xl p-10">
-            <CheckCircle className="w-16 h-16 text-[#4CAF82] mx-auto mb-4" />
+            <IconCheck className="w-16 h-16 text-[#4CAF82] mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-2">Anfrage gesendet</h2>
             <p className="text-gray-400 mb-4">
               Ihre Löschanfrage wurde vorbereitet. Bitte senden Sie die E-Mail ab.
