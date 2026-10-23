@@ -12,10 +12,11 @@ import type { PetRow } from '../../lib/supabase';
 import { DocumentSection } from './DocumentSection';
 import { VaccinationSection } from './VaccinationSection';
 import { WeightSection } from './WeightSection';
+import { LabSection } from './LabSection';
 
-const TABS = ['weight', 'vacc', 'docs'] as const;
+const TABS = ['weight', 'vacc', 'docs', 'lab'] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABEL: Record<Tab, MessageKey> = { weight: 'recWeight', vacc: 'recVacc', docs: 'recDocs' };
+const TAB_LABEL: Record<Tab, MessageKey> = { weight: 'recWeight', vacc: 'recVacc', docs: 'recDocs', lab: 'recLab' };
 
 /** Tierakte unter dem Profil: Reiter Gewicht, Impfungen, Dokumente. Nur ansehen: ohne Knöpfe, mit Hinweis. */
 export function PetRecord({ pet }: { pet: PetRow }) {
@@ -98,6 +99,7 @@ export function PetRecord({ pet }: { pet: PetRow }) {
           {tab === k && k === 'weight' && <WeightSection key={pet.id} {...common} />}
           {tab === k && k === 'vacc' && <VaccinationSection key={pet.id} {...common} />}
           {tab === k && k === 'docs' && <DocumentSection key={pet.id} {...common} />}
+          {tab === k && k === 'lab' && <LabSection key={pet.id} {...common} />}
         </div>
       ))}
     </section>

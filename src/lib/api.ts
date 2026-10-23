@@ -768,3 +768,58 @@ export async function saveNotificationPrefs(userId: string, stored: boolean, nex
   if (w.op === 'insert') checkOk(await supabase.from('notification_prefs').insert(w.values));
   else checkChanged(await supabase.from('notification_prefs').update(w.values).eq('user_id', userId).select('user_id'));
 }
+
+// ---------- Laborwerte ----------
+
+export interface LabValueRow {
+  id: string;
+  pet_id: string;
+  owner_id: string;
+  measured_on: string;
+  parameter: string;
+  value: number;
+  unit: string;
+  ref_min: number | null;
+  ref_max: number | null;
+  note: string;
+  practice: string;
+  created_at: string;
+}
+
+export async function listLabValues(petId: string): Promise<LabValueRow[]> {
+  return check(
+    await supabase
+      .from('lab_values')
+      .select('*')
+      .eq('pet_id', petId)
+      .order('measured_on', { ascending: false })
+      .order('created_at', { ascending: false }),
+  );
+}
+
+export async function addLabValue(
+  petId: string,
+  data: Omit<LabValueRow, 'id' | 'pet_id' | 'owner_id' | 'created_at'>,
+): Promise<LabValueRow> {
+  const { data: { user } } = await supabase.auth.getUser();
+  return check(
+    await supabase
+      .from('lab_values')
+      .insert({ pet_id: petId, owner_id: user!.id, ...data })
+      .select('*')
+      .single(),
+  );
+}
+
+export async function updateLabValue(
+  id: string,
+  data: Omit<LabValueRow, 'id' | 'pet_id' | 'owner_id' | 'created_at'>,
+): Promise<LabValueRow> {
+  return checkChanged(
+    await supabase.from('lab_values').update(data).eq('id', id).select('*'),
+  );
+}
+
+export async function deleteLabValue(id: string): Promise<void> {
+  checkChanged(await supabase.from('lab_values').delete().eq('id', id).select('id'));
+}
