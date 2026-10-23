@@ -133,7 +133,25 @@ export function Privacy() {
       <h2>13. Automatisierte Entscheidungen</h2>
       <p>Eine automatisierte Entscheidungsfindung oder ein Profiling im Sinne von Art. 22 DSGVO findet nicht statt. Symptom- oder Medikamentenfunktionen geben keine tierärztliche Diagnose und berechnen keine Dosierungen.</p>
 
-      <h2>14. Änderungen</h2>
+      {/* RECHTLICH PRÜFEN: Speicherdauer für Protokoll und Tickets festlegen und Abschnitt prüfen lassen. */}
+      <h2>14. Support-Zugriffe</h2>
+      <p>
+        Unser Support kann für die Bearbeitung von Anfragen auf Konten zugreifen. Mitarbeitende sehen dabei Ihre E-Mail-Adresse, Ihren Anzeigenamen, das Registrierungsdatum, den Kontostatus sowie Namen und Tierarten Ihrer Tiere. Gesundheitsdaten, Dokumente, Notizen und Rechnungen sind für den Support nicht sichtbar.
+      </p>
+      <p>
+        Mitarbeitende können einen Link zum Zurücksetzen des Passworts an Ihre E-Mail-Adresse senden. Das Passwort sehen sie nicht. Nur Admins können ein Konto sperren oder freigeben, jeweils mit Angabe eines Grundes.
+      </p>
+      <p>
+        Diese Aktionen werden protokolliert: wer gehandelt hat, wann, welches Konto betroffen war, welche Aktion und gegebenenfalls der Grund. Das Protokoll ist nur für Admins einsehbar.
+      </p>
+      <p>
+        Anfragen, die uns per E-Mail erreichen, legen wir als Support-Ticket mit Absender, Betreff, Inhalt und Status an. Interne Notizen sind nur für Mitarbeitende sichtbar.
+      </p>
+      <p>
+        Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO, soweit Ihre Anfrage auf einen Vertrag zielt, und Art. 6 Abs. 1 lit. f DSGVO für den Schutz vor Missbrauch und die Nachvollziehbarkeit von Eingriffen in Konten. Wie lange Protokolle und Tickets gespeichert werden, ist noch nicht festgelegt.
+      </p>
+
+      <h2>15. Änderungen</h2>
       <p>Wir passen diese Datenschutzerklärung an, wenn sich die App oder die rechtlichen Anforderungen ändern.</p>
     </LegalFrame>
   );
