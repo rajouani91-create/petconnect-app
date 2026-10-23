@@ -55,7 +55,7 @@ export function LabSection({
 }) {
   const { t, lang } = useI18n();
   const [rows, setRows] = useState<LabValueRow[] | null>(null);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState<string | false>(false);
   const [mode, setMode] = useState<Mode>(null);
   const [toDelete, setToDelete] = useState<LabValueRow | null>(null);
   const [status, setStatus] = useStatus();
@@ -67,7 +67,8 @@ export function LabSection({
       setLoadError(false);
     } catch (e) {
       console.error(e);
-      setLoadError(true);
+      const msg = e instanceof Error ? e.message : String(e);
+      setLoadError(msg || 'Unbekannter Fehler');
     }
   }, [petId]);
 
@@ -111,7 +112,7 @@ export function LabSection({
     <div className="stack record-panel">
       {loadError && (
         <p className="notice notice-crit" role="alert">
-          {t('errGeneric')}
+          {t('errGeneric')} — {loadError}
         </p>
       )}
       {!rows && !loadError && <Loading />}
