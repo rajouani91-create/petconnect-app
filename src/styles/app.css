@@ -526,9 +526,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .med-ended { background: var(--surface-2); color: var(--fg); }
 .med-notes h3 { font-size: 1rem; }
 .dose-row .record-title { font-weight: 600; }
-/* Medikamentenzeilen: Text bekommt die volle Breite, Status darunter (verhindert zusammengedrückten Text) */
-.dose-row .record-main { flex: 1 1 100%; min-width: 0; }
+/* Medikamentenzeilen: Zeile vertikal aufteilen → Text immer volle Breite */
+.dose-row { flex-direction: column; align-items: stretch; }
+.dose-row .record-main { flex: 1 1 auto; width: 100%; min-width: 0; }
+.dose-row .record-title { display: block; white-space: normal; overflow-wrap: anywhere; width: 100%; }
 .dose-row .pill { align-self: flex-start; white-space: normal; }
+.dose-row .row-actions { display: flex; justify-content: flex-end; }
 .dose-time { font-variant-numeric: tabular-nums; }
 .dose-open { background: var(--surface-2); color: var(--fg); }
 .dose-due { background: var(--warn-soft); color: var(--warn-ink); }
