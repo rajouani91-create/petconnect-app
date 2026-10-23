@@ -1,10 +1,10 @@
-[
-  {
-    "relation": ["delegate_permission/common.handle_all_urls"],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "com.petconnect24.app",
-      "sha256_cert_fingerprints": ["BITTE_SHA256_AUS_PLAY_CONSOLE_EINTRAGEN"]
-    }
+﻿[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.petconnect24.app",
+    "sha256_cert_fingerprints": [
+      "6A:8D:09:F3:48:FC:0F:D0:8D:D0:EC:68:D5:DB:2C:D6:75:8D:F9:01:32:3D:60:50:51:03:EF:D5:C7:59:71:CB"
+    ]
   }
-]
+}]
