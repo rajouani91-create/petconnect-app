@@ -20,6 +20,7 @@ export function MoreAboutPet({ pet }: { pet: PetRow }) {
         <li><Link to={`${base}/versicherung`} className="btn btn-secondary more-btn">{t('mIns')}</Link></li>
         <li><Link to={`${base}/betreuung`} className="btn btn-secondary more-btn">{t('mSit')}</Link></li>
         <li><Link to={`${base}/gesundheitsakte`} className="btn btn-secondary more-btn">{t('mVault')}</Link></li>
+        <li><Link to={`${base}/vorgeschichte`} className="btn btn-secondary more-btn">{t('hsTitle')}</Link></li>
         <li><Link to={{ hash: 'gewicht' }} className="btn btn-ghost more-btn">{t('wkOpen')}</Link></li>
       </ul>
     </section>

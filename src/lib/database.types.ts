@@ -903,6 +903,59 @@ export type Database = {
           },
         ]
       }
+      pet_history: {
+        Row: {
+          allergies: string | null
+          chronic: string | null
+          neutered: string | null
+          origin: string | null
+          other: string | null
+          past_illness: string | null
+          past_medication: string | null
+          pet_id: string
+          previous_practice: string | null
+          surgeries: string | null
+          travel: string | null
+          updated_at: string
+          updated_by: string | null
+          housing: string | null
+          with_since: string | null
+        }
+        Insert: {
+          allergies?: string | null
+          chronic?: string | null
+          neutered?: string | null
+          origin?: string | null
+          other?: string | null
+          past_illness?: string | null
+          past_medication?: string | null
+          pet_id: string
+          previous_practice?: string | null
+          surgeries?: string | null
+          travel?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          housing?: string | null
+          with_since?: string | null
+        }
+        Update: {
+          allergies?: string | null
+          chronic?: string | null
+          neutered?: string | null
+          origin?: string | null
+          other?: string | null
+          past_illness?: string | null
+          past_medication?: string | null
+          previous_practice?: string | null
+          surgeries?: string | null
+          travel?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          housing?: string | null
+          with_since?: string | null
+        }
+        Relationships: []
+      }
       weights: {
         Row: {
           created_at: string

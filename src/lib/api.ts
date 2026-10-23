@@ -296,6 +296,27 @@ function checkChanged<T>(res: { data: T[] | null; error: PostgrestError | null }
   return first;
 }
 
+export type HistoryRow = Database['public']['Tables']['pet_history']['Row'];
+/** Halterangaben zur Vorgeschichte; Felder sind alle optional */
+export type HistoryInput = Partial<Omit<HistoryRow, 'pet_id' | 'updated_at' | 'updated_by'>>;
+
+/** Vorgeschichte eines Tieres (null, wenn noch nichts eingetragen ist) */
+export async function getHistory(petId: string): Promise<HistoryRow | null> {
+  return checkMaybe(await supabase.from('pet_history').select('*').eq('pet_id', petId).maybeSingle());
+}
+
+/** Speichert die Halterangaben. Die Zeile wird beim ersten Speichern angelegt. */
+export async function saveHistory(petId: string, v: HistoryInput): Promise<HistoryRow> {
+  const { data: auth } = await supabase.auth.getUser();
+  return check(
+    await supabase
+      .from('pet_history')
+      .upsert({ ...v, pet_id: petId, updated_by: auth.user?.id ?? null, updated_at: new Date().toISOString() }, { onConflict: 'pet_id' })
+      .select('*')
+      .single(),
+  );
+}
+
 export async function listWeights(petId: string): Promise<WeightRow[]> {
   return check(
     await supabase.from('weights').select('*').eq('pet_id', petId).order('measured_on', { ascending: false }).order('created_at', { ascending: false }),

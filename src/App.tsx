@@ -21,6 +21,7 @@ import { EmergencyCard } from './pages/more/EmergencyCard';
 import { Insurance } from './pages/more/Insurance';
 import { Sitting } from './pages/more/Sitting';
 import { HealthRecord } from './pages/more/HealthRecord';
+import { History } from './pages/more/History';
 import { SitterPublic } from './pages/SitterPublic';
 import { Practices } from './pages/Practices';
 import { Notifications } from './pages/more/Notifications';
@@ -61,6 +62,7 @@ export function App() {
               <Route path="tier/:petId/versicherung" element={<Insurance />} />
               <Route path="tier/:petId/betreuung" element={<Sitting />} />
               <Route path="tier/:petId/gesundheitsakte" element={<HealthRecord />} />
+              <Route path="tier/:petId/vorgeschichte" element={<History />} />
               <Route path="praxen" element={<Practices />} />
               <Route path="erinnerungen" element={<Reminders />} />
               <Route path="alltag" element={<Routine />} />
