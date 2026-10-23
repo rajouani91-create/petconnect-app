@@ -494,7 +494,7 @@ export const ru: Messages = {
   memberRemoveL: "Удалить {name}",
   memberRemoveTitle: "Удалить помощника?",
   moreAreas: "Другие разделы",
-  moreTitle: "Ещё о питомце {n}",
+  moreTitle: "Ещё",
   nav_main: "Основная навигация",
   nav_more: "Ещё",
   nav_notfall: "Экстренно",

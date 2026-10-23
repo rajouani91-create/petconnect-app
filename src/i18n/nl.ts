@@ -494,7 +494,7 @@ export const nl: Messages = {
   memberRemoveL: "{name} verwijderen",
   memberRemoveTitle: "Medeverzorger verwijderen?",
   moreAreas: "Meer onderdelen",
-  moreTitle: "Meer over {n}",
+  moreTitle: "Meer",
   nav_main: "Hoofdnavigatie",
   nav_more: "Meer",
   nav_notfall: "Noodgeval",

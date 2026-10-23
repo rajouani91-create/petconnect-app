@@ -494,7 +494,7 @@ export const ar: Messages = {
   memberRemoveL: "إزالة {name}",
   memberRemoveTitle: "إزالة المشارك في الرعاية؟",
   moreAreas: "أقسام أخرى",
-  moreTitle: "المزيد عن {n}",
+  moreTitle: "المزيد",
   nav_main: "التنقل الرئيسي",
   nav_more: "المزيد",
   nav_notfall: "الطوارئ",

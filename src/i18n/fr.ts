@@ -494,7 +494,7 @@ export const fr: Messages = {
   memberRemoveL: "Retirer {name}",
   memberRemoveTitle: "Retirer cette personne ?",
   moreAreas: "Autres rubriques",
-  moreTitle: "Plus sur {n}",
+  moreTitle: "Plus",
   nav_main: "Navigation principale",
   nav_more: "Plus",
   nav_notfall: "Urgence",

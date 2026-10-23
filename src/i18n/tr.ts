@@ -494,7 +494,7 @@ export const tr: Messages = {
   memberRemoveL: "{name} kişisini kaldır",
   memberRemoveTitle: "Bakım ortağı kaldırılsın mı?",
   moreAreas: "Diğer bölümler",
-  moreTitle: "{n} hakkında daha fazlası",
+  moreTitle: "Daha Fazla",
   nav_main: "Ana gezinme",
   nav_more: "Daha fazla",
   nav_notfall: "Acil",

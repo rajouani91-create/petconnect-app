@@ -493,7 +493,7 @@ export const de = {
   memberRemoveL: "{name} entfernen",
   memberRemoveTitle: "Mitbetreuung beenden?",
   moreAreas: "Weitere Bereiche",
-  moreTitle: "Mehr zu {n}",
+  moreTitle: "Mehr",
   nav_main: "Hauptnavigation",
   nav_more: "Mehr",
   nav_notfall: "Notfall",
