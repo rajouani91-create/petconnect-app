@@ -786,14 +786,17 @@ export interface LabValueRow {
   created_at: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sb = supabase as any;
+
 export async function listLabValues(petId: string): Promise<LabValueRow[]> {
-  return check(
-    await (supabase as any).from('lab_values')
-      .select('*')
-      .eq('pet_id', petId)
-      .order('measured_on', { ascending: false })
-      .order('created_at', { ascending: false }),
-  );
+  const res = await sb.from('lab_values')
+    .select('*')
+    .eq('pet_id', petId)
+    .order('measured_on', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (res.error) throw new ApiError(res.error);
+  return (res.data ?? []) as LabValueRow[];
 }
 
 export async function addLabValue(
@@ -801,23 +804,25 @@ export async function addLabValue(
   data: Omit<LabValueRow, 'id' | 'pet_id' | 'owner_id' | 'created_at'>,
 ): Promise<LabValueRow> {
   const { data: { user } } = await supabase.auth.getUser();
-  return check(
-    await (supabase as any).from('lab_values')
-      .insert({ pet_id: petId, owner_id: user!.id, ...data })
-      .select('*')
-      .single(),
-  );
+  const res = await sb.from('lab_values')
+    .insert({ pet_id: petId, owner_id: user!.id, ...data })
+    .select('*')
+    .single();
+  if (res.error) throw new ApiError(res.error);
+  return res.data as LabValueRow;
 }
 
 export async function updateLabValue(
   id: string,
   data: Omit<LabValueRow, 'id' | 'pet_id' | 'owner_id' | 'created_at'>,
 ): Promise<LabValueRow> {
-  return checkChanged(
-    await (supabase as any).from('lab_values').update(data).eq('id', id).select('*'),
-  );
+  const res = await sb.from('lab_values').update(data).eq('id', id).select('*');
+  if (res.error) throw new ApiError(res.error);
+  if (!res.data?.length) throw new ApiError({ message: 'Nicht gefunden' });
+  return res.data[0] as LabValueRow;
 }
 
 export async function deleteLabValue(id: string): Promise<void> {
-  checkChanged(await (supabase as any).from('lab_values').delete().eq('id', id).select('id'));
+  const res = await sb.from('lab_values').delete().eq('id', id).select('id');
+  if (res.error) throw new ApiError(res.error);
 }
