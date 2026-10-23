@@ -927,6 +927,18 @@ export type Database = {
         Update: { user_id?: string; status?: string; reason?: string | null; changed_by?: string | null; changed_at?: string }
         Relationships: []
       }
+      announcements: {
+        Row: { id: string; body: string; starts_at: string; ends_at: string; created_by: string | null; created_at: string }
+        Insert: { id?: string; body: string; starts_at: string; ends_at: string; created_by?: string | null; created_at?: string }
+        Update: { id?: string; body?: string; starts_at?: string; ends_at?: string; created_by?: string | null; created_at?: string }
+        Relationships: []
+      }
+      announcement_dismissals: {
+        Row: { user_id: string; announcement_id: string; dismissed_at: string }
+        Insert: { user_id?: string; announcement_id: string; dismissed_at?: string }
+        Update: { user_id?: string; announcement_id?: string; dismissed_at?: string }
+        Relationships: []
+      }
       pet_history: {
         Row: {
           allergies: string | null

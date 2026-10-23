@@ -1,6 +1,7 @@
 import { Link, Navigate, Outlet, useLocation } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { usePets } from '../pets/PetsProvider';
+import { AnnouncementBanner } from './AnnouncementBanner';
 import { BottomNav } from './BottomNav';
 import { IconEmergency, LogoMark } from './Icons';
 import { Loading } from './Loading';
@@ -20,6 +21,7 @@ export function AppShell() {
 
   return (
     <div className="shell">
+      <AnnouncementBanner />
       <a className="skip-link" href="#main">
         {t('skipToContent')}
       </a>

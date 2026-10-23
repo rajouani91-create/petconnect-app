@@ -1111,6 +1111,20 @@ export const de = {
   ticketsFail: "Das Ticket konnte nicht gespeichert werden.",
   ticketsRequired: "Bitte geben Sie Betreff und Inhalt an.",
   ticketsTooLong: "Eine Eingabe ist zu lang.",
+  annTitle: "Ankündigungen",
+  annBannerClose: "Schließen",
+  annCreateTitle: "Ankündigung anlegen",
+  annBody: "Text (höchstens 300 Zeichen)",
+  annStart: "Beginn",
+  annEnd: "Ende",
+  annCreate: "Ankündigung speichern",
+  annEmpty: "Keine Ankündigungen.",
+  annRequired: "Bitte geben Sie Text, Beginn und Ende an.",
+  annOrder: "Das Ende muss nach dem Beginn liegen.",
+  annSaved: "Ankündigung gespeichert.",
+  annFail: "Die Ankündigung konnte nicht gespeichert werden.",
+  annDelete: "Löschen",
+  annDeleted: "Ankündigung gelöscht.",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;

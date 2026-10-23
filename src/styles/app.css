@@ -592,3 +592,17 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
   .mo-print { position: absolute; left: 0; top: 0; width: 100%; padding: 1rem; }
   .no-print { display: none !important; }
 }
+
+/* Ankündigungs-Banner oben in der App (Auftrag 15) */
+.announcement {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #fff7e6;
+  border-bottom: 1px solid #f0d9a8;
+}
+.announcement p {
+  margin: 0;
+  flex: 1;
+}
