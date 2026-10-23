@@ -4,6 +4,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import { LANGUAGES, isLang, type Lang } from '../i18n';
 import { useAuth } from '../auth/AuthProvider';
 import { updateLanguage } from '../lib/api';
+import { staffRoleFor } from '../lib/staff';
 import { Field } from '../components/Field';
 import { FamilyCard } from '../components/FamilyCard';
 import { Link } from 'react-router';
@@ -18,6 +19,17 @@ export function More() {
   const [busy, setBusy] = useState(false);
   const [askDelete, setAskDelete] = useState(false);
   const { hash } = useLocation();
+  const [isStaff, setIsStaff] = useState(false);
+
+  // Admin-/Support-Zugang nur für Konten mit Rolle anzeigen
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    staffRoleFor(user.id)
+      .then((role) => { if (alive) setIsStaff(role !== null); })
+      .catch(() => { if (alive) setIsStaff(false); });
+    return () => { alive = false; };
+  }, [user]);
 
   // „Personen verwalten“ auf der Tier-Seite springt zur Familie-Karte
   useEffect(() => {
@@ -56,6 +68,7 @@ export function More() {
           <li><Link to="/notfall" className="btn btn-secondary more-btn"><IconEmergency size={20} />{t('nav_notfall')}</Link></li>
           <li><Link to="/mehr/benachrichtigungen" className="btn btn-secondary more-btn"><IconBell size={20} />{t('pnTitle')}</Link></li>
           <li><Link to="/mehr/monatsuebersicht" className="btn btn-secondary more-btn">{t('moTitle')}</Link></li>
+          {isStaff && <li><Link to="/admin" className="btn btn-secondary more-btn">{t('adminTitle')}</Link></li>}
         </ul>
       </nav>
 
