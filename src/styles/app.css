@@ -261,7 +261,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .check[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: var(--surface); }
 
 /* ---------- Alltag ---------- */
-.routine-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.routine-text { flex: 1 1 11rem; min-width: 0; display: flex; flex-direction: column; }
 .add-form { border-top: 1px solid var(--line); padding-top: var(--s-4); }
 @media (max-width: 380px) {
   .routine-row { flex-wrap: wrap; }
@@ -300,7 +300,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .auth { min-height: 100dvh; display: flex; flex-direction: column; }
 .auth-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) var(--s-4); }
 .lang-select select { width: auto; min-width: 9rem; }
-.auth-main { flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: var(--s-4) var(--s-4) var(--s-7); }
+.auth-main { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; width: 100%; padding: var(--s-4) var(--s-4) var(--s-7); }
 .auth-card { width: 100%; max-width: 440px; padding: var(--s-5); gap: var(--s-4); }
 .auth-sub { margin-top: calc(var(--s-3) * -1); }
 .auth-alt { text-align: center; color: var(--muted); }
@@ -541,12 +541,14 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .push-state-blocked { color: var(--crit); }
 .device-row .record-title { font-weight: 600; }
 .legal-page h2 { margin-top: var(--s-4); }
-.auth-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-3); margin-top: var(--s-4); }
+.auth-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-3); margin-top: auto; padding-top: var(--s-5); width: 100%; }
 /* Tagesplan: Medikamente aus der Medikation, alte Medikamenten-Einträge */
 .plan-med-link { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; min-height: 44px; display: inline-flex; align-items: center; }
 .plan-med-meta { display: flex; flex-wrap: wrap; gap: var(--s-1); margin-top: var(--s-1); }
 .pill-med { background: var(--brand-soft); color: var(--brand); }
 .routine-row.plan-med.is-done .plan-med-link { color: var(--muted); }
+.routine-row { flex-wrap: wrap; }
+.routine-row.plan-med .plan-med-link { overflow-wrap: anywhere; min-height: 44px; }
 .legacy-note { color: var(--warn-ink); background: var(--warn-soft); padding: var(--s-1) var(--s-2); border-radius: var(--r); margin-top: var(--s-1); }
 .push-note { margin-top: var(--s-3); }
 .radio-col { display: flex; flex-direction: column; gap: var(--s-2); }
@@ -565,3 +567,20 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .intro-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-3); }
 .intro-list li { position: relative; padding-inline-start: var(--s-5); line-height: 1.5; }
 .intro-list li::before { content: ""; position: absolute; inset-inline-start: 0; top: 0.55em; width: 10px; height: 10px; border-radius: 50%; background: var(--accent, #2563eb); }
+
+/* Erinnerungen: Art-Badges (Impfung, Medikation, übrige) */
+.rem-kind { font-weight: 600; }
+.rem-kind-vaccination { background: var(--surface-2); color: var(--fg); border: 1px solid var(--brand); }
+.rem-kind-medication { background: var(--brand-soft); color: var(--brand); }
+.rem-kind-deworming, .rem-kind-flea_tick, .rem-kind-checkup, .rem-kind-grooming, .rem-kind-other { background: var(--surface-2); color: var(--muted); }
+
+/* Erinnerungen: Titel öffnet Details */
+.rem-open { background: none; border: 0; padding: 0; color: inherit; font: inherit; font-weight: 600; text-align: start; text-decoration: underline; text-underline-offset: 3px; min-height: 44px; cursor: pointer; overflow-wrap: anywhere; }
+.rem-open:focus-visible { outline: 3px solid var(--focus, #2563eb); outline-offset: 2px; }
+.rem-detail { display: flex; flex-direction: column; gap: var(--s-3); margin: 0; }
+.rem-detail > div { display: flex; flex-direction: column; gap: 2px; }
+.rem-detail dt { margin: 0; }
+.rem-detail dd { margin: 0; }
+
+/* Termine: Routenlinks zu Karten-Apps */
+.appt-nav { display: flex; flex-wrap: wrap; gap: var(--s-3); min-height: 44px; align-items: center; }

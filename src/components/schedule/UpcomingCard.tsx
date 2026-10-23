@@ -71,6 +71,12 @@ export function UpcomingCard({ onStatus }: { onStatus: (text: string) => void })
                   <span className="appt-when mono">{formatDateTime(a.starts_at, locale)}</span>
                   <span className="record-title">{a.title}</span>
                   <span className="muted small">{[isApptKind(a.kind) ? t(APPT_KIND_LABEL[a.kind]) : a.kind, names.get(a.pet_id), a.location].filter(Boolean).join(' · ')}</span>
+                  {a.location && (
+                    <span className="appt-nav small">
+                      <a className="link" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(a.location)}`} target="_blank" rel="noopener noreferrer">Google Maps</a>
+                      <a className="link" href={`https://maps.apple.com/?daddr=${encodeURIComponent(a.location)}`} target="_blank" rel="noopener noreferrer">Apple Maps</a>
+                    </span>
+                  )}
                 </div>
               </li>
             ))}

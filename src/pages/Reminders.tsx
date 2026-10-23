@@ -93,6 +93,7 @@ export function Reminders() {
   const [mode, setMode] = useState<Mode>(null);
   const [toDelete, setToDelete] = useState<ReminderRow | null>(null);
   const [doneOther, setDoneOther] = useState<ReminderRow | null>(null);
+  const [detail, setDetail] = useState<ReminderRow | null>(null);
   const [status, setStatus] = useStatus();
   const { register, focusLater } = useFocusAfter();
 
@@ -148,6 +149,7 @@ export function Reminders() {
       onEdit={() => { setMode({ kind: 'edit', row: r }); setStatus(''); }}
       onDelete={() => setToDelete(r)}
       onExport={() => exportIcs(r)}
+      onOpen={() => setDetail(r)}
     />
   );
 
@@ -157,6 +159,73 @@ export function Reminders() {
         <h1 ref={register('top')} tabIndex={-1}>{t('nav_reminders')}</h1>
         <p className="muted">{t('rmSub')}</p>
       </header>
+
+      <Dialog
+        open={detail !== null}
+        title={detail?.title ?? ''}
+        onClose={() => setDetail(null)}
+        actions={
+          detail && (
+            <>
+              <button type="button" className="btn btn-ghost" onClick={() => setDetail(null)}>{t('cancelBtn')}</button>
+              {!detail.done_at && (
+                <button type="button" className="btn btn-ghost" onClick={() => { exportIcs(detail); }}>
+                  <IconCalendar size={18} />
+                  {t('calExport')}
+                </button>
+              )}
+              {editable.has(detail.pet_id) && (
+                <button type="button" className="btn btn-secondary" onClick={() => { setMode({ kind: 'edit', row: detail }); setStatus(''); setDetail(null); }}>
+                  {t('editBtn')}
+                </button>
+              )}
+              {editable.has(detail.pet_id) && !detail.done_at && (
+                <button type="button" className="btn btn-primary" onClick={() => { void complete(detail, today); setDetail(null); }}>
+                  <IconCheck size={18} />
+                  {t('rmComplete')}
+                </button>
+              )}
+            </>
+          )
+        }
+      >
+        {detail && (
+          <dl className="rem-detail">
+            <div>
+              <dt className="muted small">{t('rmDueLabel')}</dt>
+              <dd>{t('rmDueOn', { d: formatIsoDateShort(detail.due_on, lang) })}</dd>
+            </div>
+            <div>
+              <dt className="muted small">{t('rmStatusLabel')}</dt>
+              <dd>{t(reminderStatus(detail.due_on, today).key, { n: reminderStatus(detail.due_on, today).n })}</dd>
+            </div>
+            <div>
+              <dt className="muted small">{t('rmRepeatLabel')}</dt>
+              <dd>{detail.repeat_days === null ? t('rmOnce') : t('rmEvery', { n: detail.repeat_days })}</dd>
+            </div>
+            {detail.last_done_on && (
+              <div>
+                <dt className="muted small">{t('rmLastLabel')}</dt>
+                <dd>{formatIsoDateShort(detail.last_done_on, lang)}</dd>
+              </div>
+            )}
+            <div>
+              <dt className="muted small">{t('rmKindLabel')}</dt>
+              <dd>
+                {isRemKind(detail.kind) ? t(REM_KIND_LABEL[detail.kind]) : detail.kind}
+                {' · '}
+                {names.get(detail.pet_id) ?? ''}
+              </dd>
+            </div>
+            {detail.note && (
+              <div>
+                <dt className="muted small">{t('rmNoteLabel')}</dt>
+                <dd className="appt-note">{detail.note}</dd>
+              </div>
+            )}
+          </dl>
+        )}
+      </Dialog>
 
       {!anyEditable && pets.length > 0 && <p className="notice notice-info">{t('rmViewOnly')}</p>}
       <PushHint />
@@ -261,6 +330,7 @@ export function ReminderItem({
   onEdit,
   onDelete,
   onExport,
+  onOpen,
   compact = false,
 }: {
   r: ReminderRow;
@@ -274,6 +344,7 @@ export function ReminderItem({
   onEdit?: () => void;
   onDelete?: () => void;
   onExport?: () => void;
+  onOpen?: () => void;
   compact?: boolean;
 }) {
   const { t, lang } = useI18n();
@@ -283,12 +354,13 @@ export function ReminderItem({
     <li className={`record-row rem-row${done ? ' is-closed' : ''}`}>
       <div className="record-main">
         <span className="record-title">
-          {r.title}
+          {onOpen ? <button type="button" className="rem-open" onClick={onOpen}>{r.title}</button> : r.title}
+          {isRemKind(r.kind) && <span className={`pill rem-kind rem-kind-${r.kind}`}>{t(REM_KIND_LABEL[r.kind])}</span>}
           {!done && <span className={`pill rem-st-${st.key === 'rmToday' ? 'today' : st.key.startsWith('rmOverdue') ? 'overdue' : 'later'}`}>{t(st.key, { n: st.n })}</span>}
           {done && <span className="pill pill-ok">{t('rmDoneLabel')}</span>}
         </span>
         <span className="muted small">
-          {[isRemKind(r.kind) ? t(REM_KIND_LABEL[r.kind]) : r.kind, petName].filter(Boolean).join(' · ')}
+          {petName}
         </span>
         <span className="muted small">
           {[
