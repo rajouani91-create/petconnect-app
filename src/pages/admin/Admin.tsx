@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Navigate } from 'react-router';
 import { useAuth } from '../../auth/AuthProvider';
 import { Loading } from '../../components/Loading';
+import { Tickets } from './Tickets';
 import { useI18n } from '../../i18n/I18nProvider';
 import {
   MAX_REASON,
@@ -212,6 +213,7 @@ export function Admin() {
           </button>
         </section>
       )}
+      {user && <Tickets staffId={user.id} />}
     </main>
   );
 }

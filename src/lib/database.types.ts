@@ -916,9 +916,9 @@ export type Database = {
         Relationships: []
       }
       support_tickets: {
-        Row: { id: string; user_id: string | null; subject: string; body: string; status: string; created_by_staff: string | null; created_at: string; updated_at: string }
-        Insert: { id?: string; user_id?: string | null; subject: string; body: string; status?: string; created_by_staff?: string | null; created_at?: string; updated_at?: string }
-        Update: { id?: string; user_id?: string | null; subject?: string; body?: string; status?: string; created_by_staff?: string | null; created_at?: string; updated_at?: string }
+        Row: { id: string; user_id: string | null; sender: string | null; subject: string; body: string; status: string; staff_note: string | null; created_by_staff: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id?: string | null; sender?: string | null; subject: string; body: string; status?: string; staff_note?: string | null; created_by_staff?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string | null; sender?: string | null; subject?: string; body?: string; status?: string; staff_note?: string | null; created_by_staff?: string | null; created_at?: string; updated_at?: string }
         Relationships: []
       }
       account_status: {

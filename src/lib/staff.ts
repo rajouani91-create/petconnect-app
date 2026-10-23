@@ -72,3 +72,58 @@ export async function sendResetLink(target: string): Promise<void> {
   const { error } = await supabase.functions.invoke('staff-reset-link', { body: { target } });
   if (error) throw error;
 }
+
+export type TicketStatus = 'open' | 'in_progress' | 'closed';
+export type TicketRow = {
+  id: string;
+  sender: string | null;
+  subject: string;
+  body: string;
+  status: TicketStatus;
+  staff_note: string | null;
+  created_at: string;
+};
+
+export const TICKET_LIMITS = { subject: 200, body: 4000, sender: 200, note: 2000 } as const;
+
+/** Pflichtfelder und Obergrenzen beim manuellen Anlegen. Liefert null, wenn alles passt. */
+export function ticketInputError(input: { sender: string; subject: string; body: string; note: string }): 'required' | 'too_long' | null {
+  if (input.subject.trim().length === 0 || input.body.trim().length === 0) return 'required';
+  if (
+    input.subject.trim().length > TICKET_LIMITS.subject ||
+    input.body.trim().length > TICKET_LIMITS.body ||
+    input.sender.trim().length > TICKET_LIMITS.sender ||
+    input.note.trim().length > TICKET_LIMITS.note
+  )
+    return 'too_long';
+  return null;
+}
+
+export async function listTickets(status: TicketStatus | 'all'): Promise<TicketRow[]> {
+  let query = supabase
+    .from('support_tickets')
+    .select('id, sender, subject, body, status, staff_note, created_at')
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (status !== 'all') query = query.eq('status', status);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as TicketRow[];
+}
+
+export async function createTicket(input: { sender: string; subject: string; body: string; status: TicketStatus; note: string }, staffId: string): Promise<void> {
+  const { error } = await supabase.from('support_tickets').insert({
+    sender: input.sender.trim() || null,
+    subject: input.subject.trim(),
+    body: input.body.trim(),
+    status: input.status,
+    staff_note: input.note.trim() || null,
+    created_by_staff: staffId,
+  });
+  if (error) throw error;
+}
+
+export async function updateTicket(id: string, patch: { status?: TicketStatus; staff_note?: string | null }): Promise<void> {
+  const { error } = await supabase.from('support_tickets').update(patch).eq('id', id);
+  if (error) throw error;
+}
