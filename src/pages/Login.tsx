@@ -4,6 +4,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import { supabase } from '../lib/supabase';
 import { emailError, hasErrors, type Errors, type FieldError } from '../lib/validate';
 import { authErrorKey } from '../auth/authErrors';
+import { readPendingInvite } from '../lib/sharing';
 import { AuthLayout } from '../components/AuthLayout';
 import { Field } from '../components/Field';
 
@@ -18,6 +19,9 @@ export function Login() {
   const [formError, setFormError] = useState<FieldError | null>(null);
   const [resetSent, setResetSent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  // Die Einführung zeigt sich nur ohne wartende Einladung; mit Einladung geht es direkt zur Anmeldung.
+  const [intro, setIntro] = useState(() => readPendingInvite() === null);
   const emailRef = useRef<HTMLInputElement>(null);
   const pwRef = useRef<HTMLInputElement>(null);
 
@@ -83,6 +87,24 @@ export function Login() {
     </Field>
   );
 
+  if (mode === 'login' && intro) {
+    return (
+      <AuthLayout title={t('intro_title')} sub={t('intro_sub')}>
+        <ul className="intro-list">
+          <li>{t('intro_f1')}</li>
+          <li>{t('intro_f2')}</li>
+          <li>{t('intro_f3')}</li>
+        </ul>
+        <button type="button" className="btn btn-primary btn-block" onClick={() => setIntro(false)}>
+          {t('intro_cta')}
+        </button>
+        <p className="auth-alt">
+          {t('noAccount')} <Link to="/registrieren">{t('toRegister')}</Link>
+        </p>
+      </AuthLayout>
+    );
+  }
+
   if (mode === 'reset') {
     return (
       <AuthLayout title={t('resetTitle')} sub={t('resetHint')}>
@@ -118,17 +140,34 @@ export function Login() {
         {emailField}
         <Field id="login-pw" label={t('password')} error={errors.password} required>
           {(a) => (
-            <input
-              {...a}
-              ref={pwRef}
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setErrors((p) => ({ ...p, password: undefined }));
-              }}
-            />
+            <div className="pw-wrap">
+              <input
+                {...a}
+                ref={pwRef}
+                type={showPw ? 'text' : 'password'}
+                autoComplete="current-password"
+                autoCapitalize="none"
+                spellCheck={false}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setErrors((p) => ({ ...p, password: undefined }));
+                }}
+              />
+              <button
+                type="button"
+                className="pw-toggle"
+                aria-label={t(showPw ? 'hidePw' : 'showPw')}
+                title={t(showPw ? 'hidePw' : 'showPw')}
+                onClick={() => setShowPw((v) => !v)}
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                  <circle cx="12" cy="12" r="3" />
+                  {showPw && <path d="M3 3l18 18" />}
+                </svg>
+              </button>
+            </div>
           )}
         </Field>
         <button type="button" className="link link-end" onClick={() => { setMode('reset'); setErrors({}); setFormError(null); }}>
