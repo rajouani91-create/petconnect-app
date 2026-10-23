@@ -27,6 +27,7 @@ import { Practices } from './pages/Practices';
 import { Notifications } from './pages/more/Notifications';
 import { MonthlyReport } from './pages/more/MonthlyReport';
 import { Imprint, Privacy } from './pages/Legal';
+import DeleteAccount from './pages/DeleteAccount';
 import { UpdateBanner } from './components/UpdateBanner';
 import { Admin } from './pages/admin/Admin';
 
@@ -44,6 +45,7 @@ export function App() {
             {/* Öffentlich: Pflichtangaben (Play Store) */}
             <Route path="/datenschutz" element={<Privacy />} />
             <Route path="/impressum" element={<Imprint />} />
+            <Route path="/konto-loeschen" element={<DeleteAccount />} />
             <Route
               element={
                 <RequireAuth>
