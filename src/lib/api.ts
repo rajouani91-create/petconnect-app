@@ -120,6 +120,12 @@ export async function listDone(itemIds: readonly string[], date: string): Promis
   return new Map(rows.map((r) => [r.routine_item_id, r.owner_id]));
 }
 
+/** Erledigte Alltags-Einträge in einem Zeitraum (Monatsübersicht) */
+export async function listRoutineDoneRange(itemIds: readonly string[], from: string, to: string): Promise<{ routine_item_id: string; done_on: string }[]> {
+  if (itemIds.length === 0) return [];
+  return check(await supabase.from('routine_done').select('routine_item_id, done_on').in('routine_item_id', [...itemIds]).gte('done_on', from).lte('done_on', to));
+}
+
 export async function markDone(itemId: string, date: string): Promise<void> {
   const res = await supabase.from('routine_done').upsert(
     { routine_item_id: itemId, done_on: date },
@@ -682,6 +688,11 @@ export async function deleteMedication(id: string): Promise<void> {
 export async function listDoses(petIds: readonly string[], day: string): Promise<DoseRow[]> {
   if (petIds.length === 0) return [];
   return check(await supabase.from('medication_doses').select('*').in('pet_id', [...petIds]).eq('scheduled_on', day));
+}
+
+/** Gaben eines Tieres in einem Zeitraum (Monatsübersicht) */
+export async function listDosesRange(petId: string, from: string, to: string): Promise<DoseRow[]> {
+  return check(await supabase.from('medication_doses').select('*').eq('pet_id', petId).gte('scheduled_on', from).lte('scheduled_on', to));
 }
 
 /** „Gegeben“: Person und Zeitpunkt setzt die Datenbank. Doppelt → 23505 (isDuplicate). */

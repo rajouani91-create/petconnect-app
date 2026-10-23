@@ -584,3 +584,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 
 /* Termine: Routenlinks zu Karten-Apps */
 .appt-nav { display: flex; flex-wrap: wrap; gap: var(--s-3); min-height: 44px; align-items: center; }
+
+/* Druckansicht Monatsübersicht (Als PDF speichern über den Browser) */
+@media print {
+  body * { visibility: hidden; }
+  .mo-print, .mo-print * { visibility: visible; }
+  .mo-print { position: absolute; left: 0; top: 0; width: 100%; padding: 1rem; }
+  .no-print { display: none !important; }
+}

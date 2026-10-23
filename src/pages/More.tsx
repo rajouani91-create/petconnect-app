@@ -55,6 +55,7 @@ export function More() {
           <li><Link to="/alltag" className="btn btn-secondary more-btn"><IconList size={20} />{t('nav_routine')}</Link></li>
           <li><Link to="/notfall" className="btn btn-secondary more-btn"><IconEmergency size={20} />{t('nav_notfall')}</Link></li>
           <li><Link to="/mehr/benachrichtigungen" className="btn btn-secondary more-btn"><IconBell size={20} />{t('pnTitle')}</Link></li>
+          <li><Link to="/mehr/monatsuebersicht" className="btn btn-secondary more-btn">{t('moTitle')}</Link></li>
         </ul>
       </nav>
 
