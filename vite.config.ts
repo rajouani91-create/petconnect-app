@@ -9,7 +9,7 @@ export default defineConfig({
   server: { port: 3000, strictPort: true },
   preview: { port: 3000, strictPort: true },
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'supabase/**/*.test.ts'],
     environment: 'node',
   },
 });

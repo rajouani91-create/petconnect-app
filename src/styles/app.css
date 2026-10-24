@@ -612,3 +612,18 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
   margin: 0;
   flex: 1;
 }
+
+/* KI-Assistent */
+.ai-pet { display: flex; flex-direction: column; gap: var(--s-1); font-weight: 600; }
+.ai-pet select { font-weight: 400; }
+.ai-log { display: flex; flex-direction: column; gap: var(--s-3); min-height: 8rem; }
+.ai-suggest { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.ai-msg { display: flex; flex-direction: column; gap: var(--s-1); padding: var(--s-3) var(--s-4); border-radius: var(--r); border: 1px solid var(--line, var(--border, currentColor)); max-width: 100%; }
+.ai-user { background: var(--brand-soft); align-self: flex-end; }
+.ai-assistant { background: var(--surface, transparent); align-self: flex-start; }
+.ai-who { font-size: 0.8rem; font-weight: 600; opacity: 0.75; margin: 0; }
+.ai-text { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.ai-meta { font-size: 0.8rem; opacity: 0.8; margin: 0; }
+.ai-wait { opacity: 0.8; }
+.ai-form textarea { width: 100%; resize: vertical; min-height: 4.5rem; }
+.ai-actions { display: flex; gap: var(--s-2); flex-wrap: wrap; }

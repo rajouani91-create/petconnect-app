@@ -68,6 +68,7 @@ export function More() {
           <li><Link to="/notfall" className="btn btn-secondary more-btn"><IconEmergency size={20} />{t('nav_notfall')}</Link></li>
           <li><Link to="/mehr/benachrichtigungen" className="btn btn-secondary more-btn"><IconBell size={20} />{t('pnTitle')}</Link></li>
           <li><Link to="/mehr/monatsuebersicht" className="btn btn-secondary more-btn">{t('moTitle')}</Link></li>
+          <li><Link to="/mehr/assistent" className="btn btn-secondary more-btn">{t('aiMenu')}</Link></li>
           {isStaff && <li><Link to="/admin" className="btn btn-secondary more-btn">{t('adminTitle')}</Link></li>}
         </ul>
       </nav>
