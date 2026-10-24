@@ -2,7 +2,7 @@
 // Autocomplete-Dropdown für Rassenname im PetNew-Formular
 // Verwendung: <BreedSuggest species="dog" value={breed} onChange={setBreed} />
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useBreedList, filterBreedSuggestions, type BreedSpecies } from '../hooks/useBreedInfo';
 
 interface Props {
@@ -13,14 +13,33 @@ interface Props {
   label?: string;
 }
 
+interface DropdownPos {
+  top: number;
+  left: number;
+  width: number;
+}
+
 export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse eingeben…', label = 'Rasse' }: Props) {
   const { breeds, loading } = useBreedList(species);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(value);
+  const [pos, setPos] = useState<DropdownPos | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Sync nach außen
   useEffect(() => { setQuery(value); }, [value]);
+
+  // Position des Dropdowns berechnen (fixed, relativ zum Viewport)
+  const updatePos = useCallback(() => {
+    if (!inputRef.current) return;
+    const rect = inputRef.current.getBoundingClientRect();
+    setPos({
+      top: rect.bottom + window.scrollY + 4,
+      left: rect.left + window.scrollX,
+      width: rect.width,
+    });
+  }, []);
 
   // Schließen bei Klick außerhalb
   useEffect(() => {
@@ -33,13 +52,32 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
     return () => document.removeEventListener('mousedown', handle);
   }, []);
 
+  // Position aktualisieren beim Scrollen / Resize
+  useEffect(() => {
+    if (!open) return;
+    window.addEventListener('scroll', updatePos, true);
+    window.addEventListener('resize', updatePos);
+    return () => {
+      window.removeEventListener('scroll', updatePos, true);
+      window.removeEventListener('resize', updatePos);
+    };
+  }, [open, updatePos]);
+
   const suggestions = species ? filterBreedSuggestions(breeds, query) : [];
 
   function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
     const v = e.target.value;
     setQuery(v);
     onChange(v);
+    updatePos();
     setOpen(true);
+  }
+
+  function handleFocus() {
+    if (query.length >= 2) {
+      updatePos();
+      setOpen(true);
+    }
   }
 
   function handleSelect(name: string) {
@@ -68,17 +106,28 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
     <div className="form-field breed-suggest" ref={containerRef}>
       <label className="form-label">{label}</label>
       <input
+        ref={inputRef}
         type="text"
         className="form-input"
         value={query}
         placeholder={loading ? 'Lädt Rassen…' : placeholder}
         disabled={loading}
         onChange={handleInput}
-        onFocus={() => query.length >= 2 && setOpen(true)}
+        onFocus={handleFocus}
         autoComplete="off"
       />
-      {open && suggestions.length > 0 && (
-        <ul className="breed-suggest-list" role="listbox">
+      {open && suggestions.length > 0 && pos && (
+        <ul
+          className="breed-suggest-list"
+          role="listbox"
+          style={{
+            position: 'fixed',
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+            zIndex: 9999,
+          }}
+        >
           {suggestions.map((b) => (
             <li
               key={b.id}
