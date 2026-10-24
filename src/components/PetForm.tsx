@@ -137,8 +137,8 @@ export function PetForm({ initial, withTemplate, submitLabel, onSubmit, onCancel
       <fieldset className="fieldset">
         <legend>{t('optionalH')}</legend>
         <Field id={id('breed')} label={t('breed')} optional>
-          {(a) => (
-            <BreedSuggest
+      {() => (
+              <BreedSuggest
               species={breedSpecies}
               value={v.breed}
               onChange={(val) => set('breed', val)}
