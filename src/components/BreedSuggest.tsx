@@ -1,12 +1,10 @@
 // src/components/BreedSuggest.tsx
-// Autocomplete-Dropdown für Rassenname im PetNew-Formular
-// Verwendung: <BreedSuggest species="dog" value={breed} onChange={setBreed} />
-
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useBreedList, filterBreedSuggestions, type BreedSpecies } from '../hooks/useBreedInfo';
 
 interface Props {
-  species: BreedSpecies | null;    // 'dog' | 'cat' — bei anderen Tierarten null
+  species: BreedSpecies | null;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -26,40 +24,54 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
   const [pos, setPos] = useState<DropdownPos | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
-  // Sync nach außen
   useEffect(() => { setQuery(value); }, [value]);
 
-  // Position des Dropdowns berechnen (fixed, relativ zum Viewport)
   const updatePos = useCallback(() => {
     if (!inputRef.current) return;
     const rect = inputRef.current.getBoundingClientRect();
     setPos({
-      top: rect.bottom + window.scrollY + 4,
-      left: rect.left + window.scrollX,
+      top: rect.bottom + 4,
+      left: rect.left,
       width: rect.width,
     });
   }, []);
 
   // Schließen bei Klick außerhalb
   useEffect(() => {
-    function handle(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    function handle(e: MouseEvent | TouchEvent) {
+      const target = e.target as Node;
+      if (
+        containerRef.current && !containerRef.current.contains(target) &&
+        listRef.current && !listRef.current.contains(target)
+      ) {
         setOpen(false);
       }
     }
     document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
+    document.addEventListener('touchstart', handle);
+    return () => {
+      document.removeEventListener('mousedown', handle);
+      document.removeEventListener('touchstart', handle);
+    };
   }, []);
 
-  // Position aktualisieren beim Scrollen / Resize
+  // Position bei Scroll/Resize/Keyboard aktualisieren
   useEffect(() => {
     if (!open) return;
     window.addEventListener('scroll', updatePos, true);
     window.addEventListener('resize', updatePos);
+    // Tastatur auf Mobile
+    if (typeof window.visualViewport !== 'undefined') {
+      window.visualViewport?.addEventListener('resize', updatePos);
+      window.visualViewport?.addEventListener('scroll', updatePos);
+    }
     return () => {
       window.removeEventListener('scroll', updatePos, true);
       window.removeEventListener('resize', updatePos);
+      window.visualViewport?.removeEventListener('resize', updatePos);
+      window.visualViewport?.removeEventListener('scroll', updatePos);
     };
   }, [open, updatePos]);
 
@@ -86,7 +98,6 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
     setOpen(false);
   }
 
-  // Bei Tierarten ohne API (Pferd etc.) einfaches Textfeld
   if (!species) {
     return (
       <div className="form-field">
@@ -102,6 +113,30 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
     );
   }
 
+  // Dropdown-Position: nutze visualViewport für Mobile (Tastatur-Verschiebung)
+  const getFixedStyle = (): React.CSSProperties => {
+    if (!pos) return { display: 'none' };
+    const vv = window.visualViewport;
+    const offsetY = vv ? vv.offsetTop : 0;
+    const offsetX = vv ? vv.offsetLeft : 0;
+    return {
+      position: 'fixed',
+      top: pos.top - offsetY,
+      left: pos.left - offsetX,
+      width: pos.width,
+      zIndex: 99999,
+      maxHeight: '200px',
+      overflowY: 'auto',
+      backgroundColor: 'var(--color-surface, #1e1e2e)',
+      border: '1px solid var(--color-border, #333)',
+      borderRadius: '8px',
+      boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+      listStyle: 'none',
+      margin: 0,
+      padding: '4px 0',
+    };
+  };
+
   return (
     <div className="form-field breed-suggest" ref={containerRef}>
       <label className="form-label">{label}</label>
@@ -116,17 +151,12 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
         onFocus={handleFocus}
         autoComplete="off"
       />
-      {open && suggestions.length > 0 && pos && (
+      {open && suggestions.length > 0 && pos && createPortal(
         <ul
+          ref={listRef}
           className="breed-suggest-list"
           role="listbox"
-          style={{
-            position: 'fixed',
-            top: pos.top,
-            left: pos.left,
-            width: pos.width,
-            zIndex: 9999,
-          }}
+          style={getFixedStyle()}
         >
           {suggestions.map((b) => (
             <li
@@ -134,12 +164,15 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
               className="breed-suggest-item"
               role="option"
               onMouseDown={() => handleSelect(b.name)}
+              onTouchEnd={(e) => { e.preventDefault(); handleSelect(b.name); }}
+              style={{ padding: '10px 14px', cursor: 'pointer', fontSize: '15px' }}
             >
               {b.name}
-              {b.origin ? <span className="breed-suggest-origin"> · {b.origin}</span> : null}
+              {b.origin ? <span className="breed-suggest-origin" style={{ opacity: 0.6, fontSize: '13px' }}> · {b.origin}</span> : null}
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );
