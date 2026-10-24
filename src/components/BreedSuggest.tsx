@@ -127,9 +127,9 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
       zIndex: 99999,
       maxHeight: '200px',
       overflowY: 'auto',
-      backgroundColor: 'var(--color-surface, #1e1e2e)',
-      border: '1px solid var(--color-border, #333)',
-      borderRadius: '8px',
+      backgroundColor: 'var(--surface)', color: 'var(--fg)',
+      border: '1px solid var(--control)',
+      borderRadius: 'var(--r, 10px)',
       boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
       listStyle: 'none',
       margin: 0,
@@ -165,10 +165,10 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
               role="option"
               onMouseDown={() => handleSelect(b.name)}
               onTouchEnd={(e) => { e.preventDefault(); handleSelect(b.name); }}
-              style={{ padding: '10px 14px', cursor: 'pointer', fontSize: '15px' }}
+              style={{ padding: '12px 14px', minHeight: 'var(--tap, 44px)', cursor: 'pointer', fontSize: '15px', borderBottom: '1px solid var(--line)' }}
             >
               {b.name}
-              {b.origin ? <span className="breed-suggest-origin" style={{ opacity: 0.6, fontSize: '13px' }}> · {b.origin}</span> : null}
+              {b.origin ? <span className="breed-suggest-origin" style={{ color: 'var(--muted)', fontSize: '13px' }}> · {b.origin}</span> : null}
             </li>
           ))}
         </ul>,
