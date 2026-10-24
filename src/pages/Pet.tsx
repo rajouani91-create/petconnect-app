@@ -19,6 +19,8 @@ import { MedicationCard } from '../components/record/MedicationCard';
 import { MoreAboutPet } from '../components/more/MoreAboutPet';
 import { IconPlus } from '../components/Icons';
 import { SPECIES_LABEL } from '../components/SpeciesPicker';
+import { BreedInfoCard, BreedInfoSkeleton } from '../components/BreedInfoCard';
+import { useBreedInfo } from '../hooks/useBreedInfo';
 
 /** Stammdaten und Foto ansehen und bearbeiten, Tierakte (Gewicht, Impfungen, Dokumente), weiteres Tier anlegen, Tier löschen. */
 export function Pet() {
@@ -86,6 +88,9 @@ export function Pet() {
       ) : (
         <>
           <PetDetails pet={pet} />
+          {(pet.species === 'dog' || pet.species === 'cat') && pet.breed && (
+            <BreedInfoSection species={pet.species} breed={pet.breed} />
+          )}
           <div className="actions actions-start">
             {editable && (
               <button type="button" className="btn btn-primary" onClick={() => { setEditing(true); setStatus(''); }}>
@@ -128,6 +133,13 @@ export function Pet() {
       </Dialog>
     </div>
   );
+}
+
+function BreedInfoSection({ species, breed }: { species: 'dog' | 'cat'; breed: string }) {
+  const { info, loading } = useBreedInfo(species, breed);
+  if (loading) return <BreedInfoSkeleton />;
+  if (!info) return null;
+  return <BreedInfoCard info={info} />;
 }
 
 type T = (key: MessageKey, vars?: Record<string, string | number>) => string;

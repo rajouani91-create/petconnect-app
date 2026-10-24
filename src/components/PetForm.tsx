@@ -10,6 +10,7 @@ import { Field } from './Field';
 import { KindIcon } from './Icons';
 import { SpeciesPicker, SPECIES_LABEL } from './SpeciesPicker';
 import { Switch } from './Switch';
+import { BreedSuggest } from './BreedSuggest';
 import type { Species } from '../lib/domain';
 
 interface Props {
@@ -64,6 +65,7 @@ export function PetForm({ initial, withTemplate, submitLabel, onSubmit, onCancel
   }
 
   const speciesName = t(SPECIES_LABEL[v.species]);
+  const breedSpecies = v.species === 'dog' || v.species === 'cat' ? v.species : null;
 
   return (
     <form ref={formRef} className="stack" onSubmit={submit} noValidate>
@@ -135,7 +137,14 @@ export function PetForm({ initial, withTemplate, submitLabel, onSubmit, onCancel
       <fieldset className="fieldset">
         <legend>{t('optionalH')}</legend>
         <Field id={id('breed')} label={t('breed')} optional>
-          {(a) => <input {...a} type="text" value={v.breed} onChange={(e) => set('breed', e.target.value)} />}
+          {(a) => (
+            <BreedSuggest
+              species={breedSpecies}
+              value={v.breed}
+              onChange={(val) => set('breed', val)}
+              placeholder="Rasse eingeben…"
+            />
+          )}
         </Field>
         <Field id={id('sex')} label={t('sex')} optional>
           {(a) => (
