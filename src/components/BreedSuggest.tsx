@@ -15,6 +15,8 @@ interface DropdownPos {
   top: number;
   left: number;
   width: number;
+  above: boolean;
+  maxHeight: number;
 }
 
 export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse eingeben…', label = 'Rasse' }: Props) {
@@ -31,23 +33,28 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
   const updatePos = useCallback(() => {
     if (!inputRef.current) return;
     const rect = inputRef.current.getBoundingClientRect();
+    const vv = window.visualViewport;
+    const visTop = vv ? vv.offsetTop : 0;
+    const visBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+    const below = visBottom - rect.bottom - 8;
+    const above = rect.top - visTop - 8;
+    const placeAbove = below < 160 && above > below;
+    const space = placeAbove ? above : below;
     setPos({
-      top: rect.bottom + 4,
+      top: placeAbove ? rect.top - 4 : rect.bottom + 4,
       left: rect.left,
       width: rect.width,
+      above: placeAbove,
+      maxHeight: Math.max(120, Math.min(260, space)),
     });
   }, []);
 
-  // Schließen bei Klick außerhalb
   useEffect(() => {
     function handle(e: MouseEvent | TouchEvent) {
       const target = e.target as Node;
-      if (
-        containerRef.current && !containerRef.current.contains(target) &&
-        listRef.current && !listRef.current.contains(target)
-      ) {
-        setOpen(false);
-      }
+      const inContainer = containerRef.current?.contains(target);
+      const inList = listRef.current?.contains(target);
+      if (!inContainer && !inList) setOpen(false);
     }
     document.addEventListener('mousedown', handle);
     document.addEventListener('touchstart', handle);
@@ -57,16 +64,12 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
     };
   }, []);
 
-  // Position bei Scroll/Resize/Keyboard aktualisieren
   useEffect(() => {
     if (!open) return;
     window.addEventListener('scroll', updatePos, true);
     window.addEventListener('resize', updatePos);
-    // Tastatur auf Mobile
-    if (typeof window.visualViewport !== 'undefined') {
-      window.visualViewport?.addEventListener('resize', updatePos);
-      window.visualViewport?.addEventListener('scroll', updatePos);
-    }
+    window.visualViewport?.addEventListener('resize', updatePos);
+    window.visualViewport?.addEventListener('scroll', updatePos);
     return () => {
       window.removeEventListener('scroll', updatePos, true);
       window.removeEventListener('resize', updatePos);
@@ -113,30 +116,6 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
     );
   }
 
-  // Dropdown-Position: nutze visualViewport für Mobile (Tastatur-Verschiebung)
-  const getFixedStyle = (): React.CSSProperties => {
-    if (!pos) return { display: 'none' };
-    const vv = window.visualViewport;
-    const offsetY = vv ? vv.offsetTop : 0;
-    const offsetX = vv ? vv.offsetLeft : 0;
-    return {
-      position: 'fixed',
-      top: pos.top - offsetY,
-      left: pos.left - offsetX,
-      width: pos.width,
-      zIndex: 99999,
-      maxHeight: '200px',
-      overflowY: 'auto',
-      backgroundColor: 'var(--surface)', color: 'var(--fg)',
-      border: '1px solid var(--control)',
-      borderRadius: 'var(--r, 10px)',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-      listStyle: 'none',
-      margin: 0,
-      padding: '4px 0',
-    };
-  };
-
   return (
     <div className="form-field breed-suggest" ref={containerRef}>
       <label className="form-label">{label}</label>
@@ -156,7 +135,15 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
           ref={listRef}
           className="breed-suggest-list"
           role="listbox"
-          style={getFixedStyle()}
+          style={{
+            position: 'fixed',
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+            maxHeight: pos.maxHeight,
+            transform: pos.above ? 'translateY(-100%)' : undefined,
+            zIndex: 99999,
+          }}
         >
           {suggestions.map((b) => (
             <li
@@ -165,10 +152,9 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
               role="option"
               onMouseDown={() => handleSelect(b.name)}
               onTouchEnd={(e) => { e.preventDefault(); handleSelect(b.name); }}
-              style={{ padding: '12px 14px', minHeight: 'var(--tap, 44px)', cursor: 'pointer', fontSize: '15px', borderBottom: '1px solid var(--line)' }}
             >
               {b.name}
-              {b.origin ? <span className="breed-suggest-origin" style={{ color: 'var(--muted)', fontSize: '13px' }}> · {b.origin}</span> : null}
+              {b.origin ? <span className="breed-suggest-origin"> · {b.origin}</span> : null}
             </li>
           ))}
         </ul>,
