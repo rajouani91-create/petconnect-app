@@ -88,6 +88,10 @@ export function Practices() {
   const focusCounter = useRef(false);
   const { register, focusLater } = useFocusAfter();
 
+  // Collapse-State für Filtergruppen
+  const [showSpecies, setShowSpecies] = useState(true);
+  const [showServices, setShowServices] = useState(true);
+
   const editablePets = pets.filter((p) => canEdit(myRole(p)));
 
   const setFilters = useCallback(
@@ -237,7 +241,7 @@ export function Practices() {
   const hintText = filters.species ? t(SPECIES_TEXT[filters.species]) : null;
   const openMatches = applyOpenNow(split.matches, infoOf, filters.openNow);
   const openUnknown = applyOpenNow(split.unknown, infoOf, filters.openNow);
-  // Mit „Jetzt geöffnet“: geöffnete Treffer plus Treffer mit unbekannten Zeiten (sie werden ja angezeigt)
+  // Mit „Jetzt geöffnet": geöffnete Treffer plus Treffer mit unbekannten Zeiten (sie werden ja angezeigt)
   const count = rows ? (filters.openNow ? openMatches.shown.length + openMatches.unknownTimes.length : countMatches(rows, offer)) : 0;
   const ck = countKey(count);
   const favIds = new Set(favorites.map((f) => f.id));
@@ -356,20 +360,46 @@ export function Practices() {
       <section className="card stack" aria-labelledby={`${uid}-filters`}>
         <h2 id={`${uid}-filters`} className="sr-only">{t('psFilters')}</h2>
         <div role="group" aria-labelledby={`${uid}-g-sp`} className="stack">
-          <h3 id={`${uid}-g-sp`}>{t('psFor')}</h3>
-          <div className="pet-switcher">
-            {chip(filters.species === null, t('psAll'), () => setFilters({ species: null }), 'all')}
-            {pets.filter((p) => isPracticeSpecies(p.species)).map((p) =>
-              chip(false, t('psPetOf', { a: t(SPECIES_TEXT[p.species as keyof typeof SPECIES_TEXT]), n: p.name }), () => setFilters({ species: p.species as (typeof PRACTICE_SPECIES)[number] }), `pet-${p.id}`),
-            )}
-            {PRACTICE_SPECIES.map((s) => chip(filters.species === s, t(SPECIES_TEXT[s]), () => setFilters({ species: filters.species === s ? null : s }), s))}
+          <div className="filter-group-head">
+            <h3 id={`${uid}-g-sp`}>{t('psFor')}</h3>
+            <button
+              type="button"
+              className="btn-collapse"
+              aria-expanded={showSpecies}
+              aria-controls={`${uid}-sp-chips`}
+              onClick={() => setShowSpecies((v) => !v)}
+            >
+              {showSpecies ? '▲' : '▼'}
+            </button>
           </div>
+          {showSpecies && (
+            <div id={`${uid}-sp-chips`} className="pet-switcher">
+              {chip(filters.species === null, t('psAll'), () => setFilters({ species: null }), 'all')}
+              {pets.filter((p) => isPracticeSpecies(p.species)).map((p) =>
+                chip(false, t('psPetOf', { a: t(SPECIES_TEXT[p.species as keyof typeof SPECIES_TEXT]), n: p.name }), () => setFilters({ species: p.species as (typeof PRACTICE_SPECIES)[number] }), `pet-${p.id}`),
+              )}
+              {PRACTICE_SPECIES.map((s) => chip(filters.species === s, t(SPECIES_TEXT[s]), () => setFilters({ species: filters.species === s ? null : s }), s))}
+            </div>
+          )}
         </div>
         <div role="group" aria-labelledby={`${uid}-g-sv`} className="stack">
-          <h3 id={`${uid}-g-sv`}>{t('psNeed')}</h3>
-          <div className="pet-switcher">
-            {PRACTICE_SERVICES.map((s) => chip(filters.services.includes(s), t(SERVICE_TEXT[s]), () => setFilters({ services: toggle(filters.services, s) }), s))}
+          <div className="filter-group-head">
+            <h3 id={`${uid}-g-sv`}>{t('psNeed')}</h3>
+            <button
+              type="button"
+              className="btn-collapse"
+              aria-expanded={showServices}
+              aria-controls={`${uid}-sv-chips`}
+              onClick={() => setShowServices((v) => !v)}
+            >
+              {showServices ? '▲' : '▼'}
+            </button>
           </div>
+          {showServices && (
+            <div id={`${uid}-sv-chips`} className="pet-switcher">
+              {PRACTICE_SERVICES.map((s) => chip(filters.services.includes(s), t(SERVICE_TEXT[s]), () => setFilters({ services: toggle(filters.services, s) }), s))}
+            </div>
+          )}
         </div>
         <div role="group" aria-labelledby={`${uid}-g-ti`} className="stack">
           <h3 id={`${uid}-g-ti`}>{t('psSpecH')}</h3>
