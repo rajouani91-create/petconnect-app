@@ -1,129 +1,59 @@
-/* breed-info.css – in src/styles/ ablegen und in main.css/index.css importieren */
+/* breed-info.css – Rassen-Dropdown und Rassenprofil, nutzt die App-Tokens aus tokens.css */
 
-/* ---- Karte ---- */
 .breed-info-card {
-  background: var(--color-surface, #fff);
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg, 16px);
   padding: 1.25rem;
   margin-top: 1rem;
 }
+.breed-info-title { font-size: 1rem; font-weight: 600; margin: 0 0 0.5rem; color: var(--fg); }
+.breed-info-description { font-size: 0.875rem; color: var(--muted); margin: 0 0 0.75rem; line-height: 1.5; }
+.breed-info-list { display: grid; grid-template-columns: 1fr; gap: 0.5rem; margin: 0 0 0.75rem; }
+.breed-info-row { display: flex; gap: 0.5rem; align-items: baseline; }
+.breed-info-label { font-size: 0.8rem; font-weight: 500; color: var(--muted); min-width: 130px; flex-shrink: 0; }
+.breed-info-value { font-size: 0.875rem; color: var(--fg); margin: 0; }
+.breed-dot-scale { letter-spacing: 2px; font-size: 0.85rem; }
+.dot-filled { color: var(--brand); }
+.dot-empty { color: var(--line); }
+.breed-info-source { font-size: 0.7rem; color: var(--muted); margin: 0; }
 
-.breed-info-title {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem;
-  color: var(--color-text, #111);
-}
-
-.breed-info-description {
-  font-size: 0.875rem;
-  color: var(--color-text-muted, #6b7280);
-  margin: 0 0 0.75rem;
-  line-height: 1.5;
-}
-
-/* ---- Q&A Liste ---- */
-.breed-info-list {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.5rem;
-  margin: 0 0 0.75rem;
-}
-
-.breed-info-row {
-  display: flex;
-  gap: 0.5rem;
-  align-items: baseline;
-}
-
-.breed-info-label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--color-text-muted, #6b7280);
-  min-width: 130px;
-  flex-shrink: 0;
-}
-
-.breed-info-value {
-  font-size: 0.875rem;
-  color: var(--color-text, #111);
-  margin: 0;
-}
-
-/* ---- Punkteskala ---- */
-.breed-dot-scale {
-  letter-spacing: 2px;
-  font-size: 0.85rem;
-}
-.dot-filled { color: var(--color-primary, #4f46e5); }
-.dot-empty  { color: var(--color-border, #d1d5db); }
-
-/* ---- Quelle ---- */
-.breed-info-source {
-  font-size: 0.7rem;
-  color: var(--color-text-muted, #9ca3af);
-  margin: 0;
-}
-
-/* ---- Skeleton ---- */
-.breed-info-skeleton {
-  pointer-events: none;
-}
+.breed-info-skeleton { pointer-events: none; }
 .skeleton-line {
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--line) 50%, var(--surface-2) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.2s infinite;
   border-radius: 4px;
   height: 14px;
 }
-.skeleton-title  { width: 60%; margin-bottom: 0.75rem; }
-.skeleton-row    { display: flex; gap: 0.5rem; margin-bottom: 0.4rem; }
-.skeleton-label  { width: 30%; }
-.skeleton-value  { width: 50%; }
+.skeleton-title { width: 60%; margin-bottom: 0.75rem; }
+.skeleton-row { display: flex; gap: 0.5rem; margin-bottom: 0.4rem; }
+.skeleton-label { width: 30%; }
+.skeleton-value { width: 50%; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-@keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* ---- Autocomplete Dropdown ---- */
-.breed-suggest {
-  position: relative;
-}
-
+.breed-suggest { position: relative; }
 .breed-suggest-list {
-  position: absolute;
-  z-index: 50;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  background: var(--color-surface, #fff);
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--control);
+  border-radius: var(--r, 10px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
   list-style: none;
   margin: 0;
   padding: 0.25rem 0;
-  max-height: 220px;
   overflow-y: auto;
 }
-
 .breed-suggest-item {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
+  padding: 0.75rem 0.9rem;
+  min-height: var(--tap, 44px);
+  font-size: 0.95rem;
   cursor: pointer;
-  color: var(--color-text, #111);
+  color: var(--fg);
+  border-bottom: 1px solid var(--line);
 }
-.breed-suggest-item:hover {
-  background: var(--color-surface-hover, #f9fafb);
-}
+.breed-suggest-item:last-child { border-bottom: 0; }
+.breed-suggest-item:hover, .breed-suggest-item:active { background: var(--surface-2); }
+.breed-suggest-origin { color: var(--muted); font-size: 0.8rem; }
 
-.breed-suggest-origin {
-  color: var(--color-text-muted, #9ca3af);
-  font-size: 0.8rem;
-}
-/* Fix: fieldset darf overflow nicht verstecken */
-fieldset.fieldset {
-  overflow: visible !important;
-}
+fieldset.fieldset { overflow: visible !important; }
