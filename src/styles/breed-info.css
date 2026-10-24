@@ -123,3 +123,7 @@
   color: var(--color-text-muted, #9ca3af);
   font-size: 0.8rem;
 }
+/* Fix: fieldset darf overflow nicht verstecken */
+fieldset.fieldset {
+  overflow: visible !important;
+}
