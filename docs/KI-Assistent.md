@@ -11,7 +11,7 @@
 ## Secrets (Supabase → Edge Functions → Secrets)
 | Name | Pflicht | Bedeutung |
 |---|---|---|
-| `AI_API_KEY` | ja | Schlüssel des KI-Anbieters (Standard: Groq) |
+| `AI_API_KEY` oder `GROQ_API_KEY` | ja | Schlüssel des KI-Anbieters (Standard: Groq) |
 | `AI_BASE_URL` | nein | Standard `https://api.groq.com/openai/v1` |
 | `AI_MODEL` | nein | Standard `openai/gpt-oss-120b` |
 | `AI_VISION_MODEL` | nein | Bildmodell (z. B. `qwen/qwen3.8-27b`, bei Groq „Preview“). Ohne Wert sind Bild-Anhänge aus (503), Text-Anhänge gehen trotzdem. Freies Limit des Modells in console.groq.com → Settings → Limits prüfen |

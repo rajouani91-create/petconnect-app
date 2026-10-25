@@ -1,7 +1,7 @@
 /* Edge Function „pet-ai-chat“: KI-Assistent für Tierfragen.
    Meldet die Person mit ihrem eigenen Token an, liest Tierdaten ausschließlich über deren Zugriffsrechte (Row Level Security),
    schickt nur die für die Frage nötigen Angaben an den KI-Anbieter und gibt Antwort, Notfall-Kennzeichen und Quellen zurück.
-   Secrets (Supabase → Edge Functions → Secrets): AI_API_KEY (Pflicht), AI_BASE_URL, AI_MODEL, AI_VISION_MODEL (optional, Bilder), DOG_API_KEY, CAT_API_KEY, ALLOWED_ORIGINS. */
+   Secrets (Supabase → Edge Functions → Secrets): AI_API_KEY oder GROQ_API_KEY (Pflicht), AI_BASE_URL, AI_MODEL, AI_VISION_MODEL (optional, Bilder), DOG_API_KEY, CAT_API_KEY, ALLOWED_ORIGINS. */
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0';
 import { handle, type Deps, type UserCtx } from './handler.ts';
 import type { Extras, HistoryRow, MedRow, PetCore, Topic } from './context.ts';
@@ -84,7 +84,7 @@ const deps: Deps = {
     .map((s) => s.trim())
     .filter(Boolean),
   ai: {
-    apiKey: Deno.env.get('AI_API_KEY') || undefined,
+    apiKey: Deno.env.get('AI_API_KEY') || Deno.env.get('GROQ_API_KEY') || undefined,
     baseUrl: Deno.env.get('AI_BASE_URL') ?? 'https://api.groq.com/openai/v1',
     model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
     // Bildmodell nur, wenn ausdrücklich gesetzt (Secret AI_VISION_MODEL, z. B. qwen/qwen3.8-27b). Ohne: Bilder werden abgelehnt.
