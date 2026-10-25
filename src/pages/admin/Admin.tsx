@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { Loading } from '../../components/Loading';
 import { Tickets } from './Tickets';
 import { Announcements } from './Announcements';
+import { Dashboard } from './Dashboard';
 import { useI18n } from '../../i18n/I18nProvider';
 import {
   MAX_REASON,
@@ -14,11 +15,9 @@ import {
   sendResetLink,
   setAccountStatus,
   staffRoleFor,
-  staffStats,
   type AccountStatus,
   type SearchHit,
   type StaffRole,
-  type StaffStats,
 } from '../../lib/staff';
 
 /** Bereich für Support und Admin: Konto suchen, Status ansehen, sperren oder freigeben. */
@@ -33,7 +32,6 @@ export function Admin() {
   const [reason, setReason] = useState('');
   const [pending, setPending] = useState<AccountStatus | null>(null);
   const [busy, setBusy] = useState(false);
-  const [stats, setStats] = useState<StaffStats | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -42,7 +40,6 @@ export function Admin() {
       .then((r) => {
         if (!alive) return;
         setRole(r);
-        if (r === 'admin') staffStats().then((st) => alive && setStats(st)).catch(() => undefined);
       })
       .catch(() => alive && setRole(null));
     return () => {
@@ -124,30 +121,7 @@ export function Admin() {
       <h1 id="admin-title">{t('adminTitle')}</h1>
       <p>{t('adminIntro')}</p>
 
-      {stats && (
-        <section aria-labelledby="admin-stats">
-          <h2 id="admin-stats">{t('adminStats')}</h2>
-          <p>{t('adminStatsNote')}</p>
-          <dl>
-            <dt>{t('adminStatAccounts')}</dt>
-            <dd>{stats.accounts}</dd>
-            <dt>{t('adminStatProfiles')}</dt>
-            <dd>{stats.profiles}</dd>
-            <dt>{t('adminStatWithPets')}</dt>
-            <dd>{stats.accounts_with_pets}</dd>
-            <dt>{t('adminStatPets')}</dt>
-            <dd>{stats.pets}</dd>
-            <dt>{t('adminStatSpecies')}</dt>
-            <dd>{Object.entries(stats.pets_by_species).map(([k, v]) => `${k}: ${v}`).join(', ') || '–'}</dd>
-            <dt>{t('adminStatLocked')}</dt>
-            <dd>{stats.locked_accounts}</dd>
-            <dt>{t('adminStatTickets')}</dt>
-            <dd>
-              {stats.tickets_open} / {stats.tickets_in_progress} / {stats.tickets_closed}
-            </dd>
-          </dl>
-        </section>
-      )}
+      {role === 'admin' && <Dashboard />}
 
       <form onSubmit={onSearch} role="search">
         <label htmlFor="admin-query">{t('adminQueryLabel')}</label>

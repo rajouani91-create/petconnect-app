@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { DashboardData } from './dashboard';
 
 export type StaffRole = 'admin' | 'support';
 export type AccountStatus = 'active' | 'locked';
@@ -65,6 +66,13 @@ export async function staffStats(): Promise<StaffStats> {
   const { data, error } = await supabase.rpc('staff_stats');
   if (error) throw error;
   return data as StaffStats;
+}
+
+/** Zahlen für das Admin-Dashboard (nur Zählungen, nur Admin; die Datenbank prüft das ebenfalls). */
+export async function staffDashboard(): Promise<DashboardData> {
+  const { data, error } = await supabase.rpc('staff_dashboard');
+  if (error) throw error;
+  return data as unknown as DashboardData;
 }
 
 /** Löst den bestehenden Passwort-Reset für ein Konto aus. Das Passwort sieht niemand, die Funktion protokolliert den Versand. */
