@@ -38,7 +38,7 @@ export function AppShell() {
       </header>
       <BottomNav />
       <AssistantFab />
-      <main id="main" className="main" tabIndex={-1}>
+      <main id="main" className={`main${pathname === '/admin' ? ' main-wide' : ''}`} tabIndex={-1}>
         {!loaded ? (
           <Loading />
         ) : error ? (

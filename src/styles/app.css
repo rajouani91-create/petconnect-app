@@ -120,6 +120,101 @@ ul { margin: 0; padding: 0; list-style: none; }
 .ai-fab.is-dragging { cursor: grabbing; transform: scale(1.12); box-shadow: 0 8px 22px rgb(0 0 0 / 35%); transition: none; }
 @media (prefers-reduced-motion: reduce) { .ai-fab, .ai-fab:hover, .ai-fab.is-dragging { transition: none; transform: none; } }
 
+/* ---------- Admin-Dashboard ---------- */
+.main-wide { max-width: 1120px; }
+.dash { display: flex; flex-direction: column; gap: var(--s-5); margin-block: var(--s-4) var(--s-6); }
+.dash-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--s-3) var(--s-5); }
+.dash-head h2 { font-family: var(--f-display); font-size: 1.6rem; margin: 0; }
+.dash-head p { margin: 2px 0 0; }
+.dash-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
+.dash-refresh { min-height: 40px; }
+.dash-seg { display: inline-flex; flex-wrap: wrap; background: var(--surface-2); border-radius: var(--r-pill); padding: 3px; gap: 2px; }
+.dash-seg button {
+  border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 600; font-size: 0.9rem;
+  padding: 8px 14px; min-height: 36px; border-radius: var(--r-pill); cursor: pointer;
+}
+.dash-seg button:hover { color: var(--fg); }
+.dash-seg button.on { background: var(--surface); color: var(--brand); box-shadow: var(--shadow); }
+.dash-seg button:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+
+.dash-kpis { display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.dash-kpi {
+  --tone: var(--brand); --tone-soft: var(--brand-soft);
+  position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 2px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  padding: var(--s-4) var(--s-4) var(--s-3); box-shadow: var(--shadow); min-height: 132px;
+}
+.dash-kpi::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: 0; width: 4px; background: var(--tone); }
+.dash-kpi.tone-accent { --tone: var(--accent); --tone-soft: var(--accent-soft); }
+.dash-kpi.tone-ok { --tone: var(--ok); --tone-soft: var(--ok-soft); }
+.dash-kpi.tone-warn { --tone: var(--warn); --tone-soft: var(--warn-soft); }
+.dash-kpi-label { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+.dash-kpi-value { font-family: var(--f-display); font-weight: 700; font-size: 2.1rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.dash-kpi-sub { font-size: 0.82rem; color: var(--muted); }
+.dash-spark { position: absolute; inset-inline: 0; bottom: 0; width: 100%; height: 34px; opacity: 0.9; pointer-events: none; }
+.dash-spark-line { fill: none; stroke: var(--tone); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+.dash-spark-area { fill: var(--tone); opacity: 0.14; }
+.dash-skeleton { background: linear-gradient(90deg, var(--surface-2), var(--surface), var(--surface-2)); background-size: 200% 100%; animation: dash-shimmer 1.4s linear infinite; border: 0; }
+@keyframes dash-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+.dash-grid-2 { display: grid; gap: var(--s-4); grid-template-columns: 1fr; }
+@media (min-width: 900px) {
+  .dash-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-grid-2 .dash-wide { grid-column: 1 / -1; }
+}
+.dash-card { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+.dash-card h3 { font-family: var(--f-display); font-size: 1.1rem; margin: 0; }
+.dash-hint { margin: 0; font-size: 0.85rem; }
+
+.dash-chart-wrap { position: relative; }
+.dash-chart { width: 100%; height: auto; display: block; touch-action: pan-y; border-radius: var(--r); }
+.dash-chart-hit { position: absolute; inset: 0; touch-action: pan-y; border-radius: var(--r); cursor: crosshair; }
+.dash-chart-hit:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.dash-grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.dash-axis { fill: var(--muted); font-size: 11px; font-family: var(--f-body); }
+@media (max-width: 600px) { .dash-axis { font-size: 18px; } .dash-seg button { padding: 8px 10px; font-size: 0.85rem; } }
+.dash-cursor { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.dash-line { stroke-dasharray: 2400; stroke-dashoffset: 2400; animation: dash-draw 1s ease-out forwards; }
+@keyframes dash-draw { to { stroke-dashoffset: 0; } }
+.dash-tip {
+  position: absolute; top: 4px; transform: translateX(-50%); pointer-events: none; white-space: nowrap;
+  background: var(--fg); color: var(--bg); border-radius: var(--r); padding: 6px 10px; font-size: 0.85rem;
+  display: flex; flex-direction: column; align-items: center; line-height: 1.25; box-shadow: var(--shadow);
+}
+.dash-tip span { opacity: 0.75; font-size: 0.75rem; }
+
+.dash-chips { display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-block: var(--s-2); }
+.dash-chip { display: flex; flex-direction: column; gap: 2px; background: var(--surface-2); border-radius: var(--r); padding: var(--s-3) var(--s-4); }
+.dash-chip span { font-size: 0.8rem; color: var(--muted); }
+.dash-chip strong { font-family: var(--f-display); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.dash-chip strong.pos { color: var(--ok-ink); }
+.dash-chip strong.neg { color: var(--crit); }
+.dash-bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.dash-bars li { display: grid; grid-template-columns: minmax(96px, 150px) 1fr auto; align-items: center; gap: var(--s-3); font-size: 0.92rem; }
+.dash-bar-label { overflow-wrap: anywhere; }
+.dash-bar-track { height: 10px; background: var(--surface-2); border-radius: var(--r-pill); overflow: hidden; }
+.dash-bar-fill { display: block; height: 100%; border-radius: var(--r-pill); background: var(--brand); transform-origin: left; animation: dash-grow 0.7s ease-out both; }
+.dash-bar-fill.tone-accent { background: var(--accent); }
+@keyframes dash-grow { from { transform: scaleX(0); } }
+.dash-bar-n { font-variant-numeric: tabular-nums; font-weight: 600; text-align: end; white-space: nowrap; }
+.dash-bar-n small { font-weight: 400; color: var(--muted); }
+
+.dash-hours { display: flex; align-items: flex-end; gap: 3px; height: 120px; padding-top: var(--s-2); }
+.dash-hour { flex: 1; height: 100%; display: flex; align-items: flex-end; border-radius: 4px 4px 0 0; }
+.dash-hour:hover { background: var(--surface-2); }
+.dash-hour-bar { display: block; width: 100%; background: var(--accent); border-radius: 4px 4px 0 0; transform-origin: bottom; animation: dash-rise 0.6s ease-out both; }
+@keyframes dash-rise { from { transform: scaleY(0); } }
+.dash-hours-axis { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+
+.dash-meter { display: flex; flex-direction: column; gap: 6px; }
+.dash-meter-head { display: flex; justify-content: space-between; font-size: 0.92rem; }
+.dash-meter-track { height: 12px; background: var(--surface-2); border-radius: var(--r-pill); overflow: hidden; }
+.dash-meter-fill { height: 100%; background: linear-gradient(90deg, var(--brand), var(--ok)); border-radius: var(--r-pill); transform-origin: left; animation: dash-grow 0.8s ease-out both; }
+.dash-note { font-size: 0.82rem; margin: 0; max-width: 78ch; }
+@media (prefers-reduced-motion: reduce) {
+  .dash-line, .dash-bar-fill, .dash-hour-bar, .dash-meter-fill, .dash-skeleton { animation: none; stroke-dashoffset: 0; }
+}
+
 /* ---------- Buttons ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
