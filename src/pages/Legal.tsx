@@ -109,6 +109,7 @@ export function Privacy() {
       <ul>
         <li>Ihre Anmeldung (Sitzung), damit Sie angemeldet bleiben</li>
         <li>die gewählte Sprache</li>
+        <li>die Position der schwebenden KI-Schaltfläche, wenn Sie sie verschieben</li>
         <li>das zuletzt gewählte Tier</li>
         <li>der zuletzt gesuchte Ort bzw. die PLZ in der Praxissuche (kein Standort)</li>
         <li>ein Einladungscode, bis Sie die Einladung nach der Anmeldung annehmen</li>

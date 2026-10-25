@@ -43,6 +43,12 @@ export const IconHome = (p: IconProps) => (
     <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
   </Svg>
 );
+export const IconAssistant = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M20 4H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h3v3.5l4.5-3.5H20a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
+    <path d="M12 6.8l.9 2 2 .9-2 .9-.9 2-.9-2-2-.9 2-.9z" />
+  </Svg>
+);
 export const IconCalendar = (p: IconProps) => (
   <Svg {...p}>
     <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
