@@ -74,7 +74,7 @@ export function Privacy() {
       <p>E-Mail: <Mail /></p>
 
       <h2>2. Überblick</h2>
-      <p>PetConnect ist eine App für Tierhalter:innen. Es gibt keine Werbung, kein Tracking, keine Analyse-Dienste und keine Cookies zu Werbe- oder Analysezwecken.</p>
+      <p>PetConnect ist eine App für Tierhalter:innen. Es gibt keine Werbung, kein Tracking, keine Analyse-Dienste und keine Cookies zu Werbe- oder Analysezwecken. Der optionale KI-Assistent (Abschnitt 15) ist die einzige Funktion, bei der Ihre Eingaben an einen weiteren Anbieter weitergegeben werden, und nur, wenn Sie ihn selbst benutzen.</p>
 
       <h2>3. Konto und Inhalte</h2>
       <p>Für Ihr Konto verarbeiten wir Ihre E-Mail-Adresse, Ihren Anzeigenamen und Ihre gewählte Sprache. Dazu kommen die Angaben, die Sie zu Ihren Tieren eintragen – zum Beispiel Tierakte, Medikamente, Termine, Erinnerungen, Notfallkarte, Fotos, Dokumente und Versicherung.</p>
@@ -151,7 +151,22 @@ export function Privacy() {
         Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO, soweit Ihre Anfrage auf einen Vertrag zielt, und Art. 6 Abs. 1 lit. f DSGVO für den Schutz vor Missbrauch und die Nachvollziehbarkeit von Eingriffen in Konten. Wie lange Protokolle und Tickets gespeichert werden, ist noch nicht festgelegt.
       </p>
 
-      <h2>15. Änderungen</h2>
+      {/* RECHTLICH PRÜFEN: Einwilligung, Auftragsverarbeitungsvertrag mit Groq, Rechtsgrundlage der Übermittlung in die USA und Aufbewahrungsangaben bestätigen lassen. */}
+      <h2>15. KI-Assistent</h2>
+      <p>Der KI-Assistent ist optional. Er wird nur aktiv, wenn Sie ihm in der App eine Frage stellen. Er ist kein Tierarzt, stellt keine Diagnosen und nennt keine Dosierungen.</p>
+      <p>Wenn Sie eine Frage senden, geht sie über unseren Server bei Supabase (Frankfurt) an {FACTS.ai}. Dieser Anbieter erzeugt die Antwort mit einem KI-Modell. Übermittelt werden:</p>
+      <ul>
+        <li>Ihre Frage und die letzten Nachrichten des Gesprächs</li>
+        <li>wenn Sie ein Tier ausgewählt haben: Name, Tierart, Rasse, Alter, Geschlecht und Allergien, die Namen der laufenden Medikamente sowie je nach Frage weitere Angaben aus der Tierakte (zum Beispiel Medikamentendetails, Impfungen, Gewicht, Laborwerte, Vorerkrankungen oder die Titel hochgeladener Dokumente)</li>
+        <li>nur wenn Sie es ausdrücklich hinzufügen: ein Anhang (siehe unten)</li>
+      </ul>
+      <p>Nicht übermittelt werden Ihre E-Mail-Adresse, Ihr Anzeigename, Ihre Anschrift sowie Fotos und Dokumente, die Sie in der Tierakte gespeichert haben. Für Fragen zu Hunde- und Katzenrassen wird zusätzlich der Rassename an The Dog API bzw. The Cat API gesendet, um öffentliche Rasseninformationen abzurufen.</p>
+      <p><strong>Anhänge (Laborbericht, Foto):</strong> Anhänge werden nur nach Ihrer ausdrücklichen Einwilligung bei jedem einzelnen Versand gesendet. Zuvor werden sie auf Ihrem Gerät bereinigt: Namen, Adressen, Telefonnummern, E-Mail-Adressen und ähnliche Angaben werden entfernt, und Sie sehen eine Vorschau, in der Sie weitere Stellen schwärzen können. Bei Fotos wird das Bild neu kodiert, sodass keine versteckten Zusatzdaten (zum Beispiel der Aufnahmeort) mitgehen. Die automatische Erkennung kann nicht alles finden. Prüfen Sie die Vorschau deshalb, bevor Sie senden.</p>
+      <p>Wir speichern Ihre Fragen und die Antworten nicht in unserer Datenbank. Gespeichert wird nur ein Zähler, wie oft Sie den Assistenten in den letzten Stunden benutzt haben (Nutzerkennung und Zeitpunkte), um Missbrauch und Kosten zu begrenzen. In unseren Protokollen stehen nur technische Angaben wie Antwortzeit und Fehlercodes, nie der Inhalt. Bei {FACTS.ai} haben wir die Option „Zero Data Retention“ aktiviert; nach Angaben des Anbieters werden Anfragen dort dann nicht gespeichert.</p>
+      <p>Rechtsgrundlage ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), die Sie durch das Stellen der Frage und, bei Anhängen, durch die zusätzliche Bestätigung erteilen. {FACTS.ai} hat seinen Sitz in den USA; dabei werden Daten in die USA übermittelt. Sie können die Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen, indem Sie den Assistenten nicht mehr benutzen. Der Rest der App funktioniert ohne ihn vollständig.</p>
+      <p>Die Antworten sind allgemeine Informationen. Bei Notfällen oder gesundheitlichen Sorgen wenden Sie sich bitte immer an eine Tierärztin oder einen Tierarzt.</p>
+
+      <h2>16. Änderungen</h2>
       <p>Wir passen diese Datenschutzerklärung an, wenn sich die App oder die rechtlichen Anforderungen ändern.</p>
     </LegalFrame>
   );

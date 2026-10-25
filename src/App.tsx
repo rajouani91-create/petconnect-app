@@ -26,6 +26,7 @@ import { SitterPublic } from './pages/SitterPublic';
 import { Practices } from './pages/Practices';
 import { Notifications } from './pages/more/Notifications';
 import { MonthlyReport } from './pages/more/MonthlyReport';
+import { Assistant } from './pages/more/Assistant';
 import { Imprint, Privacy } from './pages/Legal';
 import DeleteAccount from './pages/DeleteAccount';
 import { UpdateBanner } from './components/UpdateBanner';
@@ -72,6 +73,7 @@ export function App() {
               <Route path="mehr" element={<More />} />
               <Route path="mehr/benachrichtigungen" element={<Notifications />} />
               <Route path="mehr/monatsuebersicht" element={<MonthlyReport />} />
+              <Route path="mehr/assistent" element={<Assistant />} />
               <Route path="admin" element={<Admin />} />
               <Route path="notfall" element={<Emergency />} />
               <Route path="einladung/:token" element={<Invite />} />
