@@ -4,6 +4,7 @@ import { useI18n } from '../../i18n/I18nProvider';
 import type { MessageKey } from '../../i18n';
 import { usePets } from '../../pets/PetsProvider';
 import { Loading } from '../../components/Loading';
+import { RichText } from '../../components/ai/RichText';
 import { AttachPanel, type Prepared } from '../../components/ai/AttachPanel';
 import { AI_MAX_INPUT, AiError, askAssistant, type AiAnswer, type AiErrorKind, type AiMessage } from '../../lib/ai';
 
@@ -129,7 +130,7 @@ export function Assistant() {
                 <Link to="/notfall">{t('aiEmergencyLink')}</Link>
               </p>
             )}
-            <p className="ai-text">{m.content}</p>
+            {m.role === 'assistant' ? <RichText text={m.content} /> : <p className="ai-text">{m.content}</p>}
             {m.attached && <p className="ai-meta">{t('aiAttSent', { name: m.attached })}</p>}
             {m.sources && m.sources.length > 0 && (
               <p className="ai-meta">

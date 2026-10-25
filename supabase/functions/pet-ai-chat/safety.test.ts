@@ -87,9 +87,13 @@ describe('cleanReply', () => {
 });
 
 describe('toPlainText und Kürzen', () => {
-  it('entfernt Markdown und vereinheitlicht Sonderzeichen', () => {
-    const raw = '### Fragen\n1. **Nierenstatus:** Urin\u2011Protein, SDMA\n* Punkt\u00A0eins\n---\n*kursiv* und `code`';
-    expect(toPlainText(raw)).toBe('Fragen\n1. Nierenstatus: Urin-Protein, SDMA\n- Punkt eins\n\nkursiv und code');
+  it('behält Markdown, vereinheitlicht Sonderzeichen, entfernt HTML, Codeblöcke und Trennlinien', () => {
+    const raw = '### Fragen\n1. **Nierenstatus:** Urin\u2011Protein\n* Punkt\u00A0eins\n---\n```js\nx\n```\n<b>fett</b> <img src=x>\n| A | B |\n|---|---|\n| 1 | 2 |';
+    const out = toPlainText(raw);
+    expect(out).toContain('### Fragen\n1. **Nierenstatus:** Urin-Protein\n- Punkt eins');
+    expect(out).toContain('| A | B |\n|---|---|\n| 1 | 2 |');
+    expect(out).not.toMatch(/```|<b>|<img|---\n/);
+    expect(out).toContain('fett');
   });
   it('lässt normale Texte, Aufzählungen und Rechenzeichen in Ruhe', () => {
     expect(toPlainText('Wert 2 * 3 = 6 und 5 - 3\n- Liste')).toBe('Wert 2 * 3 = 6 und 5 - 3\n- Liste');

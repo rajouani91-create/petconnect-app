@@ -637,3 +637,13 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .ai-canvas { width: 100%; height: auto; max-height: 70vh; object-fit: contain; touch-action: none; cursor: crosshair; border: 1px solid var(--line, var(--border, currentColor)); background: #fff; }
 .ai-consent { display: flex; gap: var(--s-2); align-items: flex-start; }
 .ai-consent input { margin-top: 0.25rem; }
+.ai-rich { display: flex; flex-direction: column; gap: var(--s-2); overflow-wrap: anywhere; }
+.ai-rich > * { margin: 0; }
+.ai-p { white-space: pre-line; }
+.ai-h { font-size: 1rem; font-weight: 700; margin-top: var(--s-1); }
+.ai-list { padding-inline-start: 1.4rem; display: flex; flex-direction: column; gap: var(--s-1); }
+.ai-rich code { font-family: ui-monospace, monospace; font-size: 0.9em; background: var(--brand-soft); padding: 0 0.25em; border-radius: 4px; }
+.ai-table-wrap { overflow-x: auto; max-width: 100%; }
+.ai-table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+.ai-table th, .ai-table td { border: 1px solid var(--line, var(--border, currentColor)); padding: 0.35rem 0.6rem; text-align: start; vertical-align: top; }
+.ai-table th { background: var(--brand-soft); font-weight: 600; white-space: nowrap; }

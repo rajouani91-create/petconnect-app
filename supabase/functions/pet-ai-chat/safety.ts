@@ -98,19 +98,17 @@ export interface CleanReply {
   emergency: boolean;
 }
 
-/** Die Oberfläche zeigt reinen Text: Markdown-Zeichen entfernen, Sonderstriche und Leerzeichen vereinheitlichen. */
+/** Antworten dürfen einfaches Markdown enthalten (die App stellt es dar). Hier nur vereinheitlichen und Unsicheres entfernen:
+    Sonderstriche/-leerzeichen, Codeblöcke, Trennlinien, HTML-Tags. */
 export function toPlainText(input: string): string {
   return input
     .replace(/[\u2010-\u2015\u2212]/g, '-') // geschützte/lange Bindestriche und Minuszeichen
     .replace(/[\u00A0\u202F\u2009]/g, ' ')
     .replace(/[\u200B-\u200D\u2060\uFEFF]/g, '')
-    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s*```.*$/gm, '')
+    .replace(/<\/?[a-z][^>\n]*>/gi, '')
     .replace(/^\s*[-*_]{3,}\s*$/gm, '')
     .replace(/^(\s*)[*+]\s+/gm, '$1- ')
-    .replace(/\*\*([^*\n]+?)\*\*/g, '$1')
-    .replace(/__([^_\n]+?)__/g, '$1')
-    .replace(/(?<![*\w])\*(?!\s)([^*\n]+?)\*(?![*\w])/g, '$1')
-    .replace(/`+/g, '')
     .replace(/[ \t]+$/gm, '')
     .replace(/\n{3,}/g, '\n\n');
 }
