@@ -98,11 +98,37 @@ export interface CleanReply {
   emergency: boolean;
 }
 
+/** Die Oberfläche zeigt reinen Text: Markdown-Zeichen entfernen, Sonderstriche und Leerzeichen vereinheitlichen. */
+export function toPlainText(input: string): string {
+  return input
+    .replace(/[\u2010-\u2015\u2212]/g, '-') // geschützte/lange Bindestriche und Minuszeichen
+    .replace(/[\u00A0\u202F\u2009]/g, ' ')
+    .replace(/[\u200B-\u200D\u2060\uFEFF]/g, '')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*_]{3,}\s*$/gm, '')
+    .replace(/^(\s*)[*+]\s+/gm, '$1- ')
+    .replace(/\*\*([^*\n]+?)\*\*/g, '$1')
+    .replace(/__([^_\n]+?)__/g, '$1')
+    .replace(/(?<![*\w])\*(?!\s)([^*\n]+?)\*(?![*\w])/g, '$1')
+    .replace(/`+/g, '')
+    .replace(/[ \t]+$/gm, '')
+    .replace(/\n{3,}/g, '\n\n');
+}
+
+/** Wurde die Antwort wegen der Längenbegrenzung abgeschnitten, bis zum letzten vollständigen Satz bzw. Absatz kürzen. */
+export function trimToLastSentence(text: string): string {
+  const cut = Math.max(text.lastIndexOf('. '), text.lastIndexOf('.\n'), text.lastIndexOf('?'), text.lastIndexOf('!'), text.lastIndexOf('\n'));
+  const endsClean = /[.!?)]$/.test(text.trimEnd());
+  if (endsClean || cut < text.length * 0.5) return text;
+  return text.slice(0, cut + 1).trimEnd();
+}
+
 /** Entfernt die interne Notfall-Markierung, begrenzt die Länge und blockt Antworten, die den Systemprompt verraten. */
-export function cleanReply(raw: string): CleanReply | null {
-  let text = raw.replace(CONTROL, '').trim();
+export function cleanReply(raw: string, truncated = false): CleanReply | null {
+  let text = toPlainText(raw.replace(CONTROL, '')).trim();
   const emergency = text.includes(EMERGENCY_MARK);
   text = text.split(EMERGENCY_MARK).join('').trim();
+  if (truncated) text = trimToLastSentence(text);
   if (text.length === 0) return null;
   if (text.includes(CANARY)) return null;
   if (text.length > MAX_REPLY_CHARS) text = `${text.slice(0, MAX_REPLY_CHARS - 1).trimEnd()}…`;

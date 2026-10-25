@@ -168,7 +168,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   let result;
   try {
     result = await chat(
-      { apiKey: deps.ai.apiKey, baseUrl: deps.ai.baseUrl, model: attachment?.kind === 'image' ? deps.ai.visionModel! : deps.ai.model, maxOutputTokens: deps.ai.maxOutputTokens ?? 1200, timeoutMs: 40_000 },
+      { apiKey: deps.ai.apiKey, baseUrl: deps.ai.baseUrl, model: attachment?.kind === 'image' ? deps.ai.visionModel! : deps.ai.model, maxOutputTokens: deps.ai.maxOutputTokens ?? 1800, timeoutMs: 40_000 },
       providerMessages,
       deps.fetchImpl,
     );
@@ -179,7 +179,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     return fail(502, 'ai_unavailable');
   }
 
-  const cleaned = cleanReply(result.text);
+  const cleaned = cleanReply(result.text, result.truncated);
   if (!cleaned) return fail(502, 'ai_unavailable');
 
   const sources = breed.status === 'ok' && species ? [{ title: species === 'dog' ? 'The Dog API' : 'The Cat API', url: species === 'dog' ? 'https://thedogapi.com' : 'https://thecatapi.com' }] : [];

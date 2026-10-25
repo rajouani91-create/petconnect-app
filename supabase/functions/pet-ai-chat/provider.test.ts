@@ -10,7 +10,7 @@ describe('chat', () => {
   it('sendet Anfrage mit Schlüssel an /chat/completions und liefert Text und Tokenzahlen', async () => {
     const f = vi.fn(async () => ok('Hallo'));
     const r = await chat(cfg, msgs, f as unknown as typeof fetch);
-    expect(r).toEqual({ text: 'Hallo', promptTokens: 10, completionTokens: 5 });
+    expect(r).toEqual({ text: 'Hallo', promptTokens: 10, completionTokens: 5, truncated: false });
     const [url, init] = f.mock.calls[0] as unknown as [string, { headers: Record<string, string>; body: string }];
     expect(url).toBe('https://api.example.test/v1/chat/completions');
     expect(init.headers.authorization).toBe('Bearer sk-test');
@@ -33,5 +33,12 @@ describe('chat', () => {
   it('leere oder kaputte Antwort → provider_error', async () => {
     expect(await code(chat(cfg, msgs, (async () => ok('  ')) as unknown as typeof fetch))).toBe('provider_error');
     expect(await code(chat(cfg, msgs, (async () => new Response('<html>', { status: 200 })) as unknown as typeof fetch))).toBe('provider_error');
+  });
+});
+
+describe('Abbruch wegen Längenbegrenzung', () => {
+  it('meldet truncated, wenn finish_reason „length“ ist', async () => {
+    const f = (async () => new Response(JSON.stringify({ choices: [{ message: { content: 'Halb' }, finish_reason: 'length' }] }), { status: 200 })) as unknown as typeof fetch;
+    expect((await chat(cfg, [{ role: 'user', content: 'x' }], f)).truncated).toBe(true);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CANARY, EMERGENCY_MARK, MAX_MESSAGES, cleanReply, detectEmergency, isUuid, validateMessages } from './safety.ts';
+import { CANARY, EMERGENCY_MARK, MAX_MESSAGES, cleanReply, toPlainText, trimToLastSentence, detectEmergency, isUuid, validateMessages } from './safety.ts';
 
 const ok = (m: unknown) => validateMessages(m);
 
@@ -83,5 +83,24 @@ describe('cleanReply', () => {
     const r = cleanReply('x'.repeat(9000));
     expect(r!.text.length).toBeLessThanOrEqual(5000);
     expect(r!.text.endsWith('…')).toBe(true);
+  });
+});
+
+describe('toPlainText und Kürzen', () => {
+  it('entfernt Markdown und vereinheitlicht Sonderzeichen', () => {
+    const raw = '### Fragen\n1. **Nierenstatus:** Urin\u2011Protein, SDMA\n* Punkt\u00A0eins\n---\n*kursiv* und `code`';
+    expect(toPlainText(raw)).toBe('Fragen\n1. Nierenstatus: Urin-Protein, SDMA\n- Punkt eins\n\nkursiv und code');
+  });
+  it('lässt normale Texte, Aufzählungen und Rechenzeichen in Ruhe', () => {
+    expect(toPlainText('Wert 2 * 3 = 6 und 5 - 3\n- Liste')).toBe('Wert 2 * 3 = 6 und 5 - 3\n- Liste');
+  });
+  it('kürzt abgeschnittene Antworten bis zum letzten vollständigen Satz', () => {
+    expect(trimToLastSentence('Das ist gut. Das ist auch gut. Wenn Sie weitere Details zu')).toBe('Das ist gut. Das ist auch gut.');
+    expect(trimToLastSentence('Vollständig beendet.')).toBe('Vollständig beendet.');
+    expect(trimToLastSentence('ohne Satzende ohne Punkt')).toBe('ohne Satzende ohne Punkt');
+  });
+  it('cleanReply kürzt nur bei abgeschnittener Antwort', () => {
+    expect(cleanReply('Ein Satz. Halb', true)?.text).toBe('Ein Satz.');
+    expect(cleanReply('Ein Satz. Halb', false)?.text).toBe('Ein Satz. Halb');
   });
 });

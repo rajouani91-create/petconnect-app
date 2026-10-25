@@ -23,10 +23,12 @@ export interface ProviderReply {
   text: string;
   promptTokens: number | null;
   completionTokens: number | null;
+  /** true, wenn der Anbieter wegen der Längenbegrenzung abgebrochen hat (finish_reason „length“) */
+  truncated: boolean;
 }
 
 interface ChatResponse {
-  choices?: { message?: { content?: string | null } }[];
+  choices?: { message?: { content?: string | null }; finish_reason?: string | null }[];
   usage?: { prompt_tokens?: number; completion_tokens?: number };
 }
 
@@ -79,5 +81,10 @@ export async function chat(cfg: ProviderConfig, messages: ProviderMessage[], fet
   }
   const text = json.choices?.[0]?.message?.content;
   if (typeof text !== 'string' || text.trim() === '') throw new ProviderFailure('provider_error', res.status);
-  return { text, promptTokens: json.usage?.prompt_tokens ?? null, completionTokens: json.usage?.completion_tokens ?? null };
+  return {
+    text,
+    promptTokens: json.usage?.prompt_tokens ?? null,
+    completionTokens: json.usage?.completion_tokens ?? null,
+    truncated: json.choices?.[0]?.finish_reason === 'length',
+  };
 }
