@@ -2,6 +2,7 @@ import { Link, Navigate, Outlet, useLocation } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { usePets } from '../pets/PetsProvider';
 import { AnnouncementBanner } from './AnnouncementBanner';
+import { AssistantFab } from './AssistantFab';
 import { BottomNav } from './BottomNav';
 import { IconEmergency, LogoMark } from './Icons';
 import { Loading } from './Loading';
@@ -36,6 +37,7 @@ export function AppShell() {
         </Link>
       </header>
       <BottomNav />
+      <AssistantFab />
       <main id="main" className="main" tabIndex={-1}>
         {!loaded ? (
           <Loading />
