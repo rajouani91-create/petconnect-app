@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import {
-  areaPath, fmt, linePath, niceMax, pct, sortedRecords, speciesName, sumLast, toPoints,
+  areaPath, cumulative, fmt, growthPct, linePath, niceMax, pct, sortedRecords, speciesName, sumLast, toPoints,
   type DashboardData, type SeriesKey,
 } from '../../lib/dashboard';
 import { staffDashboard } from '../../lib/staff';
@@ -185,6 +185,56 @@ function Meter({ label, part, whole, note }: { label: string; part: number; whol
   );
 }
 
+const GROWTH: { key: 'accounts' | 'pets'; label: string; unit: string; color: string }[] = [
+  { key: 'accounts', label: 'Konten', unit: 'Konten gesamt', color: 'var(--brand)' },
+  { key: 'pets', label: 'Tiere', unit: 'Tiere gesamt', color: 'var(--accent)' },
+];
+
+function signed(n: number | null): string {
+  if (n === null) return '–';
+  return `${n > 0 ? '+' : ''}${fmt(n)} %`;
+}
+
+/** Wachstumslinie: laufende Gesamtzahl und Wachstumsquote im gewählten Zeitraum. */
+function Growth({ data, range }: { data: DashboardData; range: 7 | 30 }) {
+  const [which, setWhich] = useState<'accounts' | 'pets'>('accounts');
+  const g = GROWTH.find((x) => x.key === which) ?? GROWTH[0]!;
+  const key: SeriesKey = which === 'accounts' ? 'signups' : 'pets';
+  const daily = data.series.map((p) => p[key]);
+  const total = which === 'accounts' ? data.users.total : data.pets.total;
+  // Stand vor dem ersten angezeigten Tag = heutiger Stand minus alles, was seitdem dazukam
+  const cum = cumulative(daily, Math.max(0, total - daily.reduce((a, b) => a + b, 0)));
+  const now = cum[cum.length - 1] ?? 0;
+  const at = (daysAgo: number): number => cum[Math.max(0, cum.length - 1 - daysAgo)] ?? 0;
+  const added = now - at(range);
+  const days = data.series.slice(-range).map((p) => p.d);
+  const values = cum.slice(1).slice(-range);
+  const rate = growthPct(now, at(range));
+  const rate7 = growthPct(now, at(7));
+  return (
+    <article className="card dash-card dash-wide">
+      <div className="card-head">
+        <h3>Wachstum</h3>
+        <div className="dash-seg" role="group" aria-label="Wachstum von">
+          {GROWTH.map((x) => (
+            <button key={x.key} type="button" aria-pressed={which === x.key} className={which === x.key ? 'on' : ''} onClick={() => setWhich(x.key)}>{x.label}</button>
+          ))}
+        </div>
+      </div>
+      <p className="muted dash-hint">Laufende Gesamtzahl der {g.label} und prozentuales Wachstum im Zeitraum</p>
+      <div className="dash-chips">
+        <div className="dash-chip"><span>Wachstumsquote ({range} Tage)</span><strong className={rate !== null && rate < 0 ? 'neg' : 'pos'}>{signed(rate)}</strong></div>
+        <div className="dash-chip"><span>Wachstumsquote (7 Tage)</span><strong className={rate7 !== null && rate7 < 0 ? 'neg' : 'pos'}>{signed(rate7)}</strong></div>
+        <div className="dash-chip"><span>Neu im Zeitraum</span><strong>{added > 0 ? '+' : ''}{fmt(added)}</strong></div>
+        <div className="dash-chip"><span>Ø pro Tag</span><strong>{new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }).format(added / range)}</strong></div>
+      </div>
+      <LineChart days={days} values={values} color={g.color} unit={g.unit} />
+      <p className="muted dash-hint">Bei wenigen Konten oder Tieren schwanken Prozentwerte stark: Von 1 auf 19 sind es +1.800 %, von 19 auf 29 nur +53 %.</p>
+      {rate === null && <p className="muted dash-hint">Eine Quote gibt es erst, wenn zu Beginn des Zeitraums schon {g.label} vorhanden waren.</p>}
+    </article>
+  );
+}
+
 /** Zahlen-Übersicht für Admins: Konten, Tiere, Interaktionen, KI-Nutzung. Aktualisiert sich selbst. */
 export function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -270,9 +320,11 @@ export function Dashboard() {
       </div>
 
       <div className="dash-grid-2">
+        <Growth data={data} range={range} />
+
         <article className="card dash-card dash-wide">
           <div className="card-head">
-            <h3>Verlauf</h3>
+            <h3>Verlauf pro Tag</h3>
             <div className="dash-seg" role="group" aria-label="Kennzahl">
               {METRICS.map((x) => (
                 <button key={x.key} type="button" aria-pressed={metric === x.key} className={metric === x.key ? 'on' : ''} onClick={() => setMetric(x.key)}>{x.label}</button>

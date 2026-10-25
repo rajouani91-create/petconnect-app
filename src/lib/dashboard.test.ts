@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { areaPath, fmt, linePath, niceMax, pct, sortedRecords, speciesName, sumLast, toPoints, type DayPoint, type RecordKey } from './dashboard';
+import { areaPath, cumulative, fmt, growthPct, linePath, niceMax, pct, sortedRecords, speciesName, sumLast, toPoints, type DayPoint, type RecordKey } from './dashboard';
 
 const series: DayPoint[] = [
   { d: '2026-10-20', signups: 1, pets: 0, interactions: 5 },
@@ -65,5 +65,18 @@ describe('Beschriftungen', () => {
   });
   it('formatiert Zahlen deutsch', () => {
     expect(fmt(1234)).toBe('1.234');
+  });
+});
+
+describe('Wachstum', () => {
+  it('bildet die laufende Gesamtzahl mit Startwert', () => {
+    expect(cumulative([2, 0, 3], 10)).toEqual([10, 12, 12, 15]);
+    expect(cumulative([], 4)).toEqual([4]);
+  });
+  it('berechnet die Wachstumsquote', () => {
+    expect(growthPct(19, 9)).toBe(111);
+    expect(growthPct(10, 10)).toBe(0);
+    expect(growthPct(8, 10)).toBe(-20);
+    expect(growthPct(5, 0)).toBeNull();
   });
 });

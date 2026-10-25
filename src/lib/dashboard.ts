@@ -26,6 +26,18 @@ export function sumLast(series: DayPoint[], key: SeriesKey, n: number): number {
   return series.slice(-n).reduce((a, p) => a + p[key], 0);
 }
 
+/** Laufende Gesamtzahl: Startwert (Stand vor dem ersten Tag) plus Summe der Tageswerte. Index 0 ist der Startwert selbst. */
+export function cumulative(daily: number[], base: number): number[] {
+  const out = [base];
+  for (const v of daily) out.push(out[out.length - 1]! + v);
+  return out;
+}
+
+/** Wachstum in Prozent zwischen zwei Ständen; ohne Vergleichswert (0) null. */
+export function growthPct(now: number, before: number): number | null {
+  return before > 0 ? Math.round(((now - before) / before) * 100) : null;
+}
+
 /** Anteil in Prozent, ganzzahlig; bei Nenner 0 → 0. */
 export function pct(part: number, whole: number): number {
   return whole > 0 ? Math.round((part / whole) * 100) : 0;

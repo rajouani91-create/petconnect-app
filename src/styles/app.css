@@ -183,6 +183,12 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 .dash-tip span { opacity: 0.75; font-size: 0.75rem; }
 
+.dash-chips { display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-block: var(--s-2); }
+.dash-chip { display: flex; flex-direction: column; gap: 2px; background: var(--surface-2); border-radius: var(--r); padding: var(--s-3) var(--s-4); }
+.dash-chip span { font-size: 0.8rem; color: var(--muted); }
+.dash-chip strong { font-family: var(--f-display); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.dash-chip strong.pos { color: var(--ok-ink); }
+.dash-chip strong.neg { color: var(--crit); }
 .dash-bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .dash-bars li { display: grid; grid-template-columns: minmax(96px, 150px) 1fr auto; align-items: center; gap: var(--s-3); font-size: 0.92rem; }
 .dash-bar-label { overflow-wrap: anywhere; }
