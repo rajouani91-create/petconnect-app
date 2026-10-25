@@ -14,9 +14,10 @@ export class ProviderFailure extends Error {
     super(code);
   }
 }
+export type ContentPart = { type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } };
 export interface ProviderMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string;
+  content: string | ContentPart[];
 }
 export interface ProviderReply {
   text: string;

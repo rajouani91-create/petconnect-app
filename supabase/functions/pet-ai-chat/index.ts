@@ -1,7 +1,7 @@
 /* Edge Function „pet-ai-chat“: KI-Assistent für Tierfragen.
    Meldet die Person mit ihrem eigenen Token an, liest Tierdaten ausschließlich über deren Zugriffsrechte (Row Level Security),
    schickt nur die für die Frage nötigen Angaben an den KI-Anbieter und gibt Antwort, Notfall-Kennzeichen und Quellen zurück.
-   Secrets (Supabase → Edge Functions → Secrets): AI_API_KEY (Pflicht), AI_BASE_URL, AI_MODEL, DOG_API_KEY, CAT_API_KEY, ALLOWED_ORIGINS. */
+   Secrets (Supabase → Edge Functions → Secrets): AI_API_KEY (Pflicht), AI_BASE_URL, AI_MODEL, AI_VISION_MODEL (optional, Bilder), DOG_API_KEY, CAT_API_KEY, ALLOWED_ORIGINS. */
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0';
 import { handle, type Deps, type UserCtx } from './handler.ts';
 import type { Extras, HistoryRow, MedRow, PetCore, Topic } from './context.ts';
@@ -10,7 +10,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
 const PET_COLUMNS = 'name,species,species_other,breed,sex,birth_date,allergies,medications,cat_outdoor,stable,deceased';
-const MED_COLUMNS = 'name,amount,unit,frequency,times,intake_hint,note,reason,prescribed_by,starts_on,ends_on,stopped_on';
+const MED_COLUMNS = 'name,amount,unit,frequency,times,intake_hint,note,reason,starts_on,ends_on,stopped_on';
 
 function userClient(token: string) {
   return createClient(SUPABASE_URL, ANON_KEY, {
@@ -87,6 +87,8 @@ const deps: Deps = {
     apiKey: Deno.env.get('AI_API_KEY') || undefined,
     baseUrl: Deno.env.get('AI_BASE_URL') ?? 'https://api.groq.com/openai/v1',
     model: Deno.env.get('AI_MODEL') ?? 'openai/gpt-oss-120b',
+    // Bildmodell nur, wenn ausdrücklich gesetzt (Secret AI_VISION_MODEL, z. B. qwen/qwen3.8-27b). Ohne: Bilder werden abgelehnt.
+    visionModel: Deno.env.get('AI_VISION_MODEL') || undefined,
   },
   breedKeys: { dog: Deno.env.get('DOG_API_KEY') || undefined, cat: Deno.env.get('CAT_API_KEY') || undefined },
   authenticate,

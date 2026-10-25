@@ -42,6 +42,7 @@ describe('buildPetContext', () => {
     const c = buildPetContext(dog, { meds: [med] }, new Set(['meds']), NOW);
     expect(c.text).toContain('Meloxicam | 0.5 ml | daily at 08:00, 20:00 | with food');
     expect(c.text).toContain('not verified by a vet');
+    expect(c.text).not.toContain('Dr. Muster');
     expect(c.used).toContain('medication');
   });
   it('beendete Medikamente werden nicht als laufend gezeigt', () => {

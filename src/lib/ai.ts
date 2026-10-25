@@ -15,7 +15,12 @@ export interface AiAnswer {
   readonly used: readonly string[];
   readonly dayLeft: number | null;
 }
-export type AiErrorKind = 'auth' | 'rate_hour' | 'rate_day' | 'rate_global' | 'busy' | 'down' | 'network' | 'too_long' | 'pet' | 'generic';
+export type AiErrorKind =
+  | 'auth' | 'rate_hour' | 'rate_day' | 'rate_global' | 'busy' | 'down' | 'network' | 'too_long' | 'pet' | 'generic'
+  | 'consent' | 'pii' | 'vision_off' | 'attach_bad' | 'attach_big';
+
+/** Angehängter Inhalt: bereinigter Text oder ein auf dem Gerät geschwärztes JPEG (Base64 ohne Präfix). */
+export type AiAttachment = { readonly kind: 'text'; readonly text: string } | { readonly kind: 'image'; readonly mime: 'image/jpeg'; readonly data: string };
 
 export class AiError extends Error {
   constructor(readonly kind: AiErrorKind) {
@@ -32,6 +37,11 @@ export function errorKind(status: number, body: { error?: string; reason?: strin
   const e = body?.error;
   if (status === 401) return 'auth';
   if (status === 429) return body?.reason === 'hour' ? 'rate_hour' : body?.reason === 'global' ? 'rate_global' : 'rate_day';
+  if (e === 'consent_required') return 'consent';
+  if (e === 'pii_detected') return 'pii';
+  if (e === 'vision_not_configured') return 'vision_off';
+  if (e === 'attachment_too_long' || status === 413) return 'attach_big';
+  if (e === 'invalid_attachment') return 'attach_bad';
   if (e === 'message_too_long' || e === 'too_long_total') return 'too_long';
   if (e === 'pet_not_found' || e === 'invalid_pet') return 'pet';
   if (e === 'ai_busy') return 'busy';
@@ -55,7 +65,7 @@ export function parseAnswer(raw: unknown): AiAnswer | null {
   };
 }
 
-export async function askAssistant(messages: readonly AiMessage[], petId: string | null, lang: string, signal?: AbortSignal): Promise<AiAnswer> {
+export async function askAssistant(messages: readonly AiMessage[], petId: string | null, lang: string, signal?: AbortSignal, attachment?: AiAttachment): Promise<AiAnswer> {
   const { supabase } = await import('./supabase'); // erst beim Senden laden (Tests brauchen keine Konfiguration)
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -66,7 +76,7 @@ export async function askAssistant(messages: readonly AiMessage[], petId: string
     res = await fetch(`${base}/functions/v1/pet-ai-chat`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string },
-      body: JSON.stringify({ messages: messages.slice(-AI_HISTORY), petId, lang }),
+      body: JSON.stringify({ messages: messages.slice(-AI_HISTORY), petId, lang, ...(attachment ? { attachment, consent: true } : {}) }),
       signal,
     });
   } catch (e) {

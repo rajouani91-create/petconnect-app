@@ -9,6 +9,12 @@ describe('errorKind', () => {
     expect(errorKind(429, { error: 'rate_limit', reason: 'global' })).toBe('rate_global');
     expect(errorKind(429, null)).toBe('rate_day');
     expect(errorKind(400, { error: 'message_too_long' })).toBe('too_long');
+    expect(errorKind(403, { error: 'consent_required' })).toBe('consent');
+    expect(errorKind(422, { error: 'pii_detected' })).toBe('pii');
+    expect(errorKind(503, { error: 'vision_not_configured' })).toBe('vision_off');
+    expect(errorKind(400, { error: 'attachment_too_long' })).toBe('attach_big');
+    expect(errorKind(413, { error: 'payload_too_large' })).toBe('attach_big');
+    expect(errorKind(400, { error: 'invalid_attachment' })).toBe('attach_bad');
     expect(errorKind(404, { error: 'pet_not_found' })).toBe('pet');
     expect(errorKind(503, { error: 'ai_busy' })).toBe('busy');
     expect(errorKind(502, { error: 'ai_unavailable' })).toBe('down');

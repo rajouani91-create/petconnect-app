@@ -1,10 +1,12 @@
 /* Ablauf der Anfrage. Alle Abhängigkeiten (Anmeldung, Datenbank, KI-Anbieter, Uhr) werden hineingereicht, damit der Ablauf
    ohne Netzwerk testbar ist. Die echte Verdrahtung steht in index.ts. */
-import { MAX_BODY_BYTES, cleanReply, cleanText, detectEmergency, isUuid, validateMessages } from './safety.ts';
+import type { Attachment } from './safety.ts';
+import { MAX_ATTACH_BODY_BYTES, MAX_BODY_BYTES, cleanReply, cleanText, detectEmergency, isUuid, validateAttachment, validateMessages } from './safety.ts';
+import { hardPiiKinds } from './pii.ts';
 import { buildPetContext, selectTopics, type Extras, type PetCore, type Topic } from './context.ts';
 import { buildSystemPrompt, REMINDER, SUPPORTED_LANGS } from './prompt.ts';
 import { fetchBreed } from './breed.ts';
-import { chat, ProviderFailure, type ProviderMessage } from './provider.ts';
+import { chat, ProviderFailure, type ContentPart, type ProviderMessage } from './provider.ts';
 
 export interface UserCtx {
   id: string;
@@ -16,7 +18,7 @@ export interface UserCtx {
 
 export interface Deps {
   allowedOrigins: string[];
-  ai: { apiKey?: string; baseUrl: string; model: string; maxOutputTokens?: number };
+  ai: { apiKey?: string; baseUrl: string; model: string; visionModel?: string; maxOutputTokens?: number };
   breedKeys: { dog?: string; cat?: string };
   authenticate(token: string): Promise<UserCtx | null>;
   fetchImpl: typeof fetch;
@@ -33,6 +35,15 @@ function headersFor(origin: string | null, allowed: boolean): Record<string, str
     h['access-control-max-age'] = '600';
   }
   return h;
+}
+
+function userContent(question: string, attachment: Attachment | null): string | ContentPart[] {
+  if (!attachment) return question;
+  if (attachment.kind === 'text') return `${question}\n\n<document>\n${attachment.text.replace(/<\/?document>/gi, '')}\n</document>`;
+  return [
+    { type: 'text', text: question },
+    { type: 'image_url', image_url: { url: `data:${attachment.mime};base64,${attachment.data}` } },
+  ];
 }
 
 export async function handle(req: Request, deps: Deps): Promise<Response> {
@@ -55,7 +66,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   if (!token) return fail(401, 'unauthenticated');
 
   const declared = Number(req.headers.get('content-length') ?? '0');
-  if (declared > MAX_BODY_BYTES) return fail(413, 'payload_too_large');
+  if (declared > MAX_ATTACH_BODY_BYTES) return fail(413, 'payload_too_large');
 
   let user: UserCtx | null = null;
   try {
@@ -66,8 +77,8 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   if (!user) return fail(401, 'unauthenticated');
 
   const raw = await req.text();
-  if (raw.length > MAX_BODY_BYTES) return fail(413, 'payload_too_large');
-  let body: { messages?: unknown; petId?: unknown; lang?: unknown };
+  if (raw.length > MAX_ATTACH_BODY_BYTES) return fail(413, 'payload_too_large');
+  let body: { messages?: unknown; petId?: unknown; lang?: unknown; attachment?: unknown; consent?: unknown };
   try {
     body = JSON.parse(raw) as typeof body;
   } catch {
@@ -76,14 +87,27 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   if (typeof body !== 'object' || body === null) return fail(400, 'invalid_body');
   const checked = validateMessages(body.messages);
   if (!checked.ok) return fail(400, checked.error);
+  // Große Anfragen sind nur mit Anhang erlaubt
+  if (raw.length > MAX_BODY_BYTES && (body.attachment === undefined || body.attachment === null)) return fail(413, 'payload_too_large');
+  const att = validateAttachment(body.attachment, body.consent);
+  if (!att.ok) return fail(att.error === 'consent_required' ? 403 : 400, att.error);
+  const attachment = att.attachment;
+  if (attachment?.kind === 'text') {
+    // Zweite Kontrolle auf dem Server: eindeutige persönliche Angaben (E-Mail, Telefon, IBAN, Chip-Nr., Links) dürfen nicht mehr enthalten sein
+    const kinds = hardPiiKinds(attachment.text);
+    if (kinds.length > 0) return fail(422, 'pii_detected', { kinds });
+  }
+  if (attachment?.kind === 'image' && !deps.ai.visionModel) return fail(503, 'vision_not_configured');
   const petId = body.petId === undefined || body.petId === null ? null : body.petId;
   if (petId !== null && !isUuid(petId)) return fail(400, 'invalid_pet');
 
   if (!deps.ai.apiKey) return fail(503, 'not_configured');
 
-  let limit: Awaited<ReturnType<UserCtx['hit']>>;
+  // Bilder sind teurer: sie zählen dreifach gegen das Limit
+  const cost = attachment?.kind === 'image' ? 3 : 1;
+  let limit: Awaited<ReturnType<UserCtx['hit']>> = { allowed: true };
   try {
-    limit = await user.hit();
+    for (let i = 0; i < cost && limit.allowed; i++) limit = await user.hit();
   } catch {
     return fail(500, 'internal');
   }
@@ -132,19 +156,19 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     }
   }
 
-  const system = buildSystemPrompt({ lang, petContext, species, breed: breed.facts, breedStatus: breed.status, emergencyHint: emergencyWords });
+  const system = buildSystemPrompt({ lang, petContext, species, breed: breed.facts, breedStatus: breed.status, emergencyHint: emergencyWords, attachment: attachment?.kind ?? null });
   const history = messages.slice(0, -1);
   const providerMessages: ProviderMessage[] = [
     { role: 'system', content: system },
     ...history.map((m) => ({ role: m.role, content: m.content })),
     { role: 'system', content: REMINDER },
-    { role: 'user', content: cleanText(lastUser) },
+    { role: 'user', content: userContent(cleanText(lastUser), attachment) },
   ];
 
   let result;
   try {
     result = await chat(
-      { apiKey: deps.ai.apiKey, baseUrl: deps.ai.baseUrl, model: deps.ai.model, maxOutputTokens: deps.ai.maxOutputTokens ?? 1200, timeoutMs: 40_000 },
+      { apiKey: deps.ai.apiKey, baseUrl: deps.ai.baseUrl, model: attachment?.kind === 'image' ? deps.ai.visionModel! : deps.ai.model, maxOutputTokens: deps.ai.maxOutputTokens ?? 1200, timeoutMs: 40_000 },
       providerMessages,
       deps.fetchImpl,
     );
@@ -167,7 +191,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     reply: cleaned.text,
     emergency: cleaned.emergency || emergencyWords,
     sources,
-    used,
+    used: attachment ? [...used, attachment.kind === 'image' ? 'attachment_image' : 'attachment_text'] : used,
     breedStatus: breed.status,
     dayLeft: limit.dayLeft ?? null,
   });

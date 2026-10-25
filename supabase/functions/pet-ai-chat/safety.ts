@@ -5,6 +5,10 @@ export const MAX_USER_CHARS = 1000;
 export const MAX_ASSISTANT_CHARS = 4000;
 export const MAX_TOTAL_CHARS = 8000;
 export const MAX_BODY_BYTES = 24_000;
+/** Mit Anhang (bereinigter Text oder verkleinertes JPEG als Base64) ist die Anfrage größer. */
+export const MAX_ATTACH_BODY_BYTES = 2_200_000;
+export const MAX_ATTACH_TEXT = 6000;
+export const MAX_ATTACH_IMAGE_B64 = 1_950_000;
 export const MAX_REPLY_CHARS = 5000;
 
 export type Role = 'user' | 'assistant';
@@ -103,4 +107,32 @@ export function cleanReply(raw: string): CleanReply | null {
   if (text.includes(CANARY)) return null;
   if (text.length > MAX_REPLY_CHARS) text = `${text.slice(0, MAX_REPLY_CHARS - 1).trimEnd()}…`;
   return { text, emergency };
+}
+
+/* ---- Anhang: bereinigter Text oder verkleinertes JPEG, nur mit ausdrücklicher Einwilligung ---- */
+export type Attachment = { kind: 'text'; text: string } | { kind: 'image'; mime: 'image/jpeg'; data: string };
+export type AttachmentError = 'invalid_attachment' | 'attachment_too_long' | 'consent_required';
+
+const B64 = /^[A-Za-z0-9+/]+={0,2}$/;
+
+export function validateAttachment(raw: unknown, consent: unknown): { ok: true; attachment: Attachment | null } | { ok: false; error: AttachmentError } {
+  if (raw === undefined || raw === null) return { ok: true, attachment: null };
+  if (consent !== true) return { ok: false, error: 'consent_required' };
+  if (typeof raw !== 'object') return { ok: false, error: 'invalid_attachment' };
+  const a = raw as { kind?: unknown; text?: unknown; mime?: unknown; data?: unknown };
+  if (a.kind === 'text') {
+    if (typeof a.text !== 'string') return { ok: false, error: 'invalid_attachment' };
+    const text = cleanText(a.text);
+    if (text.length === 0) return { ok: false, error: 'invalid_attachment' };
+    if (text.length > MAX_ATTACH_TEXT) return { ok: false, error: 'attachment_too_long' };
+    return { ok: true, attachment: { kind: 'text', text } };
+  }
+  if (a.kind === 'image') {
+    if (a.mime !== 'image/jpeg' || typeof a.data !== 'string') return { ok: false, error: 'invalid_attachment' };
+    if (a.data.length > MAX_ATTACH_IMAGE_B64) return { ok: false, error: 'attachment_too_long' };
+    // JPEG beginnt mit FF D8 FF, in Base64 „/9j/“
+    if (!a.data.startsWith('/9j/') || !B64.test(a.data)) return { ok: false, error: 'invalid_attachment' };
+    return { ok: true, attachment: { kind: 'image', mime: 'image/jpeg', data: a.data } };
+  }
+  return { ok: false, error: 'invalid_attachment' };
 }

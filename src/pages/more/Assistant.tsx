@@ -4,22 +4,25 @@ import { useI18n } from '../../i18n/I18nProvider';
 import type { MessageKey } from '../../i18n';
 import { usePets } from '../../pets/PetsProvider';
 import { Loading } from '../../components/Loading';
+import { AttachPanel, type Prepared } from '../../components/ai/AttachPanel';
 import { AI_MAX_INPUT, AiError, askAssistant, type AiAnswer, type AiErrorKind, type AiMessage } from '../../lib/ai';
 
 interface Turn extends AiMessage {
   readonly emergency?: boolean;
   readonly sources?: AiAnswer['sources'];
   readonly used?: readonly string[];
+  readonly attached?: string;
 }
 
 const ERROR_KEY: Record<AiErrorKind, MessageKey> = {
   auth: 'aiErrAuth', rate_hour: 'aiErrHour', rate_day: 'aiErrDay', rate_global: 'aiErrGlobal', busy: 'aiErrBusy',
   down: 'aiErrDown', network: 'aiErrNetwork', too_long: 'aiErrLong', pet: 'aiErrPet', generic: 'aiErrGeneric',
+  consent: 'aiErrConsent', pii: 'aiErrPii', vision_off: 'aiErrVision', attach_bad: 'aiErrAttach', attach_big: 'aiErrAttachBig',
 };
 const USED_KEY: Record<string, MessageKey> = {
   profile: 'aiU_profile', allergies: 'aiU_allergies', medication_names: 'aiU_medication_names', medication: 'aiU_medication',
   vaccinations: 'aiU_vaccinations', weight: 'aiU_weight', labs: 'aiU_labs', history: 'aiU_history', documents: 'aiU_documents',
-  breed_database: 'aiU_breed_database',
+  breed_database: 'aiU_breed_database', attachment_text: 'aiU_attachment_text', attachment_image: 'aiU_attachment_image',
 };
 
 /** Mehr → KI-Assistent. Das Gespräch bleibt nur im Arbeitsspeicher dieser Seite (wird nirgends gespeichert). */
@@ -31,6 +34,7 @@ export function Assistant() {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<AiErrorKind | null>(null);
+  const [attach, setAttach] = useState<Prepared | null>(null);
   const [left, setLeft] = useState<number | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -49,15 +53,17 @@ export function Assistant() {
   async function send(question: string) {
     const q = question.trim();
     if (!q || busy) return;
-    const next: Turn[] = [...turns, { role: 'user', content: q }];
+    const att = attach;
+    const next: Turn[] = [...turns, { role: 'user', content: q, ...(att ? { attached: att.label } : {}) }];
     setTurns(next);
     setText('');
+    setAttach(null); // gilt nur für diese eine Frage
     setError(null);
     setBusy(true);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     try {
-      const a = await askAssistant(next.map(({ role, content }) => ({ role, content })), petId || null, lang, ctrl.signal);
+      const a = await askAssistant(next.map(({ role, content }) => ({ role, content })), petId || null, lang, ctrl.signal, att?.att);
       setTurns([...next, { role: 'assistant', content: a.reply, emergency: a.emergency, sources: a.sources, used: a.used }]);
       setLeft(a.dayLeft);
     } catch (e) {
@@ -81,6 +87,7 @@ export function Assistant() {
   function reset() {
     abortRef.current?.abort();
     setTurns([]);
+    setAttach(null);
     setError(null);
     setBusy(false);
   }
@@ -123,6 +130,7 @@ export function Assistant() {
               </p>
             )}
             <p className="ai-text">{m.content}</p>
+            {m.attached && <p className="ai-meta">{t('aiAttSent', { name: m.attached })}</p>}
             {m.sources && m.sources.length > 0 && (
               <p className="ai-meta">
                 {t('aiSources')}:{' '}
@@ -151,6 +159,7 @@ export function Assistant() {
           onKeyDown={onKey}
           disabled={busy}
         />
+        <AttachPanel petId={petId} disabled={busy} value={attach} onChange={setAttach} />
         <div className="ai-actions">
           <button type="submit" className="btn btn-primary" disabled={busy || text.trim() === ''}>{t('aiSend')}</button>
           {turns.length > 0 && <button type="button" className="btn btn-secondary" onClick={reset}>{t('aiReset')}</button>}

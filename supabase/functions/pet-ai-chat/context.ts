@@ -47,7 +47,7 @@ export interface MedRow {
   intake_hint: string | null;
   note: string | null;
   reason: string | null;
-  prescribed_by: string | null;
+  prescribed_by?: string | null; // wird bewusst nicht mehr abgefragt und nie an die KI gegeben
   starts_on: string | null;
   ends_on: string | null;
   stopped_on: string | null;
@@ -129,7 +129,6 @@ export function buildPetContext(pet: PetCore, extras: Extras, topics: Set<Topic>
         m.frequency === 'as_needed' ? 'as needed' : m.times && m.times.length ? `daily at ${m.times.map((t) => t.slice(0, 5)).join(', ')}` : null,
         m.intake_hint && m.intake_hint !== 'none' ? m.intake_hint.replace('_', ' ') : null,
         m.reason ? `reason: ${flat(m.reason, 80)}` : null,
-        m.prescribed_by ? `prescribed by: ${flat(m.prescribed_by, 60)}` : null,
         m.note ? `note: ${flat(m.note, 100)}` : null,
         m.ends_on ? `until ${m.ends_on}` : 'ongoing',
       ].filter(Boolean);
