@@ -75,6 +75,41 @@ export async function staffDashboard(): Promise<DashboardData> {
   return data as unknown as DashboardData;
 }
 
+export type TeamMember = { user_id: string; email: string; display_name: string | null; role: StaffRole; created_at: string };
+export type RoleChange = StaffRole | 'none';
+
+/** Einfache E-Mail-Prüfung für das Formular; die Datenbank sucht ohnehin nur bestehende Konten. */
+export function isEmail(v: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+}
+
+/** Fehlercode der Datenbankfunktion in eine verständliche Meldung übersetzen. */
+export function roleErrorText(code: string | undefined): string {
+  switch (code) {
+    case 'P0002':
+      return 'Zu dieser E-Mail-Adresse gibt es kein Konto. Die Person muss sich zuerst registrieren.';
+    case '42501':
+      return 'Dafür fehlt die Berechtigung.';
+    case '22023':
+      return 'Das eigene Konto kann hier nicht geändert werden, und ein Grund ist Pflicht.';
+    default:
+      return 'Die Änderung konnte nicht gespeichert werden.';
+  }
+}
+
+/** Nur Admin: alle Mitarbeitenden mit Rolle. */
+export async function staffTeam(): Promise<TeamMember[]> {
+  const { data, error } = await supabase.rpc('staff_team');
+  if (error) throw error;
+  return (data ?? []).filter((r) => r.role === 'admin' || r.role === 'support') as TeamMember[];
+}
+
+/** Nur Admin: Rolle vergeben, ändern oder mit 'none' entziehen. Wird protokolliert. */
+export async function setStaffRole(email: string, role: RoleChange, reason: string): Promise<void> {
+  const { error } = await supabase.rpc('staff_set_role', { target_email: email.trim(), new_role: role, reason: reason.trim() });
+  if (error) throw error;
+}
+
 /** Löst den bestehenden Passwort-Reset für ein Konto aus. Das Passwort sieht niemand, die Funktion protokolliert den Versand. */
 export async function sendResetLink(target: string): Promise<void> {
   const { error } = await supabase.functions.invoke('staff-reset-link', { body: { target } });
