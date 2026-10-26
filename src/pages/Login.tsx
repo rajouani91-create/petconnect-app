@@ -7,6 +7,7 @@ import { authErrorKey } from '../auth/authErrors';
 import { readPendingInvite } from '../lib/sharing';
 import { AuthLayout } from '../components/AuthLayout';
 import { Field } from '../components/Field';
+import { GoogleButton } from '../components/GoogleButton';
 
 type F = 'email' | 'password';
 
@@ -136,6 +137,10 @@ export function Login() {
 
   return (
     <AuthLayout title={t('login_title')} sub={t('login_sub')} inviteHint>
+      <GoogleButton onError={(key) => setFormError({ key })} />
+      <p className="auth-or" aria-hidden="true">
+        <span>{t('orDivider')}</span>
+      </p>
       <form className="stack" onSubmit={login} noValidate>
         {emailField}
         <Field id="login-pw" label={t('password')} error={errors.password} required>

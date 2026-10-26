@@ -1,6 +1,7 @@
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { getProfile } from '../lib/api';
+import { getProfile, updateLanguage } from '../lib/api';
+import { shouldAdoptLang, takeOauthLang } from '../lib/oauth';
 import { supabase, type ProfileRow } from '../lib/supabase';
 import { isLang } from '../i18n';
 import { clearPendingInvite } from '../lib/sharing';
@@ -43,7 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadProfile = useCallback(async (id: string) => {
     try {
-      const p = await getProfile(id);
+      let p = await getProfile(id);
+      // Neues Konto über Google: die Sprache der Anmeldeseite übernehmen (sonst gilt die Standardsprache).
+      const stored = takeOauthLang();
+      if (p && stored && isLang(stored) && shouldAdoptLang(p.language, p.created_at, stored)) {
+        await updateLanguage(id, stored);
+        p = { ...p, language: stored };
+      }
       setProfile(p);
       if (p && isLang(p.language)) setLang(p.language);
     } catch (e) {

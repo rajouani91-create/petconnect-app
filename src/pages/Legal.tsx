@@ -96,6 +96,8 @@ export function Privacy() {
       <h2>5. Datenbank und Anmeldung</h2>
       <p>Konto, Anmeldung und Ihre Inhalte werden bei {FACTS.database} gespeichert. Die Daten liegen in Frankfurt am Main. Supabase, Inc. ist ein Unternehmen mit Sitz in den USA.</p>
       {/* RECHTLICH PRÜFEN: Auftragsverarbeitungsvertrag mit Supabase und Hinweis auf möglichen Zugriff aus den USA. */}
+      <p>Sie können sich auch freiwillig mit Ihrem Google-Konto anmelden. Dann leitet Ihr Browser Sie zur Anmeldung zu {FACTS.google} weiter. Google teilt uns Ihre E-Mail-Adresse, Ihren Namen und eine Kennung Ihres Google-Kontos mit; Ihr Google-Passwort erhalten wir nie. Google erfährt dabei, dass Sie sich bei PetConnect anmelden, und verarbeitet das nach den eigenen Datenschutzhinweisen. Rechtsgrundlage ist die Bereitstellung des Kontos (Art. 6 Abs. 1 lit. b DSGVO). Wer das nicht möchte, meldet sich weiterhin mit E-Mail-Adresse und Passwort an.</p>
+      {/* RECHTLICH PRÜFEN: Übermittlung in die USA bei Google (Grundlage) und Verweis auf die Datenschutzhinweise von Google. */}
 
       <h2>6. Push-Benachrichtigungen</h2>
       <p>Nur wenn Sie sie auf einem Gerät aktivieren. Übertragen über den {FACTS.push} (Google, USA). Die Benachrichtigungen enthalten Tiername, Medikament oder Termin und Uhrzeit; sie werden verschlüsselt übertragen.</p>
@@ -108,7 +110,7 @@ export function Privacy() {
       <p>Einige Angaben speichert die App im lokalen Speicher Ihres Browsers, weil die jeweilige Funktion sonst nicht möglich ist (§ 25 Abs. 2 Nr. 2 TDDDG):</p>
       <ul>
         <li>Ihre Anmeldung (Sitzung), damit Sie angemeldet bleiben</li>
-        <li>die gewählte Sprache</li>
+        <li>die gewählte Sprache (bei der Anmeldung mit Google kurz zwischengespeichert und danach sofort gelöscht)</li>
         <li>die Position der schwebenden KI-Schaltfläche, wenn Sie sie verschieben</li>
         <li>das zuletzt gewählte Tier</li>
         <li>der zuletzt gesuchte Ort bzw. die PLZ in der Praxissuche (kein Standort)</li>

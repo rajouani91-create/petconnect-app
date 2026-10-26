@@ -30,6 +30,8 @@ export const FACTS = {
   database: 'Supabase (Datenbank und Anmeldung), Region eu-central-1 (Frankfurt am Main, Deutschland)',
   // RECHTLICH PRÜFEN: Anschrift von Groq, Auftragsverarbeitungsvertrag und Grundlage der Übermittlung in die USA.
   ai: 'Groq, Inc. (USA)',
+  // RECHTLICH PRÜFEN: Anschrift von Google Ireland Limited und Link zu den Datenschutzhinweisen von Google ergänzen?
+  google: 'Google Ireland Limited (Irland); Konzernmutter Google LLC (USA)',
   push: 'Push-Dienst des jeweiligen Browsers; bei Android: Google Firebase Cloud Messaging',
   maps: '© OpenStreetMap-Mitwirkende, Datenbanklizenz ODbL',
 } as const;
