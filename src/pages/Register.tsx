@@ -7,6 +7,7 @@ import { DISPLAY_NAME_MAX, emailError, hasErrors, passwordError, requiredMax, ty
 import { authErrorKey } from '../auth/authErrors';
 import { AuthLayout } from '../components/AuthLayout';
 import { Field } from '../components/Field';
+import { GoogleButton } from '../components/GoogleButton';
 
 type F = 'displayName' | 'email' | 'password';
 const ORDER: F[] = ['displayName', 'email', 'password'];
@@ -84,6 +85,10 @@ export function Register() {
 
   return (
     <AuthLayout title={t('reg_title')} sub={t('reg_sub')} inviteHint>
+      <GoogleButton onError={(key) => setFormError({ key })} />
+      <p className="auth-or" aria-hidden="true">
+        <span>{t('orDivider')}</span>
+      </p>
       <form className="stack" onSubmit={submit} noValidate>
         <Field id="reg-name" label={t('displayName')} hint={t('displayNameHint')} error={errors.displayName} required>
           {(a) => (
