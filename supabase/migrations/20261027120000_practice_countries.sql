@@ -207,6 +207,36 @@ begin
 end; $$;
 revoke all on function private.import_osm_abroad(text[]) from public, anon, authenticated;
 
+-- Der deutsche Gesamtimport darf nur deutsche Praxen deaktivieren (sonst würden die Praxen der anderen Länder jeden Monat abgeschaltet).
+create or replace function private.import_osm_all()
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare v_start timestamptz := now(); v_iso text; v_ok int := 0; v_err int := 0; n_off int := 0; r jsonb;
+begin
+  foreach v_iso in array array['DE-BW','DE-BY','DE-BE','DE-BB','DE-HB','DE-HH','DE-HE','DE-MV','DE-NI','DE-NW','DE-RP','DE-SL','DE-SN','DE-ST','DE-SH','DE-TH'] loop
+    begin
+      r := private.import_osm_state(v_iso);
+      insert into private.import_log(job, result) values ('osm '||v_iso, r);
+      v_ok := v_ok + 1;
+    exception when others then
+      insert into private.import_log(job, error) values ('osm '||v_iso, sqlerrm);
+      v_err := v_err + 1;
+    end;
+    perform pg_sleep(10);
+  end loop;
+  if v_err = 0 then
+    update public.practices set active = false, updated_at = now()
+     where source = 'osm' and not registered and active and country = 'DE' and last_seen_at < v_start;
+    get diagnostics n_off = row_count;
+  end if;
+  r := jsonb_build_object('ok', v_ok, 'errors', v_err, 'deactivated', n_off);
+  insert into private.import_log(job, result) values ('osm gesamt', r);
+  return r;
+end; $$;
+
 -- Monatlich am 3. um 03:47 (Deutschland läuft am 1.)
 select cron.unschedule(jobid) from cron.job where jobname = 'osm-import-abroad';
 select cron.schedule('osm-import-abroad', '47 3 3 * *', $cron$set statement_timeout = '60min'; select private.import_osm_abroad();$cron$);
