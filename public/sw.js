@@ -2,7 +2,7 @@
  * - App-Shell offline: "/", "/index.html" und die gebauten Dateien aus index.html beim Installieren,
  *   danach /assets/* und Icons „stale-while-revalidate“.
  * - Antworten von Supabase (andere Origin) werden nie angefasst oder gespeichert.
- * - Push: Nachricht anzeigen; Klick öffnet die passende Seite (nur gleiche Origin).
+ * - Push: Nachricht anzeigen; Klick öffnet „Heute“ (gleiche Origin).
  */
 const VERSION = 'pc-v1';
 const SHELL = `${VERSION}-shell`;
@@ -70,6 +70,9 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
+/** Ziel beim Antippen einer Benachrichtigung: die Heute-Seite */
+const TODAY_URL = '/';
+
 const FALLBACK_TITLE = 'PetConnect – Neue Benachrichtigung';
 
 /** Nachricht lesen; leer oder kaputt → neutrale Meldung */
@@ -87,7 +90,7 @@ function readPush(data) {
     options: {
       body: typeof msg.body === 'string' ? msg.body.slice(0, 300) : '',
       tag: typeof msg.tag === 'string' ? msg.tag.slice(0, 100) : 'petconnect',
-      data: { url: safeUrl(msg.url) },
+      data: { url: TODAY_URL },
     },
   };
 }
@@ -128,6 +131,6 @@ async function openUrl(path) {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification.data && event.notification.data.url;
-  event.waitUntil(openUrl(url));
+  // Jede Push-Meldung führt zu „Heute“ – dort werden Medikamente, Erinnerungen und Alltag abgehakt.
+  event.waitUntil(openUrl(TODAY_URL));
 });
