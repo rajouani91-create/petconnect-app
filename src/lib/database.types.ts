@@ -1104,7 +1104,7 @@ export type Database = {
         }[]
       }
       geocode_place: {
-        Args: { p_q: string }
+        Args: { p_country?: string; p_q: string }
         Returns: {
           lat: number
           lon: number

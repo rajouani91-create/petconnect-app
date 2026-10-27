@@ -9,6 +9,7 @@ import {
   type PracticeSpecies,
   type PracticeTitle,
 } from './practiceCatalog';
+import { DEFAULT_COUNTRY, isPracticeCountry, type PracticeCountry } from './practiceCountries';
 
 export const RADII = [5, 10, 25, 50] as const;
 export type Radius = (typeof RADII)[number];
@@ -18,6 +19,8 @@ export const SEARCH_LIMIT = 100;
 export type SortBy = 'distance' | 'name';
 
 export interface PracticeFilters {
+  /** Gewähltes Land (steht nur in der URL, wenn es nicht Deutschland ist) */
+  country: PracticeCountry;
   /** Gewählter Ort: PLZ oder Ortsname (zum Wiederherstellen per geocode_place) */
   place: string;
   radius: Radius;
@@ -29,7 +32,7 @@ export interface PracticeFilters {
   sort: SortBy;
 }
 
-export const EMPTY_FILTERS: PracticeFilters = { place: '', radius: DEFAULT_RADIUS, species: null, services: [], titles: [], q: '', openNow: false, sort: 'distance' };
+export const EMPTY_FILTERS: PracticeFilters = { country: DEFAULT_COUNTRY, place: '', radius: DEFAULT_RADIUS, species: null, services: [], titles: [], q: '', openNow: false, sort: 'distance' };
 
 /** Sind Angebots-Filter gesetzt (Tierart, Leistung, Fachtitel)? */
 export function hasOfferFilters(f: Pick<PracticeFilters, 'species' | 'services' | 'titles'>): boolean {
@@ -53,6 +56,7 @@ export function toRpcParams(f: PracticeFilters, center: { lat: number; lon: numb
 /** Filter → URL-Parameter, z. B. ?plz=65428&r=10&tier=reptile&l=hibernation&t=reptiles (Standardwerte weggelassen) */
 export function filtersToQuery(f: PracticeFilters): URLSearchParams {
   const p = new URLSearchParams();
+  if (f.country !== DEFAULT_COUNTRY) p.set('land', f.country);
   if (f.place.trim()) p.set('plz', f.place.trim());
   if (f.radius !== DEFAULT_RADIUS) p.set('r', String(f.radius));
   if (f.species) p.set('tier', f.species);
@@ -68,7 +72,9 @@ export function filtersToQuery(f: PracticeFilters): URLSearchParams {
 export function queryToFilters(p: URLSearchParams): PracticeFilters {
   const r = Number(p.get('r'));
   const tier = p.get('tier');
+  const land = p.get('land');
   return {
+    country: isPracticeCountry(land) ? land : DEFAULT_COUNTRY,
     place: (p.get('plz') ?? '').trim().slice(0, 80),
     radius: (RADII as readonly number[]).includes(r) ? (r as Radius) : DEFAULT_RADIUS,
     species: isPracticeSpecies(tier) ? tier : null,
@@ -280,6 +286,27 @@ export const SEARCH_ERROR: MessageKey = 'psError';
 // ---------- gemerkte Ortswahl (nur PLZ/Ort, keine Koordinaten) ----------
 
 const PLACE_KEY = 'pc-practice-place';
+const COUNTRY_KEY = 'pc-practice-country';
+
+export function readLastCountry(): PracticeCountry | null {
+  try {
+    const v = localStorage.getItem(COUNTRY_KEY);
+    return isPracticeCountry(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+/** Zuletzt gewählter Ort, aber nur wenn er zum Land passt (Postleitzahlen gelten je Land) */
+export function lastPlaceFor(country: PracticeCountry): string | null {
+  return (readLastCountry() ?? DEFAULT_COUNTRY) === country ? readLastPlace() : null;
+}
+export function saveLastCountry(country: PracticeCountry): void {
+  try {
+    localStorage.setItem(COUNTRY_KEY, country);
+  } catch {
+    /* Speicher nicht verfügbar */
+  }
+}
 
 export function readLastPlace(): string | null {
   try {

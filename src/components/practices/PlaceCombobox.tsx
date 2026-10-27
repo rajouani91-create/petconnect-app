@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 import { useI18n } from '../../i18n/I18nProvider';
 import { geocodePlace, type PlaceHit } from '../../lib/api';
 import { INPUT_DELAY_MS, MIN_QUERY, debounce, latestOnly } from '../../lib/debounce';
+import { fullPostcode, type PracticeCountry } from '../../lib/practiceCountries';
 import { highlightParts } from '../../lib/practices';
 
 export const placeLabel = (h: PlaceHit) => [h.postcode, h.place].filter(Boolean).join(' ');
@@ -10,14 +11,17 @@ export const placeLabel = (h: PlaceHit) => [h.postcode, h.place].filter(Boolean)
  * „Ort oder PLZ“ als Combobox (WAI-ARIA 1.2, Liste mit Vorschlägen aus geocode_place).
  * Vorschläge 250 ms nach dem letzten Tastendruck, ab 2 Zeichen; ältere Antworten werden verworfen.
  * Pfeiltasten wählen, Enter übernimmt (ohne Auswahl: erster Vorschlag), Escape schließt.
- * Genau 5 Ziffern mit genau einem Treffer: automatisch übernehmen (`auto = true`) und ansagen.
+ * Vollständige Postleitzahl des Landes (DE/FR: 5 Ziffern, NL: 4 Ziffern, auch „3511 AB“) mit genau einem Treffer:
+ * automatisch übernehmen (`auto = true`) und ansagen.
  */
 export function PlaceCombobox({
+  country,
   value,
   onValue,
   onPick,
   onError,
 }: {
+  country: PracticeCountry;
   value: string;
   onValue: (v: string) => void;
   onPick: (hit: PlaceHit, auto: boolean) => void;
@@ -35,8 +39,8 @@ export function PlaceCombobox({
   const typed = useRef(false);
   const latest = useMemo(() => latestOnly(), []);
   // Props in Refs, damit die verzögerte Abfrage immer die aktuellen Rückrufe nutzt
-  const cb = useRef({ onPick, onError, t });
-  cb.current = { onPick, onError, t };
+  const cb = useRef({ onPick, onError, t, country });
+  cb.current = { onPick, onError, t, country };
 
   function pick(h: PlaceHit, auto = false) {
     typed.current = false;
@@ -54,10 +58,11 @@ export function PlaceCombobox({
     () =>
       debounce((q: string) => {
         const isCurrent = latest.start();
-        geocodePlace(q)
+        const land = cb.current.country;
+        geocodePlace(q, land)
           .then((h) => {
             if (!isCurrent()) return;
-            if (/^\d{5}$/.test(q) && h.length === 1) {
+            if (fullPostcode(q, land) !== null && h.length === 1) {
               pick(h[0]!, true);
               return;
             }
@@ -77,6 +82,17 @@ export function PlaceCombobox({
     [latest],
   );
   useEffect(() => () => lookup.cancel(), [lookup]);
+
+  // Land gewechselt: Vorschläge aus dem anderen Land verwerfen
+  useEffect(() => {
+    lookup.cancel();
+    latest.cancel();
+    setHits([]);
+    setHitsFor('');
+    setOpen(false);
+    setActive(-1);
+    setNoHit(false);
+  }, [country, lookup, latest]);
 
   // Vorschläge laden, sobald getippt wird; ein einzelnes Zeichen sucht nicht
   useEffect(() => {
@@ -99,7 +115,7 @@ export function PlaceCombobox({
     lookup.cancel();
     const isCurrent = latest.start();
     try {
-      const h = hits.length > 0 && hitsFor === q ? hits : await geocodePlace(q);
+      const h = hits.length > 0 && hitsFor === q ? hits : await geocodePlace(q, country);
       if (!isCurrent()) return;
       if (h[0]) pick(h[0]);
       else {

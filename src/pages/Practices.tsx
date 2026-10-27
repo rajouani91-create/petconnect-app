@@ -28,6 +28,7 @@ import {
   isPracticeSpecies,
 } from '../lib/practiceCatalog';
 import { INPUT_DELAY_MS, searchText } from '../lib/debounce';
+import { COUNTRY_TEXT, ENABLED_COUNTRIES, countryForLang, isPracticeCountry, type PracticeCountry } from '../lib/practiceCountries';
 import {
   EMPTY_FILTERS,
   RADII,
@@ -39,7 +40,9 @@ import {
   filtersToQuery,
   hasOfferFilters,
   queryToFilters,
-  readLastPlace,
+  lastPlaceFor,
+  readLastCountry,
+  saveLastCountry,
   saveLastPlace,
   splitResults,
   toRpcParams,
@@ -62,14 +65,14 @@ type Center = { lat: number; lon: number; label: string; fromDevice: boolean };
 
 /** Praxissuche: Praxen aus OpenStreetMap, Angebot nur mit Praxisprofil. Keine Karte, kein Tracking. */
 export function Practices() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const uid = useId();
   const [params, setParams] = useSearchParams();
   const filters = useMemo(() => queryToFilters(params), [params]);
   const { pets, myRole, upsertLocal } = usePets();
   const now = useNow();
 
-  const [placeInput, setPlaceInput] = useState(() => filters.place || readLastPlace() || '');
+  const [placeInput, setPlaceInput] = useState(() => filters.place || lastPlaceFor(filters.country) || '');
   const [center, setCenter] = useState<Center | null>(null);
   const [rows, setRows] = useState<PracticeHit[] | null>(null);
   const [rowsKey, setRowsKey] = useState('');
@@ -127,17 +130,20 @@ export function Practices() {
     void loadFavs();
   }, [loadFavs]);
 
-  // Ort aus der URL (oder zuletzt gewählt) wiederherstellen
+  // Land: aus der URL, sonst zuletzt gewählt, sonst nach Sprache der App; der Ort gehört nur zum Land der URL bzw. zum zuletzt gewählten
   const restored = useRef(false);
   useEffect(() => {
     if (restored.current) return;
     restored.current = true;
-    const place = filters.place || readLastPlace();
+    const fromUrl = isPracticeCountry(params.get('land'));
+    const country: PracticeCountry = fromUrl ? filters.country : (readLastCountry() ?? countryForLang(lang));
+    if (!fromUrl && country !== filters.country) setFilters({ country });
+    const place = filters.place || lastPlaceFor(country);
     if (!place) return;
-    geocodePlace(place)
+    geocodePlace(place, country)
       .then((h) => {
         const hit = h[0];
-        if (hit) choosePlace(hit, false);
+        if (hit) choosePlace(hit, false, country);
       })
       .catch((e: unknown) => {
         console.error(e);
@@ -146,15 +152,31 @@ export function Practices() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur einmal beim Öffnen
   }, []);
 
-  function choosePlace(hit: PlaceHit, focus = true) {
+  function changeCountry(country: PracticeCountry) {
+    if (country === filters.country) return;
+    saveLastCountry(country);
+    // Ort, Mittelpunkt und Ergebnisse gehören zum alten Land
+    setPlaceInput('');
+    setCenter(null);
+    setRows(null);
+    setCounts(null);
+    setRowsKey('');
+    setGeoMsg(null);
+    setError(false);
+    saveLastPlace('');
+    setFilters({ country, place: '' });
+  }
+
+  function choosePlace(hit: PlaceHit, focus = true, country: PracticeCountry = filters.country) {
     const label = placeLabel(hit);
     setPlaceInput(label);
     setCenter({ lat: hit.lat, lon: hit.lon, label, fromDevice: false });
     setGeoMsg(null);
     saveLastPlace(hit.postcode);
+    saveLastCountry(country);
     if (filters.place !== hit.postcode || !center || center.fromDevice) {
       focusCounter.current = focus;
-      if (filters.place !== hit.postcode) setFilters({ place: hit.postcode });
+      if (filters.place !== hit.postcode) setFilters({ place: hit.postcode, country });
     } else if (focus) {
       // gleicher Ort, keine neue Suche: Fokus sofort setzen, sonst bliebe die Markierung hängen
       setTimeout(() => counter.current?.focus(), 0);
@@ -234,8 +256,8 @@ export function Practices() {
   const offer = hasOfferFilters(filters);
   const infoOf = useCallback(
     (p: { opening_hours: string | null; postcode: string | null }): OpeningInfo =>
-      Oh ? openingInfo(Oh, p.opening_hours, now, p.postcode) : { state: 'unknown', today: null, change: null, comment: null },
-    [Oh, now],
+      Oh ? openingInfo(Oh, p.opening_hours, now, p.postcode, filters.country) : { state: 'unknown', today: null, change: null, comment: null },
+    [Oh, now, filters.country],
   );
   const split = rows ? splitResults(rows, offer, filters.sort, filters.species) : { matches: [], unknown: [], hinted: new Set<PracticeHit>() };
   const hintText = filters.species ? t(SPECIES_TEXT[filters.species]) : null;
@@ -337,7 +359,13 @@ export function Practices() {
 
       <section className="card stack" aria-labelledby={`${uid}-where`}>
         <h2 id={`${uid}-where`}>{t('psWhere')}</h2>
-        <PlaceCombobox value={placeInput} onValue={setPlaceInput} onPick={(h, auto) => choosePlace(h, !auto)} onError={() => setError(true)} />
+        <div className="field">
+          <label htmlFor={`${uid}-c`}>{t('psCountry')}</label>
+          <select id={`${uid}-c`} value={filters.country} onChange={(e) => changeCountry(e.target.value as PracticeCountry)}>
+            {ENABLED_COUNTRIES.map((c) => <option key={c} value={c}>{t(COUNTRY_TEXT[c])}</option>)}
+          </select>
+        </div>
+        <PlaceCombobox country={filters.country} value={placeInput} onValue={setPlaceInput} onPick={(h, auto) => choosePlace(h, !auto)} onError={() => setError(true)} />
         <div className="actions actions-start">
           <button type="button" className="btn btn-secondary" onClick={locateMe}>{t('psMyLocation')}</button>
         </div>
@@ -480,6 +508,12 @@ export function Practices() {
           {t('psOsmCredit')}{' '}
           <a className="link" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">{t('psOsmCopy')}</a>
         </p>
+        {filters.country !== 'DE' && (
+          <p className="small osm-credit">
+            {t('psGeoCredit')}{' '}
+            <a className="link" href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer">GeoNames (CC BY 4.0)</a>
+          </p>
+        )}
         <p className="muted small">{t('psOsmFix')}</p>
       </section>
       <StatusLine status={status} />

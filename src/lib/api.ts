@@ -5,6 +5,7 @@ import type { Database } from './database.types';
 import { docExt, type DocCategory, type DocMime } from './record';
 import type { ApptKind, ApptStatus, RemKind } from './schedule';
 import { parseSitterView, type ClaimStatus, type SitterView, type Submission } from './care';
+import type { PracticeCountry } from './practiceCountries';
 import type { RadiusCount, toRpcParams } from './practices';
 import { prefsWrite, type NotificationPrefs } from './push';
 import { supabase, type PetRow, type ProfileRow, type RoutineRow } from './supabase';
@@ -606,11 +607,11 @@ export async function sitterView(token: string): Promise<SitterView> {
 export type PracticeHit = Database['public']['Functions']['search_practices']['Returns'][number];
 export type PlaceHit = Database['public']['Functions']['geocode_place']['Returns'][number];
 
-/** Ort oder PLZ → bis zu 10 Treffer (5-stellige PLZ exakt, sonst Ortsanfang) */
-export async function geocodePlace(q: string): Promise<PlaceHit[]> {
+/** Ort oder PLZ im gewählten Land → bis zu 10 Treffer (vollständige PLZ exakt, sonst Ortsanfang) */
+export async function geocodePlace(q: string, country: PracticeCountry = 'DE'): Promise<PlaceHit[]> {
   const s = q.trim();
   if (!s) return [];
-  return check(await supabase.rpc('geocode_place', { p_q: s }));
+  return check(await supabase.rpc('geocode_place', { p_q: s, p_country: country }));
 }
 
 /** Praxen im Umkreis mit Angebot, Trefferkennzeichen und Favorit; der Standort wird nicht gespeichert */

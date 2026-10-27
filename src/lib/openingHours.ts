@@ -1,5 +1,6 @@
 // Öffnungszeiten aus OpenStreetMap (opening_hours-Syntax) auswerten.
 // Bibliothek: opening_hours (LGPL-3.0, https://github.com/opening-hours/opening_hours.js), nur bei Bedarf geladen.
+import { COUNTRY_CENTER, DEFAULT_COUNTRY, holidayCountry, type PracticeCountry } from './practiceCountries';
 
 /** open = geöffnet, closing = geöffnet, schließt in weniger als 45 Minuten */
 export type OpenState = 'open' | 'closing' | 'closed' | 'unknown';
@@ -52,13 +53,21 @@ const UNKNOWN: OpeningInfo = { state: 'unknown', today: null, change: null, comm
 
 /**
  * Zustand jetzt, Zeiten heute, nächster Wechsel und Kommentar. Ohne Angabe oder bei nicht lesbarer Angabe:
- * „unbekannt“ – nie ein Fehler. Lokale Zeit des Geräts; Feiertage nach Bundesland (aus der PLZ).
+ * „unbekannt“ – nie ein Fehler. Lokale Zeit des Geräts; Feiertage nach Land, in Deutschland nach Bundesland (aus der PLZ).
  */
-export function openingInfo(Oh: OhConstructor, value: string | null | undefined, now: Date, postcode?: string | null): OpeningInfo {
+export function openingInfo(
+  Oh: OhConstructor,
+  value: string | null | undefined,
+  now: Date,
+  postcode?: string | null,
+  country: PracticeCountry = DEFAULT_COUNTRY,
+): OpeningInfo {
   const v = value?.trim();
   if (!v) return UNKNOWN;
   try {
-    const nominatim = { lat: 51.16, lon: 10.45, address: { country_code: 'de', state: stateFromPostcode(postcode) } };
+    // Feiertage nach Bundesland gibt es nur für Deutschland; in den anderen Ländern gelten die landesweiten Feiertage
+    const address = country === 'DE' ? { country_code: holidayCountry(country), state: stateFromPostcode(postcode) } : { country_code: holidayCountry(country) };
+    const nominatim = { ...COUNTRY_CENTER[country], address };
     const oh = new Oh(v, nominatim, { mode: 0, locale: 'de' });
     const comment = oh.getComment(now)?.trim() || null;
     if (oh.getUnknown(now)) return { ...UNKNOWN, comment };

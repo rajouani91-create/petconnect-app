@@ -60,6 +60,7 @@ export function Imprint() {
       <p>Diese Website kann Links zu externen Websites Dritter enthalten, auf deren Inhalte wir keinen Einfluss haben. Für diese fremden Inhalte ist stets der jeweilige Anbieter oder Betreiber verantwortlich. Bei Bekanntwerden von Rechtsverletzungen entfernen wir derartige Links umgehend.</p>
       <h2>Kartendaten</h2>
       <p>{FACTS.maps}</p>
+      <p>Orte und Postleitzahlen im Ausland: {FACTS.places}.</p>
     </LegalFrame>
   );
 }
@@ -104,7 +105,7 @@ export function Privacy() {
       <p>Rechtsgrundlage ist Ihre Einwilligung durch das Aktivieren auf dem Gerät (Art. 6 Abs. 1 lit. a DSGVO). Sie können sie jederzeit unter „Mehr → Benachrichtigungen“ widerrufen.</p>
 
       <h2>7. Standort und Praxissuche</h2>
-      <p>Ihr Standort wird nur nach Ihrem Klick auf „Mein Standort“ für die jeweilige Suche verwendet und nicht gespeichert. Praxisdaten: {FACTS.maps}.</p>
+      <p>Ihr Standort wird nur nach Ihrem Klick auf „Mein Standort“ für die jeweilige Suche verwendet und nicht gespeichert. Die Praxissuche gibt es für Deutschland, Frankreich und die Niederlande; der gewählte Ort wird nur für die Suche an unsere Datenbank gesendet. Praxisdaten: {FACTS.maps}. Orte und Postleitzahlen im Ausland: {FACTS.places}.</p>
 
       <h2>8. Lokale Speicherung im Browser</h2>
       <p>Einige Angaben speichert die App im lokalen Speicher Ihres Browsers, weil die jeweilige Funktion sonst nicht möglich ist (§ 25 Abs. 2 Nr. 2 TDDDG):</p>

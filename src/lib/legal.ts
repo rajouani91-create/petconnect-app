@@ -34,6 +34,7 @@ export const FACTS = {
   google: 'Google Ireland Limited (Irland); Konzernmutter Google LLC (USA)',
   push: 'Push-Dienst des jeweiligen Browsers; bei Android: Google Firebase Cloud Messaging',
   maps: '© OpenStreetMap-Mitwirkende, Datenbanklizenz ODbL',
+  places: 'GeoNames (geonames.org), Lizenz CC BY 4.0: Postleitzahlen und Orte in Frankreich und den Niederlanden',
 } as const;
 
 /** mailto: für „Konto löschen“ – ohne hinterlegte Adresse bleibt der Empfänger leer */
