@@ -1038,6 +1038,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: { accounts: number; profiles: number; accounts_with_pets: number; pets: number; pets_by_species: Record<string, number>; locked_accounts: number; tickets_open: number; tickets_in_progress: number; tickets_closed: number }
       }
+      staff_activity: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       staff_dashboard: {
         Args: Record<PropertyKey, never>
         Returns: Json

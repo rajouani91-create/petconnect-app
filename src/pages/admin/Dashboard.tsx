@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import {
-  areaPath, cumulative, fmt, growthPct, linePath, niceMax, pct, sortedRecords, speciesName, sumLast, toPoints,
-  type DashboardData, type SeriesKey,
+  activityName, areaPath, cumulative, fmt, growthPct, linePath, niceMax, pct, sortedActivity, sortedRecords, speciesName, sumLast, toPoints,
+  type ActivityData, type DashboardData, type SeriesKey,
 } from '../../lib/dashboard';
-import { staffDashboard } from '../../lib/staff';
+import { staffActivity, staffDashboard } from '../../lib/staff';
 
 // Der Bereich ist für Admins (intern), deshalb bewusst nur Deutsch und ohne die Sprachdateien der App.
 const REFRESH_MS = 60_000;
@@ -235,9 +235,56 @@ function Growth({ data, range }: { data: DashboardData; range: 7 | 30 }) {
   );
 }
 
+function timeOf(iso: string): string {
+  return new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+}
+
+/** „Letzte 24 Stunden“: was in der App passiert ist – nur Arten und Zeiten, keine Namen oder Inhalte. */
+function Activity({ a }: { a: ActivityData }) {
+  const rows = sortedActivity(a.by_kind).filter((r) => r.key !== 'push');
+  const total = rows.reduce((s, r) => s + r.n, 0);
+  const push = a.by_kind.push ?? 0;
+  const max = niceMax(Math.max(0, ...a.hourly.map((h) => h.n)), 4);
+  return (
+    <article className="card dash-card dash-wide">
+      <h3>Letzte 24 Stunden</h3>
+      <p className="muted dash-hint">Was seit gestern um diese Zeit in der App passiert ist</p>
+      <div className="dash-chips">
+        <div className="dash-chip"><span>Einträge &amp; Aktionen</span><strong>{fmt(total)}</strong></div>
+        <div className="dash-chip"><span>Anmeldungen</span><strong>{fmt(a.logins)}</strong></div>
+        <div className="dash-chip"><span>KI-Anfragen</span><strong>{fmt(a.ai)}</strong></div>
+        <div className="dash-chip"><span>Push-Nachrichten</span><strong>{fmt(push)}</strong></div>
+      </div>
+      <div className="dash-hours" role="img" aria-label={`Aktionen pro Stunde, insgesamt ${total} in 24 Stunden`}>
+        {a.hourly.map((h) => (
+          <span key={h.h} className="dash-hour" title={`${timeOf(h.h)} Uhr: ${h.n} Aktionen · ${h.push} Push · ${h.ai} KI`}>
+            <span className="dash-hour-bar" style={{ height: `${Math.max(h.n > 0 ? 6 : 2, (h.n / max) * 100)}%` }} />
+          </span>
+        ))}
+      </div>
+      <div className="dash-hours-axis" aria-hidden="true"><span>vor 24 Std.</span><span>jetzt</span></div>
+      {rows.length > 0 ? <BarRows rows={rows} tone="tone-brand" /> : <p className="muted">Keine Aktionen in den letzten 24 Stunden.</p>}
+      {a.recent.length > 0 && (
+        <>
+          <h4>Zuletzt</h4>
+          <ul className="stack">
+            {a.recent.slice(0, 15).map((e, i) => (
+              <li key={`${e.at}-${i}`}>
+                <strong>{timeOf(e.at)} Uhr</strong> · {activityName(e.kind)}
+                <small className="muted"> · {new Date(e.at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}</small>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </article>
+  );
+}
+
 /** Zahlen-Übersicht für Admins: Konten, Tiere, Interaktionen, KI-Nutzung. Aktualisiert sich selbst. */
 export function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [activity, setActivity] = useState<ActivityData | null>(null);
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [range, setRange] = useState<7 | 30>(30);
@@ -247,6 +294,8 @@ export function Dashboard() {
     setBusy(true);
     try {
       setData(await staffDashboard());
+      // Die 24-Stunden-Ansicht ist zusätzlich: fehlt sie (z. B. Funktion noch nicht eingespielt), bleibt der Rest sichtbar
+      setActivity(await staffActivity().catch(() => null));
       setFailed(false);
     } catch {
       setFailed(true);
@@ -320,6 +369,8 @@ export function Dashboard() {
       </div>
 
       <div className="dash-grid-2">
+        {activity && <Activity a={activity} />}
+
         <Growth data={data} range={range} />
 
         <article className="card dash-card dash-wide">
