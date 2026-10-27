@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { areaPath, cumulative, fmt, growthPct, linePath, niceMax, pct, sortedRecords, speciesName, sumLast, toPoints, type DayPoint, type RecordKey } from './dashboard';
+import { activityName, areaPath, cumulative, fmt, growthPct, linePath, niceMax, pct, sortedActivity, sortedRecords, speciesName, sumLast, toPoints, type DayPoint, type RecordKey } from './dashboard';
 
 const series: DayPoint[] = [
   { d: '2026-10-20', signups: 1, pets: 0, interactions: 5 },
@@ -78,5 +78,14 @@ describe('Wachstum', () => {
     expect(growthPct(10, 10)).toBe(0);
     expect(growthPct(8, 10)).toBe(-20);
     expect(growthPct(5, 0)).toBeNull();
+  });
+});
+
+describe('Aktivität der letzten 24 Stunden', () => {
+  it('sortiert nach Anzahl, lässt Nullen weg und zeigt Unbekanntes an', () => {
+    const rows = sortedActivity({ pet: 1, routine_done: 5, signup: 0, neu_x: 2 });
+    expect(rows.map((r) => r.key)).toEqual(['routine_done', 'neu_x', 'pet']);
+    expect(rows[0]!.label).toBe('Routine abgehakt');
+    expect(activityName('neu_x')).toBe('neu_x');
   });
 });

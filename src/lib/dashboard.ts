@@ -107,3 +107,33 @@ export function sortedRecords(r: Record<RecordKey, number>): { key: RecordKey; l
 export function fmt(n: number): string {
   return new Intl.NumberFormat('de-DE').format(Math.round(n));
 }
+
+/** Antwort der Datenbankfunktion staff_activity: letzte 24 Stunden, nur Arten und Zeiten. */
+export interface ActivityData {
+  generated_at: string;
+  logins: number;
+  ai: number;
+  by_kind: Record<string, number>;
+  hourly: { h: string; n: number; push: number; ai: number }[];
+  recent: { kind: string; at: string }[];
+}
+
+const ACTIVITY: Record<string, string> = {
+  signup: 'Neues Konto', pet: 'Neues Tier', routine_done: 'Routine abgehakt', routine_item: 'Routine angelegt',
+  weight: 'Gewicht eingetragen', vaccination: 'Impfung eingetragen', appointment: 'Termin angelegt', reminder: 'Erinnerung angelegt',
+  medication: 'Medikament angelegt', document: 'Dokument hochgeladen', lab_value: 'Laborwert eingetragen', dose_given: 'Medikament gegeben',
+  invite: 'Einladung erstellt', invite_accepted: 'Einladung angenommen', sitter_link: 'Sitter-Link erstellt',
+  favorite: 'Praxis als Favorit', ticket: 'Neues Ticket', push: 'Push-Nachricht gesendet',
+};
+/** Lesbarer Name einer Ereignisart; Unbekanntes bleibt sichtbar statt zu verschwinden. */
+export function activityName(kind: string): string {
+  return ACTIVITY[kind] ?? kind;
+}
+
+/** Ereignisarten nach Anzahl (absteigend), danach alphabetisch. */
+export function sortedActivity(by: Record<string, number>): { key: string; label: string; n: number }[] {
+  return Object.entries(by)
+    .filter(([, n]) => n > 0)
+    .map(([key, n]) => ({ key, label: activityName(key), n }))
+    .sort((a, b) => b.n - a.n || a.label.localeCompare(b.label, 'de'));
+}
