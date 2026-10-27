@@ -177,5 +177,5 @@ export async function currentSubscription(reg: ServiceWorkerRegistration | null)
 
 /** Beispiel-Benachrichtigung lokal über den Service Worker – kein Serveraufruf */
 export async function showTestNotification(reg: ServiceWorkerRegistration, title: string, body: string): Promise<void> {
-  await reg.showNotification(title, { body, tag: 'petconnect-test', icon: '/icons/icon-192.png', badge: '/icons/badge-96.png', data: { url: '/erinnerungen' } });
+  await reg.showNotification(title, { body, tag: 'petconnect-test', icon: '/icons/icon-192.png', badge: '/icons/badge-96.png', data: { url: '/' } });
 }
