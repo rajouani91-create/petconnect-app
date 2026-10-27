@@ -47,7 +47,7 @@ describe('URL ↔ Filter', () => {
     expect(queryToFilters(new URLSearchParams('plz=65428&r=10&tier=reptile&l=hibernation&t=reptiles'))).toEqual(reptileSearch);
   });
   it('hin und zurück mit allen Feldern', () => {
-    const f: PracticeFilters = { place: 'Mainz', radius: 25, species: 'horse', services: ['equine_mobile', 'imaging'], titles: ['horses', 'surgery'], q: 'Pferde', openNow: true, sort: 'name' };
+    const f: PracticeFilters = { country: 'DE', place: 'Mainz', radius: 25, species: 'horse', services: ['equine_mobile', 'imaging'], titles: ['horses', 'surgery'], q: 'Pferde', openNow: true, sort: 'name' };
     const back = queryToFilters(filtersToQuery(f));
     expect(back).toEqual({ ...f, services: ['imaging', 'equine_mobile'], titles: ['surgery', 'horses'] });
     expect(filtersToQuery(EMPTY_FILTERS).toString()).toBe('');

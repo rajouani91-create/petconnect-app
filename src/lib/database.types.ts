@@ -599,6 +599,7 @@ export type Database = {
         Row: {
           active: boolean
           city: string | null
+          country: string | null
           created_at: string
           email: string | null
           housenumber: string | null
@@ -621,6 +622,7 @@ export type Database = {
         Insert: {
           active?: boolean
           city?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           housenumber?: string | null
@@ -1104,7 +1106,7 @@ export type Database = {
         }[]
       }
       geocode_place: {
-        Args: { p_q: string }
+        Args: { p_country?: string; p_q: string }
         Returns: {
           lat: number
           lon: number
@@ -1130,6 +1132,7 @@ export type Database = {
         }
         Returns: {
           city: string | null
+          country: string | null
           distance_km: number
           focus: string[]
           has_profile: boolean
