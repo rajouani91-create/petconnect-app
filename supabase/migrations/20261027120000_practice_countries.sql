@@ -65,6 +65,52 @@ $$;
 revoke all on function public.geocode_place(text, text) from public, anon;
 grant execute on function public.geocode_place(text, text) to authenticated;
 
+-- ---------- 2b. search_practices liefert das Land der Praxis (für Feiertage in den Öffnungszeiten) ----------
+-- Gesucht wird nur nach Koordinaten: Wer „Mein Standort“ nutzt, bekommt Praxen im Umkreis, egal in welchem Land mit Daten er sich befindet.
+drop function if exists public.search_practices(double precision, double precision, integer, text, text[], text[], text, integer);
+create or replace function public.search_practices(
+  p_lat double precision, p_lon double precision, p_radius_km integer default 10, p_species text default null,
+  p_services text[] default '{}', p_titles text[] default '{}', p_q text default null, p_limit integer default 100)
+returns table(id uuid, name text, street text, housenumber text, postcode text, city text, lat double precision, lon double precision, distance_km double precision,
+              phone text, website text, opening_hours text, registered boolean, has_profile boolean, species text[], services text[], titles text[], focus text[],
+              titles_verified boolean, matches boolean, is_favorite boolean, country text)
+language sql
+stable
+set search_path = ''
+as $$
+  with box as (
+    select greatest(1, least(coalesce(p_radius_km,10), 100))::double precision as r,
+           p_lat as la, p_lon as lo,
+           private.norm_query(p_q) as q
+  ), c as (
+    select p.*, pp.practice_id is not null as hp, pp.species sp, pp.services sv, pp.titles ti, pp.focus fo, coalesce(pp.titles_verified,false) tv,
+           private.km(b.la, b.lo, p.lat, p.lon) as d, b.r
+    from public.practices p
+    cross join box b
+    left join public.practice_profiles pp on pp.practice_id = p.id
+    where p.active
+      and p.lat between b.la - b.r / 111.0 and b.la + b.r / 111.0
+      and p.lon between b.lo - b.r / (111.0 * cos(radians(b.la))) and b.lo + b.r / (111.0 * cos(radians(b.la)))
+      and (b.q = '' or private.norm_text(p.name) like '%' || b.q || '%'
+           or (char_length(b.q) >= 4 and extensions.word_similarity(b.q, private.norm_text(p.name)) >= 0.6))
+  )
+  select c.id, c.name, c.street, c.housenumber, c.postcode, c.city, c.lat, c.lon, round(c.d::numeric, 1)::double precision,
+         c.phone, c.website, c.opening_hours, c.registered,
+         c.hp, coalesce(c.sp,'{}'), coalesce(c.sv,'{}'), coalesce(c.ti,'{}'), coalesce(c.fo,'{}'), c.tv,
+         (c.hp
+           and (p_species is null or p_species = '' or p_species = any(c.sp))
+           and coalesce(p_services,'{}') <@ coalesce(c.sv,'{}')
+           and coalesce(p_titles,'{}') <@ coalesce(c.ti,'{}')) as matches,
+         exists (select 1 from public.practice_favorites f where f.practice_id = c.id and f.user_id = (select auth.uid())),
+         c.country::text
+  from c
+  where c.d <= c.r
+  order by c.d
+  limit greatest(1, least(coalesce(p_limit,100), 300));
+$$;
+revoke all on function public.search_practices(double precision, double precision, integer, text, text[], text[], text, integer) from public, anon;
+grant execute on function public.search_practices(double precision, double precision, integer, text, text[], text[], text, integer) to authenticated;
+
 -- ---------- 3. Namenssuche: Füllwörter auch auf Französisch und Niederländisch ----------
 create or replace function private.norm_query(t text)
 returns text

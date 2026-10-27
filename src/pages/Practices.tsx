@@ -255,8 +255,8 @@ export function Practices() {
 
   const offer = hasOfferFilters(filters);
   const infoOf = useCallback(
-    (p: { opening_hours: string | null; postcode: string | null }): OpeningInfo =>
-      Oh ? openingInfo(Oh, p.opening_hours, now, p.postcode, filters.country) : { state: 'unknown', today: null, change: null, comment: null },
+    (p: { opening_hours: string | null; postcode: string | null; country?: string | null }): OpeningInfo =>
+      Oh ? openingInfo(Oh, p.opening_hours, now, p.postcode, isPracticeCountry(p.country) ? p.country : filters.country) : { state: 'unknown', today: null, change: null, comment: null },
     [Oh, now, filters.country],
   );
   const split = rows ? splitResults(rows, offer, filters.sort, filters.species) : { matches: [], unknown: [], hinted: new Set<PracticeHit>() };

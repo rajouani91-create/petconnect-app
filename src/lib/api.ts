@@ -632,6 +632,7 @@ export interface FavoritePractice {
   website: string | null;
   opening_hours: string | null;
   registered: boolean;
+  country: string | null;
 }
 
 /** Meine Favoriten (mit Grunddaten der Praxis) */
@@ -641,7 +642,7 @@ export async function listFavoritePractices(): Promise<FavoritePractice[]> {
   const rows = check(
     await supabase
       .from('practices')
-      .select('id, name, street, housenumber, postcode, city, lat, lon, phone, website, opening_hours, registered')
+      .select('id, name, street, housenumber, postcode, city, lat, lon, phone, website, opening_hours, registered, country')
       .in('id', fav.map((f) => f.practice_id)),
   );
   const order = new Map(fav.map((f, i) => [f.practice_id, i]));
