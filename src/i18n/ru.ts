@@ -670,6 +670,8 @@ export const ru: Messages = {
   psCount0: "Подходящих клиник нет",
   psCount1: "Подходит 1 клиника",
   psCountry: "Страна",
+  psCountryAT: "Австрия",
+  psCountryCH: "Швейцария",
   psCountryDE: "Германия",
   psCountryFR: "Франция",
   psCountryMA: "Марокко",

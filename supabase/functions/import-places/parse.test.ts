@@ -13,12 +13,18 @@ describe('GeoNames-Datei lesen', () => {
     const fr = ['FR\t69003\tLyon 03\tAuvergne-Rhône-Alpes\t84\t\t\t\t\t45.76\t4.85\t5', 'FR\t69003\tLyon\tA\t84\t\t\t\t\t45.75\t4.84\t5'].join('\n');
     expect(parseGeonames(fr, 'FR')).toHaveLength(2);
   });
+  it('Österreich und Schweiz: vierstellige PLZ', () => {
+    const at = 'AT\t1010\tWien, Innere Stadt\tWien\t09\t\t\t\t\t48.2085\t16.3721\t6';
+    const ch = ['CH\t8001\tZürich\tZürich\tZH\t\t\t\t\t47.37\t8.54\t6', 'CH\t80010\tZu lang\t\t\t\t\t\t\t47\t8\t6'].join('\n');
+    expect(parseGeonames(at, 'AT').map((r) => r.postcode)).toEqual(['1010']);
+    expect(parseGeonames(ch, 'CH').map((r) => r.place)).toEqual(['Zürich']);
+  });
   it('überspringt Ungültiges und Zeilen anderer Länder', () => {
     const bad = ['FR\t6900\tZu kurz\t\t\t\t\t\t\t45\t4\t5', 'FR\t69003\t\t\t\t\t\t\t\t45\t4\t5', 'FR\t69003\tOrt\t\t\t\t\t\t\tabc\t4\t5', 'FR\t69003\tOrt\t\t\t\t\t\t\t95\t4\t5', 'DE\t65428\tRüsselsheim\t\t\t\t\t\t\t50\t8\t5', 'kaputt'].join('\n');
     expect(parseGeonames(bad, 'FR')).toEqual([]);
   });
   it('Länder und Pakete', () => {
-    expect(isCountry('FR') && isCountry('NL') && isCountry('MA')).toBe(true);
+    expect(isCountry('FR') && isCountry('NL') && isCountry('MA') && isCountry('AT') && isCountry('CH')).toBe(true);
     expect(isCountry('DE')).toBe(false);
     expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
   });

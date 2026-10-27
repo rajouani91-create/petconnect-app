@@ -670,6 +670,8 @@ export const es: Messages = {
   psCount0: "Ninguna clínica coincide",
   psCount1: "1 clínica coincide",
   psCountry: "País",
+  psCountryAT: "Austria",
+  psCountryCH: "Suiza",
   psCountryDE: "Alemania",
   psCountryFR: "Francia",
   psCountryMA: "Marruecos",

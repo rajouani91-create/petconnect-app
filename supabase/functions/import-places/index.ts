@@ -1,4 +1,4 @@
-/* Edge Function „import-places“: lädt die GeoNames-Postleitzahlen eines Landes (FR, NL, MA) und schreibt sie in public.place_index.
+/* Edge Function „import-places“: lädt die GeoNames-Postleitzahlen eines Landes (AT, CH, FR, NL, MA) und schreibt sie in public.place_index.
    Gedacht für den monatlichen oder einmaligen Aufruf durch den Betreiber (Datenbank per pg_net), nicht für Nutzer:innen.
    Zugriff: Header x-import-key muss dem Secret IMPORT_KEY entsprechen (Supabase → Edge Functions → Secrets). verify_jwt ist aus.
    Quelle: GeoNames (geonames.org), Lizenz CC BY 4.0. */

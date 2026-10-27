@@ -10,9 +10,9 @@ const Oh = OpeningHours as unknown as OhConstructor;
 describe('Länder der Praxissuche', () => {
   it('Standard ist Deutschland; Marokko ist vorbereitet, aber noch nicht wählbar', () => {
     expect(DEFAULT_COUNTRY).toBe('DE');
-    expect(ENABLED_COUNTRIES).toEqual(['DE', 'FR', 'NL']);
+    expect(ENABLED_COUNTRIES).toEqual(['DE', 'AT', 'CH', 'FR', 'NL']);
     expect(PRACTICE_COUNTRIES).toContain('MA');
-    expect(isPracticeCountry('FR') && !isPracticeCountry('XX') && !isPracticeCountry(null)).toBe(true);
+    expect(isPracticeCountry('FR') && isPracticeCountry('AT') && isPracticeCountry('CH') && !isPracticeCountry('XX') && !isPracticeCountry(null)).toBe(true);
   });
   it('Land aus der Sprache vorschlagen', () => {
     expect(countryForLang('fr')).toBe('FR');
@@ -25,6 +25,10 @@ describe('Länder der Praxissuche', () => {
     expect(fullPostcode('65428', 'DE')).toBe('65428');
     expect(fullPostcode('69003', 'FR')).toBe('69003');
     expect(fullPostcode('6542', 'DE')).toBeNull();
+    expect(fullPostcode('1010', 'AT')).toBe('1010');
+    expect(fullPostcode('8001', 'CH')).toBe('8001');
+    expect(fullPostcode('80011', 'CH')).toBeNull();
+    expect(fullPostcode('8001 AB', 'CH')).toBeNull();
     expect(fullPostcode('3511', 'NL')).toBe('3511');
     expect(fullPostcode('3511 AB', 'NL')).toBe('3511');
     expect(fullPostcode('3511ab', 'NL')).toBe('3511');

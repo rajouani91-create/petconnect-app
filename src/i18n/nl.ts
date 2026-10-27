@@ -670,6 +670,8 @@ export const nl: Messages = {
   psCount0: "Geen praktijk past",
   psCount1: "1 praktijk past",
   psCountry: "Land",
+  psCountryAT: "Oostenrijk",
+  psCountryCH: "Zwitserland",
   psCountryDE: "Duitsland",
   psCountryFR: "Frankrijk",
   psCountryMA: "Marokko",

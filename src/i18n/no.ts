@@ -670,6 +670,8 @@ export const no: Messages = {
   psCount0: "Ingen klinikk passer",
   psCount1: "1 klinikk passer",
   psCountry: "Land",
+  psCountryAT: "Østerrike",
+  psCountryCH: "Sveits",
   psCountryDE: "Tyskland",
   psCountryFR: "Frankrike",
   psCountryMA: "Marokko",

@@ -670,6 +670,8 @@ export const ar: Messages = {
   psCount0: "لا توجد عيادة مطابقة",
   psCount1: "عيادة واحدة مطابقة",
   psCountry: "البلد",
+  psCountryAT: "النمسا",
+  psCountryCH: "سويسرا",
   psCountryDE: "ألمانيا",
   psCountryFR: "فرنسا",
   psCountryMA: "المغرب",

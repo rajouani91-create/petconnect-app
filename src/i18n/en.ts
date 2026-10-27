@@ -670,6 +670,8 @@ export const en: Messages = {
   psCount0: "No practice matches",
   psCount1: "1 practice matches",
   psCountry: "Country",
+  psCountryAT: "Austria",
+  psCountryCH: "Switzerland",
   psCountryDE: "Germany",
   psCountryFR: "France",
   psCountryMA: "Morocco",

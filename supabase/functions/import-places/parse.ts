@@ -2,8 +2,8 @@
    Spalten: 0 Land, 1 PLZ, 2 Ort, 3–8 Verwaltungsangaben, 9 Breite, 10 Länge, 11 Genauigkeit.
    Quelle: GeoNames (geonames.org), Lizenz CC BY 4.0. */
 
-export type Country = 'FR' | 'NL' | 'MA';
-export const COUNTRIES: readonly Country[] = ['FR', 'NL', 'MA'];
+export type Country = 'AT' | 'CH' | 'FR' | 'NL' | 'MA';
+export const COUNTRIES: readonly Country[] = ['AT', 'CH', 'FR', 'NL', 'MA'];
 
 export interface PlaceRow {
   country: Country;
@@ -14,7 +14,7 @@ export interface PlaceRow {
   rank: number;
 }
 
-const POSTCODE: Record<Country, RegExp> = { FR: /^\d{5}$/, NL: /^\d{4}$/, MA: /^\d{5}$/ };
+const POSTCODE: Record<Country, RegExp> = { AT: /^\d{4}$/, CH: /^\d{4}$/, FR: /^\d{5}$/, NL: /^\d{4}$/, MA: /^\d{5}$/ };
 
 export const isCountry = (v: unknown): v is Country => typeof v === 'string' && (COUNTRIES as readonly string[]).includes(v);
 

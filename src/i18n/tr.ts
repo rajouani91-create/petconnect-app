@@ -670,6 +670,8 @@ export const tr: Messages = {
   psCount0: "Uygun klinik yok",
   psCount1: "1 klinik uygun",
   psCountry: "Ülke",
+  psCountryAT: "Avusturya",
+  psCountryCH: "İsviçre",
   psCountryDE: "Almanya",
   psCountryFR: "Fransa",
   psCountryMA: "Fas",

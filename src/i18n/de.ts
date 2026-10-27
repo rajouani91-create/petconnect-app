@@ -669,6 +669,8 @@ export const de = {
   psCount0: "Keine Praxis passt",
   psCount1: "1 Praxis passt",
   psCountry: "Land",
+  psCountryAT: "Österreich",
+  psCountryCH: "Schweiz",
   psCountryDE: "Deutschland",
   psCountryFR: "Frankreich",
   psCountryMA: "Marokko",

@@ -1,12 +1,12 @@
--- Praxissuche in Frankreich und den Niederlanden (Marokko vorbereitet, in der App noch nicht auswählbar).
+-- Praxissuche in Österreich, der Schweiz, Frankreich und den Niederlanden (Marokko vorbereitet, in der App noch nicht auswählbar).
 -- 1. place_index: Orte und Postleitzahlen außerhalb Deutschlands (Quelle: GeoNames, CC BY 4.0), befüllt von der Edge Function import-places.
 -- 2. geocode_place bekommt das Land (Standard DE, Verhalten für Deutschland unverändert). Niederlande: PLZ = vier Ziffern, auch „3511 AB“.
 -- 3. Namenssuche: französische und niederländische Füllwörter („cabinet vétérinaire“, „dierenartsenpraktijk“) zählen nicht.
--- 4. Praxisdaten für FR und NL aus OpenStreetMap (wie in Deutschland, je Region/Provinz), monatlich per pg_cron.
+-- 4. Praxisdaten für AT, CH, FR und NL aus OpenStreetMap (wie in Deutschland; FR und NL je Region/Provinz), monatlich per pg_cron.
 
 -- ---------- 1. Orte und PLZ im Ausland ----------
 create table if not exists public.place_index (
-  country char(2) not null check (country in ('FR', 'NL', 'MA')),
+  country char(2) not null check (country in ('AT', 'CH', 'FR', 'NL', 'MA')),
   postcode text not null check (char_length(postcode) between 3 and 10),
   place text not null check (char_length(place) between 1 and 120),
   lat double precision not null check (lat between -90 and 90),
@@ -36,7 +36,7 @@ as $$
   with q0 as (
     select btrim(coalesce(p_q, '')) as raw,
            private.norm_text(p_q) as s,
-           case when p_country in ('DE', 'FR', 'NL', 'MA') then p_country else 'DE' end as c
+           case when p_country in ('DE', 'AT', 'CH', 'FR', 'NL', 'MA') then p_country else 'DE' end as c
   ), q as (
     -- NL: „3511 AB“ → „3511“; sonst bleibt die Eingabe, wie sie ist
     select raw, s, c,
@@ -81,7 +81,7 @@ as $$
 $$;
 
 -- ---------- 4. Praxisdaten aus OpenStreetMap für FR und NL ----------
--- Wie import_osm_state, aber nur Praxen (Orte und PLZ kommen aus GeoNames). p_area: „FR-IDF“ (Region) oder „NL“ (ganzes Land).
+-- Wie import_osm_state, aber nur Praxen (Orte und PLZ kommen aus GeoNames). p_area: „FR-IDF“ (Region) oder „AT“ (ganzes Land).
 create or replace function private.import_osm_practices_area(p_area text)
 returns jsonb
 language plpgsql
@@ -121,7 +121,7 @@ revoke all on function private.import_osm_practices_area(text) from public, anon
 
 -- Alle Regionen/Provinzen eines Landes nacheinander (Pause schont den öffentlichen Overpass-Dienst).
 -- Praxen, die in keiner Region mehr auftauchen, werden nur deaktiviert, wenn alle Regionen des Landes fehlerfrei liefen.
-create or replace function private.import_osm_abroad(p_countries text[] default array['FR', 'NL'])
+create or replace function private.import_osm_abroad(p_countries text[] default array['AT', 'CH', 'FR', 'NL'])
 returns jsonb
 language plpgsql
 security definer
@@ -131,11 +131,11 @@ declare
   v_start timestamptz; v_country text; v_area text; v_areas text[]; v_ok int; v_err int; n_off int; r jsonb; out jsonb := '{}'::jsonb;
 begin
   foreach v_country in array p_countries loop
-    if v_country not in ('FR', 'NL', 'MA') then continue; end if;
+    if v_country not in ('AT', 'CH', 'FR', 'NL', 'MA') then continue; end if;
     v_areas := case v_country
       when 'FR' then array['FR-ARA','FR-BFC','FR-BRE','FR-CVL','FR-COR','FR-GES','FR-HDF','FR-IDF','FR-NOR','FR-NAQ','FR-OCC','FR-PDL','FR-PAC']
       when 'NL' then array['NL-DR','NL-FL','NL-FR','NL-GE','NL-GR','NL-LI','NL-NB','NL-NH','NL-OV','NL-UT','NL-ZE','NL-ZH']
-      else array['MA'] end;
+      else array[v_country] end; -- AT, CH, MA: ganzes Land in einer Abfrage
     v_start := now(); v_ok := 0; v_err := 0; n_off := 0;
     foreach v_area in array v_areas loop
       begin

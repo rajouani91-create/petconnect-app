@@ -670,6 +670,8 @@ export const fr: Messages = {
   psCount0: "Aucun cabinet ne correspond",
   psCount1: "1 cabinet correspond",
   psCountry: "Pays",
+  psCountryAT: "Autriche",
+  psCountryCH: "Suisse",
   psCountryDE: "Allemagne",
   psCountryFR: "France",
   psCountryMA: "Maroc",
