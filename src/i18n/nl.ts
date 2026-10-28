@@ -130,6 +130,7 @@ export const nl: Messages = {
   bird: "Vogel",
   birth: "Geboortedatum",
   breed: "Ras",
+  breedPh: "Ras invoeren…",
   cAllergies: "Allergieën & voorgeschiedenis",
   cChipHint: "15 cijfers, spaties zijn toegestaan",
   cEditTitle: "Noodkaart bewerken",

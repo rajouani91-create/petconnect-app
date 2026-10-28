@@ -23,7 +23,7 @@ export interface TimelineSources {
 }
 
 /** Alle Einträge, neueste zuerst. Einträge ohne Datum entfallen. */
-export function buildTimeline(src: TimelineSources, filter: readonly TimelineKind[] = TIMELINE_KINDS): TimelineEntry[] {
+export function buildTimeline(src: TimelineSources, filter: readonly TimelineKind[] = TIMELINE_KINDS, locale = 'de-DE'): TimelineEntry[] {
   const out: TimelineEntry[] = [];
   if (filter.includes('vaccination')) {
     for (const v of src.vaccinations) {
@@ -39,7 +39,7 @@ export function buildTimeline(src: TimelineSources, filter: readonly TimelineKin
     for (const m of src.doses) out.push({ id: `m-${m.id}`, kind: 'medication', date: m.scheduled_on, title: m.medication_name, detail: null });
   }
   if (filter.includes('weight')) {
-    for (const w of src.weights) out.push({ id: `w-${w.id}`, kind: 'weight', date: w.measured_on, title: `${w.kg.toLocaleString('de-DE', { maximumFractionDigits: 2 })} kg`, detail: null });
+    for (const w of src.weights) out.push({ id: `w-${w.id}`, kind: 'weight', date: w.measured_on, title: `${w.kg.toLocaleString(locale, { maximumFractionDigits: 2 })} kg`, detail: null });
   }
   return out.sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id));
 }

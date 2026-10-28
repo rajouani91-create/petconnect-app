@@ -130,6 +130,7 @@ export const no: Messages = {
   bird: "Fugl",
   birth: "Fødselsdato",
   breed: "Rase",
+  breedPh: "Oppgi rase…",
   cAllergies: "Allergier & tidligere sykdommer",
   cChipHint: "15 sifre, mellomrom er tillatt",
   cEditTitle: "Rediger nødkortet",

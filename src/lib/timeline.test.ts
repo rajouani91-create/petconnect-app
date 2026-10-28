@@ -15,6 +15,11 @@ describe('buildTimeline', () => {
     expect(t.find((e) => e.title === 'Offen')).toBeUndefined();
   });
 
+  it('formatiert Gewicht nach der übergebenen Locale', () => {
+    const w = buildTimeline(src, undefined, 'en-GB').find((e) => e.kind === 'weight');
+    expect(w?.title).toBe('4.25 kg');
+  });
+
   it('formatiert Gewicht mit deutschem Dezimalkomma', () => {
     const w = buildTimeline(src).find((e) => e.kind === 'weight');
     expect(w?.title).toBe('4,25 kg');

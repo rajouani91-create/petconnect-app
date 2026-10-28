@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
-import { formatIsoDate, type MessageKey } from '../../i18n';
+import { formatIsoDate, localeOf, type MessageKey } from '../../i18n';
 import {
   getHistory,
   listDocuments,
@@ -97,7 +97,7 @@ function HistoryView({ pet, editable }: { pet: PetRow; editable: boolean }) {
             documents: docs.map((d) => ({ id: d.id, title: d.title, category: d.category, doc_date: d.doc_date })),
             doses: doses.map((d) => ({ id: d.id, medication_name: names.get(d.medication_id) ?? '', scheduled_on: d.scheduled_on })),
             weights: weights.map((w) => ({ id: w.id, kg: w.kg, measured_on: w.measured_on })),
-          }),
+          }, undefined, localeOf(lang)),
         );
       } catch {
         if (alive) setLoadFailed(true);
@@ -106,7 +106,7 @@ function HistoryView({ pet, editable }: { pet: PetRow; editable: boolean }) {
     return () => {
       alive = false;
     };
-  }, [pet.id]);
+  }, [pet.id, lang]);
 
   function set<K extends keyof HistoryInput>(key: K, value: HistoryInput[K]) {
     setDraft((d) => ({ ...d, [key]: value }));

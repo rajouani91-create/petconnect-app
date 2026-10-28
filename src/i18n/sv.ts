@@ -130,6 +130,7 @@ export const sv: Messages = {
   bird: "Fågel",
   birth: "Födelsedatum",
   breed: "Ras",
+  breedPh: "Ange ras…",
   cAllergies: "Allergier & tidigare sjukdomar",
   cChipHint: "15 siffror, mellanslag är tillåtna",
   cEditTitle: "Redigera nödkortet",

@@ -130,6 +130,7 @@ export const es: Messages = {
   bird: "Ave",
   birth: "Fecha de nacimiento",
   breed: "Raza",
+  breedPh: "Introduzca la raza…",
   cAllergies: "Alergias y enfermedades previas",
   cChipHint: "15 dígitos, se permiten espacios",
   cEditTitle: "Editar tarjeta de emergencia",

@@ -129,6 +129,7 @@ export const de = {
   bird: "Vogel",
   birth: "Geburtsdatum",
   breed: "Rasse",
+  breedPh: "Rasse eingeben…",
   cAllergies: "Allergien & Vorerkrankungen",
   cChipHint: "15 Ziffern, Leerzeichen sind erlaubt",
   cEditTitle: "Notfallkarte bearbeiten",

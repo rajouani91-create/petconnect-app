@@ -130,6 +130,7 @@ export const tr: Messages = {
   bird: "Kuş",
   birth: "Doğum tarihi",
   breed: "Irk",
+  breedPh: "Irkı girin…",
   cAllergies: "Alerjiler ve önceki hastalıklar",
   cChipHint: "15 rakam, boşluk kullanılabilir",
   cEditTitle: "Acil durum kartını düzenle",

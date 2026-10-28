@@ -130,6 +130,7 @@ export const ar: Messages = {
   bird: "طائر",
   birth: "تاريخ الميلاد",
   breed: "السلالة",
+  breedPh: "أدخل السلالة…",
   cAllergies: "الحساسية والأمراض السابقة",
   cChipHint: "15 رقمًا، المسافات مسموحة",
   cEditTitle: "تعديل بطاقة الطوارئ",

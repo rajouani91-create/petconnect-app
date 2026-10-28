@@ -130,6 +130,7 @@ export const ru: Messages = {
   bird: "Птица",
   birth: "Дата рождения",
   breed: "Порода",
+  breedPh: "Введите породу…",
   cAllergies: "Аллергии и хронические болезни",
   cChipHint: "15 цифр, пробелы допускаются",
   cEditTitle: "Изменить экстренную карточку",
