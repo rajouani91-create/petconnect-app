@@ -62,10 +62,11 @@ const DeleteAccount: React.FC = () => {
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">
+                  <label htmlFor="delete-account-email" className="block text-sm text-gray-400 mb-1">
                     E-Mail-Adresse Ihres Kontos *
                   </label>
                   <input
+                    id="delete-account-email"
                     type="email"
                     required
                     value={email}
