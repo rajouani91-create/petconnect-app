@@ -9,7 +9,7 @@ export function MoreAboutPet({ pet }: { pet: PetRow }) {
   const base = `/tier/${encodeURIComponent(pet.id)}`;
   return (
     <section className="card stack" aria-labelledby="more-pet-h">
-      <h2 id="more-pet-h">{t('moreTitle', { n: pet.name })}</h2>
+      <h2 id="more-pet-h">{t('morePetTitle', { n: pet.name })}</h2>
       <ul className="more-grid">
         <li>
           <Link to={`${base}/notfallkarte`} className="btn btn-secondary more-btn">

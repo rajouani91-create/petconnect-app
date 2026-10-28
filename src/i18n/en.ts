@@ -498,6 +498,7 @@ export const en: Messages = {
   memberRemoveTitle: "Remove carer?",
   moreAreas: "Other areas",
   moreTitle: "More",
+  morePetTitle: "More about {n}",
   nav_main: "Main navigation",
   nav_more: "More",
   nav_notfall: "Emergency",

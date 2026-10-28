@@ -497,6 +497,7 @@ export const de = {
   memberRemoveTitle: "Mitbetreuung beenden?",
   moreAreas: "Weitere Bereiche",
   moreTitle: "Mehr",
+  morePetTitle: "Mehr zu {n}",
   nav_main: "Hauptnavigation",
   nav_more: "Mehr",
   nav_notfall: "Notfall",
