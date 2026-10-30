@@ -1325,6 +1325,11 @@ export const de = {
   err_pwMismatch: "Die Passwörter stimmen nicht überein.",
   err_birthInvalid: "Bitte geben Sie ein gültiges Geburtsdatum an.",
   err_underAge: "Ein eigenes Konto ist erst ab 16 Jahren möglich. Bitten Sie Ihre Eltern, die Tiere in ihrem Konto zu verwalten.",
+  pcLabel: "Benachrichtigung bestätigen",
+  pcGiveAsk: "{p}: {m} um {t} Uhr. Wurde das Medikament gegeben?",
+  pcDoneAsk: "{x} um {t} Uhr. Erledigt?",
+  pcAlready: "Das ist bereits eingetragen.",
+  pcGone: "Diesen Eintrag finden wir nicht mehr. Bitte prüfen Sie die Liste unten.",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;

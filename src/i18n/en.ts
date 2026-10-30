@@ -1326,4 +1326,9 @@ export const en: Messages = {
   err_pwMismatch: "The passwords do not match.",
   err_birthInvalid: "Please enter a valid date of birth.",
   err_underAge: "Your own account is only possible from age 16. Please ask your parents to manage the pets in their account.",
+  pcLabel: "Confirm notification",
+  pcGiveAsk: "{p}: {m} at {t}. Was the medication given?",
+  pcDoneAsk: "{x} at {t}. Done?",
+  pcAlready: "This has already been recorded.",
+  pcGone: "We can no longer find this entry. Please check the list below.",
 };

@@ -1326,4 +1326,9 @@ export const da: Messages = {
   err_pwMismatch: "Adgangskoderne stemmer ikke overens.",
   err_birthInvalid: "Angiv en gyldig fødselsdato.",
   err_underAge: "En egen konto er først mulig fra 16 år. Bed dine forældre om at administrere dyrene i deres konto.",
+  pcLabel: "Bekræft besked",
+  pcGiveAsk: "{p}: {m} kl. {t}. Er medicinen givet?",
+  pcDoneAsk: "{x} kl. {t}. Klaret?",
+  pcAlready: "Det er allerede registreret.",
+  pcGone: "Vi kan ikke finde posten længere. Tjek listen nedenfor.",
 };
