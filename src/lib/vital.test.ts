@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { measuredAtFor, parseVital, sortVitalsDesc, toChartRows } from './vital';
+import { KIND_EXAMPLE, measuredAtFor, normalRange, parseVital, sortVitalsDesc, toChartRows } from './vital';
 
 describe('Vitalwerte: Eingabe', () => {
   it('liest Komma und Punkt, höchstens 2 Nachkommastellen', () => {
@@ -38,5 +38,17 @@ describe('Vitalwerte: Zeitpunkt und Sortierung', () => {
     const c = toChartRows(sortVitalsDesc(rows));
     expect(c.map((r) => r.kg)).toEqual([38.6, 38]);
     expect(c[0]!.measured_on).toBe('2026-10-10');
+  });
+});
+
+describe('Vitalwerte: Richtwerte', () => {
+  it('Richtwerte je Tierart und Messwert, ohne Angabe bei Vogel/Reptil', () => {
+    expect(normalRange('dog', 'temperature')).toEqual({ min: 37.5, max: 39.2 });
+    expect(normalRange('cat', 'heart_rate')).toEqual({ min: 140, max: 220 });
+    expect(normalRange('bird', 'heart_rate')).toBeNull();
+  });
+  it('jeder Messwert hat ein eigenes Beispiel (kein 38,5 bei Herzfrequenz)', () => {
+    expect(KIND_EXAMPLE.heart_rate).not.toBe(KIND_EXAMPLE.temperature);
+    expect(KIND_EXAMPLE.resp_rate).not.toBe(KIND_EXAMPLE.heart_rate);
   });
 });

@@ -1315,4 +1315,9 @@ export const sv: Messages = {
   tlMore: "Visa fler",
   tlLabN: "Värden: {n}",
   tlMedStart: "Påbörjad",
+  vtHintHeart: "t.ex. 90",
+  vtHintResp: "t.ex. 24",
+  vtUnitRate: "per min.",
+  vtNormal: "Riktvärde i vila ({sp}, vuxen): {a} till {b} {u}. Valpar, små djur och upphetsning avviker.",
+  vtNormalNone: "Det finns inga allmänna riktvärden för det här djurslaget. Fråga din klinik.",
 };

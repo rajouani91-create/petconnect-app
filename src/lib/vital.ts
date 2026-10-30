@@ -16,6 +16,22 @@ export const VITAL_RANGE: Record<VitalKind, { min: number; max: number }> = {
   resp_rate: { min: 2, max: 200 },
 };
 
+/** Übliche Ruhewerte erwachsener Tiere (Richtwerte zur Orientierung, keine Diagnose). Fehlt eine Tierart, gibt es keine allgemeinen Werte. */
+const NORMAL_RANGE: Partial<Record<string, Partial<Record<VitalKind, { min: number; max: number }>>>> = {
+  dog: { temperature: { min: 37.5, max: 39.2 }, heart_rate: { min: 60, max: 140 }, resp_rate: { min: 10, max: 30 } },
+  cat: { temperature: { min: 38, max: 39.2 }, heart_rate: { min: 140, max: 220 }, resp_rate: { min: 20, max: 30 } },
+  rabbit: { temperature: { min: 38.5, max: 40 }, heart_rate: { min: 130, max: 325 }, resp_rate: { min: 30, max: 60 } },
+  guinea: { temperature: { min: 37.2, max: 39.5 }, heart_rate: { min: 230, max: 380 }, resp_rate: { min: 42, max: 104 } },
+  horse: { temperature: { min: 37.2, max: 38.5 }, heart_rate: { min: 28, max: 44 }, resp_rate: { min: 8, max: 16 } },
+};
+
+export function normalRange(species: string, kind: VitalKind): { min: number; max: number } | null {
+  return NORMAL_RANGE[species]?.[kind] ?? null;
+}
+
+/** Beispiel im Eingabefeld je Messwert */
+export const KIND_EXAMPLE: Record<VitalKind, MessageKey> = { temperature: 'vtValueHint', heart_rate: 'vtHintHeart', resp_rate: 'vtHintResp' };
+
 export const KIND_LABEL: Record<VitalKind, MessageKey> = { temperature: 'vtKindTemp', heart_rate: 'vtKindHeart', resp_rate: 'vtKindResp' };
 export const CONTEXT_LABEL: Record<VitalContext, MessageKey> = { rectal: 'vtCtxRectal', ear: 'vtCtxEar', resting: 'vtCtxResting', active: 'vtCtxActive' };
 /** Welche Messarten zu welchem Wert passen */

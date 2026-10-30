@@ -114,7 +114,7 @@ export function PetRecord({ pet }: { pet: PetRow }) {
       {TABS.map((k) => (
         <div key={k} role="tabpanel" id={`${uid}-panel-${k}`} aria-labelledby={`${uid}-tab-${k}`} hidden={tab !== k}>
           {tab === k && k === 'weight' && <WeightSection key={pet.id} {...common} />}
-          {tab === k && k === 'vitals' && <VitalSection key={pet.id} {...common} />}
+          {tab === k && k === 'vitals' && <VitalSection key={pet.id} {...common} species={pet.species} />}
           {tab === k && k === 'vacc' && <VaccinationSection key={pet.id} {...common} />}
           {tab === k && k === 'docs' && <DocumentSection key={pet.id} {...common} />}
           {tab === k && k === 'lab' && <LabSection key={pet.id} {...common} />}

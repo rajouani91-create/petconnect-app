@@ -1314,6 +1314,11 @@ export const de = {
   tlMore: "Mehr anzeigen",
   tlLabN: "Werte: {n}",
   tlMedStart: "Begonnen",
+  vtHintHeart: "z. B. 90",
+  vtHintResp: "z. B. 24",
+  vtUnitRate: "pro Min.",
+  vtNormal: "Richtwert in Ruhe ({sp}, erwachsen): {a} bis {b} {u}. Welpen, kleine Tiere und Aufregung weichen ab.",
+  vtNormalNone: "Für diese Tierart gibt es hier keine allgemeinen Richtwerte. Fragen Sie Ihre Praxis.",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;
