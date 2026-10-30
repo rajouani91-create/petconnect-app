@@ -1267,4 +1267,5 @@ export const no: Messages = {
   qaMed: "Medisin",
   qaDoc: "Last opp dokument",
   qaAi: "KI-assistent",
+  todayProgress: "{done} av {total} utført",
 };

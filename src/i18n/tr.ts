@@ -1267,4 +1267,5 @@ export const tr: Messages = {
   qaMed: "İlaç",
   qaDoc: "Belge yükle",
   qaAi: "Yapay zekâ asistanı",
+  todayProgress: "{total} işten {done} tamamlandı",
 };

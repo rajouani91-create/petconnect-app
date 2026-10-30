@@ -1267,4 +1267,5 @@ export const fr: Messages = {
   qaMed: "Médicament",
   qaDoc: "Ajouter un document",
   qaAi: "Assistant IA",
+  todayProgress: "{done} sur {total} faits",
 };

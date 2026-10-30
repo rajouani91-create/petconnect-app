@@ -1267,4 +1267,5 @@ export const ar: Messages = {
   qaMed: "دواء",
   qaDoc: "رفع مستند",
   qaAi: "مساعد الذكاء الاصطناعي",
+  todayProgress: "تم إنجاز {done} من {total}",
 };

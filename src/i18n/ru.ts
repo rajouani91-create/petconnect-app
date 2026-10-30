@@ -1267,4 +1267,5 @@ export const ru: Messages = {
   qaMed: "Лекарство",
   qaDoc: "Загрузить документ",
   qaAi: "ИИ-помощник",
+  todayProgress: "Выполнено {done} из {total}",
 };

@@ -1267,4 +1267,5 @@ export const sv: Messages = {
   qaMed: "Medicin",
   qaDoc: "Ladda upp dokument",
   qaAi: "AI-assistent",
+  todayProgress: "{done} av {total} klara",
 };
