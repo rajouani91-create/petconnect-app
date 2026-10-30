@@ -1315,4 +1315,9 @@ export const da: Messages = {
   tlMore: "Vis mere",
   tlLabN: "Værdier: {n}",
   tlMedStart: "Påbegyndt",
+  vtHintHeart: "f.eks. 90",
+  vtHintResp: "f.eks. 24",
+  vtUnitRate: "pr. min.",
+  vtNormal: "Vejledende værdi i hvile ({sp}, voksen): {a} til {b} {u}. Hvalpe, små dyr og ophidselse afviger.",
+  vtNormalNone: "Der findes ingen generelle vejledende værdier for dette dyr her. Spørg din klinik.",
 };

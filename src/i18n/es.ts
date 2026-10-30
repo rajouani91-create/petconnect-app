@@ -1315,4 +1315,9 @@ export const es: Messages = {
   tlMore: "Mostrar más",
   tlLabN: "Valores: {n}",
   tlMedStart: "Iniciado",
+  vtHintHeart: "p. ej. 90",
+  vtHintResp: "p. ej. 24",
+  vtUnitRate: "por min.",
+  vtNormal: "Valor de referencia en reposo ({sp}, adulto): de {a} a {b} {u}. Los cachorros, los animales pequeños y la excitación se desvían.",
+  vtNormalNone: "No hay valores de referencia generales para esta especie. Consulte a su clínica.",
 };

@@ -1315,4 +1315,9 @@ export const tr: Messages = {
   tlMore: "Daha fazla göster",
   tlLabN: "Değer: {n}",
   tlMedStart: "Başladı",
+  vtHintHeart: "örn. 90",
+  vtHintResp: "örn. 24",
+  vtUnitRate: "dakikada",
+  vtNormal: "Dinlenirken yaklaşık değer ({sp}, yetişkin): {a} ile {b} {u}. Yavrular, küçük hayvanlar ve heyecan farklılık gösterir.",
+  vtNormalNone: "Bu tür için burada genel referans değerleri yok. Kliniğinize danışın.",
 };

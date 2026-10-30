@@ -6,7 +6,7 @@ import { addVital, deleteVital, listVitals, updateVital, type VitalRow } from '.
 import { WEIGHT_RANGES, chartPoints, filterWeightsByRange, formatKg, pastDateError, recordErrorKey, type WeightRange } from '../../lib/record';
 import { localDate } from '../../lib/schedule';
 import {
-  CONTEXT_LABEL, KIND_CONTEXTS, KIND_LABEL, VITAL_ERROR, VITAL_KINDS, isVitalContext, measuredAtFor, parseVital, sortVitalsDesc, toChartRows,
+  CONTEXT_LABEL, KIND_CONTEXTS, KIND_EXAMPLE, KIND_LABEL, VITAL_ERROR, VITAL_KINDS, isVitalContext, measuredAtFor, normalRange, parseVital, sortVitalsDesc, toChartRows,
   type VitalContext, type VitalKind,
 } from '../../lib/vital';
 import type { FieldError } from '../../lib/validate';
@@ -20,7 +20,7 @@ type Mode = { kind: 'add' } | { kind: 'edit'; row: VitalRow } | null;
 const RANGE_LABEL: Record<WeightRange, MessageKey> = { '30d': 'wkRange30', '3m': 'wkRange3m', '6m': 'wkRange6m', all: 'wkRangeAll' };
 
 /** Vitalwerte, vom Halter eingetragen: je Art aktueller Wert, Verlauf und Liste. Keine Bewertung, keine Grenzwerte. */
-export function VitalSection({ petId, editable, today }: { petId: string; editable: boolean; today: string; myId?: string | undefined; names?: ReadonlyMap<string, string> }) {
+export function VitalSection({ petId, editable, today, species }: { petId: string; editable: boolean; today: string; species: string; myId?: string | undefined; names?: ReadonlyMap<string, string> }) {
   const { t, lang } = useI18n();
   const locale = localeOf(lang);
   const [kind, setKind] = useState<VitalKind>('temperature');
@@ -50,6 +50,11 @@ export function VitalSection({ petId, editable, today }: { petId: string; editab
 
   const val = (n: number) => (kind === 'temperature' ? t('vtValTemp', { v: formatKg(Number(n), locale) }) : t('vtValRate', { v: formatKg(Number(n), locale) }));
   const date = (iso: string) => formatIsoDateShort(localDate(new Date(iso)), lang);
+  const nr = normalRange(species, kind);
+  const unit = kind === 'temperature' ? '°C' : t('vtUnitRate');
+  const normalText = nr
+    ? t('vtNormal', { sp: t(species as MessageKey), a: formatKg(nr.min, locale), b: formatKg(nr.max, locale), u: unit })
+    : t('vtNormalNone');
   const sorted = rows ?? [];
   const current = sorted[0];
   const inRange = filterWeightsByRange(toChartRows(sorted), range, today);
@@ -139,6 +144,7 @@ export function VitalSection({ petId, editable, today }: { petId: string; editab
               key={`${kind}-${mode.kind === 'edit' ? mode.row.id : 'add'}`}
               kind={kind}
               today={today}
+              normalText={nr ? normalText : ''}
               initial={
                 mode.kind === 'edit'
                   ? { date: localDate(new Date(mode.row.measured_at)), value: formatKg(Number(mode.row.value), locale), context: isVitalContext(mode.row.context) ? mode.row.context : '' }
@@ -181,6 +187,7 @@ export function VitalSection({ petId, editable, today }: { petId: string; editab
               </ul>
             </div>
           )}
+          <p className="muted small">{normalText}</p>
           <p className="muted small">{t('vtHint')}</p>
         </>
       )}
@@ -222,9 +229,10 @@ function VitalChart({ rows, fmt }: { rows: { id: string; measured_on: string; kg
 }
 
 function VitalForm({
-  kind, initial, today, title, onSave, onCancel,
+  kind, initial, today, title, normalText, onSave, onCancel,
 }: {
   kind: VitalKind;
+  normalText: string;
   initial: { date: string; value: string; context: VitalContext | '' };
   today: string;
   title: string;
@@ -270,7 +278,7 @@ function VitalForm({
         <Field id={`${uid}-date`} label={t('wkDate')} error={errors.date} required>
           {(a) => <input {...a} ref={dateRef} type="date" max={today} value={dateV} onChange={(e) => { setDate(e.target.value); setErrors((p) => ({ ...p, date: undefined })); }} />}
         </Field>
-        <Field id={`${uid}-v`} label={`${t('vtValue')} (${t(KIND_LABEL[kind])})`} hint={t('vtValueHint')} error={errors.value} required>
+        <Field id={`${uid}-v`} label={`${t('vtValue')} (${t(KIND_LABEL[kind])})`} hint={normalText ? `${t(KIND_EXAMPLE[kind])} · ${normalText}` : t(KIND_EXAMPLE[kind])} error={errors.value} required>
           {(a) => (
             <input {...a} ref={valueRef} type="text" inputMode="decimal" autoComplete="off" value={valueV}
               onChange={(e) => { setValue(e.target.value); setErrors((p) => ({ ...p, value: undefined })); }} />

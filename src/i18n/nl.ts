@@ -1315,4 +1315,9 @@ export const nl: Messages = {
   tlMore: "Meer tonen",
   tlLabN: "Waarden: {n}",
   tlMedStart: "Gestart",
+  vtHintHeart: "bijv. 90",
+  vtHintResp: "bijv. 24",
+  vtUnitRate: "per min.",
+  vtNormal: "Richtwaarde in rust ({sp}, volwassen): {a} tot {b} {u}. Pups, kleine dieren en opwinding wijken af.",
+  vtNormalNone: "Voor deze diersoort zijn hier geen algemene richtwaarden. Vraag het uw praktijk.",
 };

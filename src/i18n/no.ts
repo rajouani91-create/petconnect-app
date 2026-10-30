@@ -1315,4 +1315,9 @@ export const no: Messages = {
   tlMore: "Vis mer",
   tlLabN: "Verdier: {n}",
   tlMedStart: "Startet",
+  vtHintHeart: "f.eks. 90",
+  vtHintResp: "f.eks. 24",
+  vtUnitRate: "per min.",
+  vtNormal: "Veiledende verdi i hvile ({sp}, voksen): {a} til {b} {u}. Valper, små dyr og opphisselse avviker.",
+  vtNormalNone: "Det finnes ingen generelle veiledende verdier for dette dyreslaget her. Spør klinikken din.",
 };

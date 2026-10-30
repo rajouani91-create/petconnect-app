@@ -1315,4 +1315,9 @@ export const fr: Messages = {
   tlMore: "Afficher plus",
   tlLabN: "Valeurs : {n}",
   tlMedStart: "Commencé",
+  vtHintHeart: "p. ex. 90",
+  vtHintResp: "p. ex. 24",
+  vtUnitRate: "par min.",
+  vtNormal: "Valeur de référence au repos ({sp}, adulte) : {a} à {b} {u}. Les jeunes, les petits animaux et l'excitation s'en écartent.",
+  vtNormalNone: "Il n'existe pas de valeurs de référence générales pour cette espèce. Demandez à votre cabinet.",
 };

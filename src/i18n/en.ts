@@ -1315,4 +1315,9 @@ export const en: Messages = {
   tlMore: "Show more",
   tlLabN: "Values: {n}",
   tlMedStart: "Started",
+  vtHintHeart: "e.g. 90",
+  vtHintResp: "e.g. 24",
+  vtUnitRate: "per min.",
+  vtNormal: "Typical resting range ({sp}, adult): {a} to {b} {u}. Puppies, small animals and excitement differ.",
+  vtNormalNone: "There are no general reference values for this species here. Ask your practice.",
 };
