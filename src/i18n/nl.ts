@@ -1299,4 +1299,5 @@ export const nl: Messages = {
   vtChartL: "Verloop van {from} op {d1} tot {to} op {d2}",
   vtValTemp: "{v} °C",
   vtValRate: "{v} per min.",
+  aiU_vitals: "vitale waarden",
 };

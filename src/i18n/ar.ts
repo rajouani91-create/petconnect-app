@@ -1299,4 +1299,5 @@ export const ar: Messages = {
   vtChartL: "التطور من {from} في {d1} إلى {to} في {d2}",
   vtValTemp: "{v} °C",
   vtValRate: "{v} في الدقيقة",
+  aiU_vitals: "العلامات الحيوية",
 };

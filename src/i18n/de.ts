@@ -1298,6 +1298,7 @@ export const de = {
   vtChartL: "Verlauf von {from} am {d1} bis {to} am {d2}",
   vtValTemp: "{v} °C",
   vtValRate: "{v} pro Min.",
+  aiU_vitals: "Vitalwerte",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;

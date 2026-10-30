@@ -1299,4 +1299,5 @@ export const da: Messages = {
   vtChartL: "Udvikling fra {from} den {d1} til {to} den {d2}",
   vtValTemp: "{v} °C",
   vtValRate: "{v} pr. min.",
+  aiU_vitals: "vitale værdier",
 };

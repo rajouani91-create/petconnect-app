@@ -48,13 +48,16 @@ async function authenticate(token: string): Promise<UserCtx | null> {
         if (e) throw new Error('extras_query_failed');
         return (d ?? []) as T;
       };
-      const [meds, vaccinations, weights, labs, historyRows, docs] = await Promise.all([
+      const [meds, vaccinations, weights, vitals, labs, historyRows, docs] = await Promise.all([
         q<MedRow[]>(sb.from('pet_medications').select(MED_COLUMNS).eq('pet_id', petId).order('starts_on', { ascending: false }).limit(30)),
         topics.has('vaccines')
           ? q(sb.from('vaccinations').select('name,given_on,valid_until').eq('pet_id', petId).order('given_on', { ascending: false }).limit(15))
           : Promise.resolve(undefined),
         topics.has('weight')
           ? q(sb.from('weights').select('measured_on,kg').eq('pet_id', petId).order('measured_on', { ascending: false }).limit(6))
+          : Promise.resolve(undefined),
+        topics.has('vitals')
+          ? q(sb.from('vital_values').select('kind,value,context,measured_at').eq('pet_id', petId).order('measured_at', { ascending: false }).limit(15))
           : Promise.resolve(undefined),
         topics.has('labs')
           ? q(sb.from('lab_values').select('measured_on,parameter,value,unit,ref_min,ref_max').eq('pet_id', petId).order('measured_on', { ascending: false }).limit(20))
@@ -70,6 +73,7 @@ async function authenticate(token: string): Promise<UserCtx | null> {
         meds,
         vaccinations: vaccinations as Extras['vaccinations'],
         weights: weights as Extras['weights'],
+        vitals: vitals as Extras['vitals'],
         labs: labs as Extras['labs'],
         history: historyRows ? (historyRows[0] ?? null) : undefined,
         docs: docs as Extras['docs'],

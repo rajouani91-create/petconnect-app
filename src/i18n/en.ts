@@ -1299,4 +1299,5 @@ export const en: Messages = {
   vtChartL: "Trend from {from} on {d1} to {to} on {d2}",
   vtValTemp: "{v} °C",
   vtValRate: "{v} per min.",
+  aiU_vitals: "vital signs",
 };

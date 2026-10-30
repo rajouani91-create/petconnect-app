@@ -17,6 +17,10 @@ describe('selectTopics', () => {
     expect([...selectTopics('Which medication is safe with food?')]).toContain('meds');
     expect([...selectTopics('Wie viel Futter bei Übergewicht?')]).toContain('weight');
   });
+  it('erkennt Fragen zu Vitalwerten', () => {
+    expect(selectTopics('Hat mein Hund Fieber?').has('vitals')).toBe(true);
+    expect(selectTopics('Is this heart rate normal?').has('vitals')).toBe(true);
+  });
   it('Medikamente ziehen die Vorgeschichte nach (Wechselwirkungen)', () => {
     expect(selectTopics('Welche Medikamente nimmt er?').has('history')).toBe(true);
   });
@@ -89,5 +93,16 @@ describe('Hilfsfunktionen', () => {
     expect(isActive(med, '2026-10-24')).toBe(true);
     expect(isActive({ ...med, ends_on: '2026-10-23' }, '2026-10-24')).toBe(false);
     expect(isActive({ ...med, ends_on: '2026-10-24' }, '2026-10-24')).toBe(true);
+  });
+});
+
+describe('buildPetContext: Vitalwerte', () => {
+  it('nur bei Thema vitals, mit Einheit und Messart', () => {
+    const vitals = [{ kind: 'temperature', value: 39.1, context: 'rectal', measured_at: '2026-10-28' }];
+    const none = buildPetContext(dog, { meds: [], vitals }, new Set(), NOW);
+    expect(none.text).not.toContain('39.1');
+    const c = buildPetContext(dog, { meds: [], vitals }, new Set(['vitals'] as const), NOW);
+    expect(c.text).toContain('2026-10-28 temperature: 39.1 °C (rectal)');
+    expect(c.used).toContain('vitals');
   });
 });

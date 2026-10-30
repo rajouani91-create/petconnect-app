@@ -22,7 +22,7 @@ const ERROR_KEY: Record<AiErrorKind, MessageKey> = {
 };
 const USED_KEY: Record<string, MessageKey> = {
   profile: 'aiU_profile', allergies: 'aiU_allergies', medication_names: 'aiU_medication_names', medication: 'aiU_medication',
-  vaccinations: 'aiU_vaccinations', weight: 'aiU_weight', labs: 'aiU_labs', history: 'aiU_history', documents: 'aiU_documents',
+  vaccinations: 'aiU_vaccinations', weight: 'aiU_weight', vitals: 'aiU_vitals', labs: 'aiU_labs', history: 'aiU_history', documents: 'aiU_documents',
   breed_database: 'aiU_breed_database', attachment_text: 'aiU_attachment_text', attachment_image: 'aiU_attachment_image',
 };
 
