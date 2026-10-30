@@ -1306,4 +1306,5 @@ export const ar: Messages = {
   moreFamily: "العائلة والمستخدمون المشاركون",
   moreAccount: "اللغة والحساب",
   moreEmergencyCard: "بطاقة الطوارئ",
+  aiSugL: "أسئلة سريعة",
 };

@@ -292,3 +292,8 @@ export const IconUser = (p: IconProps) => (
     <path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5" />
   </Svg>
 );
+export const IconSend = (p: IconProps) => (
+  <Svg {...p} className="flip-rtl">
+    <path d="m4 12 16-8-6 16-3-7Z" />
+  </Svg>
+);

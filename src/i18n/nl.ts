@@ -1306,4 +1306,5 @@ export const nl: Messages = {
   moreFamily: "Gezin en medegebruikers",
   moreAccount: "Taal en account",
   moreEmergencyCard: "Noodkaart",
+  aiSugL: "Snelle vragen",
 };
