@@ -1259,4 +1259,12 @@ export const en: Messages = {
   wkRangeAll: "All",
   wkRangeFew: "There are fewer than two measurements in this range. Choose a longer range.",
   wkTrend: "Since {d}: {delta} kg ({pct} %). This is not a diagnosis. Discuss changes with your vet practice.",
+  myPetsTitle: "My pets",
+  vcChipOk: "Vaccinations up to date",
+  vcChipSoon: "Vaccination due soon",
+  vcChipExp: "Vaccination overdue",
+  qaTitle: "Quick actions",
+  qaMed: "Medication",
+  qaDoc: "Upload document",
+  qaAi: "AI assistant",
 };

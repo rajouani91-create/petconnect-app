@@ -114,6 +114,10 @@ export function Appointments() {
     const isPast = st === 'planned' && localDate(new Date(r.starts_at)) < today;
     return (
       <li key={r.id} className={`record-row appt-row${st !== 'planned' ? ' is-closed' : ''}`}>
+        <span className="date-block" aria-hidden="true">
+          <span className="date-block-mon">{new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(r.starts_at))}</span>
+          <span className="date-block-day">{new Date(r.starts_at).getDate()}</span>
+        </span>
         <div className="record-main">
           <span className="appt-when mono">
             {formatDateTime(r.starts_at, locale)}

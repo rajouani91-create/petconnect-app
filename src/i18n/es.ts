@@ -1259,4 +1259,12 @@ export const es: Messages = {
   wkRangeAll: "Todo",
   wkRangeFew: "Hay menos de dos mediciones en este periodo. Elija un periodo más largo.",
   wkTrend: "Desde el {d}: {delta} kg ({pct} %). No es un diagnóstico. Hable de los cambios con su clínica.",
+  myPetsTitle: "Mis mascotas",
+  vcChipOk: "Vacunas al día",
+  vcChipSoon: "Vacuna próxima a vencer",
+  vcChipExp: "Vacuna vencida",
+  qaTitle: "Acciones rápidas",
+  qaMed: "Medicamento",
+  qaDoc: "Subir documento",
+  qaAi: "Asistente de IA",
 };

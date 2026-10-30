@@ -1259,4 +1259,12 @@ export const ar: Messages = {
   wkRangeAll: "الكل",
   wkRangeFew: "هناك أقل من قياسين في هذه الفترة. اختر فترة أطول.",
   wkTrend: "منذ {d}: {delta} كغ ({pct}٪). هذا ليس تشخيصًا. ناقش التغييرات مع عيادتك.",
+  myPetsTitle: "حيواناتي",
+  vcChipOk: "التطعيمات محدّثة",
+  vcChipSoon: "تطعيم مستحق قريبًا",
+  vcChipExp: "تطعيم متأخر",
+  qaTitle: "إجراءات سريعة",
+  qaMed: "دواء",
+  qaDoc: "رفع مستند",
+  qaAi: "مساعد الذكاء الاصطناعي",
 };

@@ -1259,4 +1259,12 @@ export const sv: Messages = {
   wkRangeAll: "Allt",
   wkRangeFew: "Det finns färre än två mätningar i den här perioden. Välj en längre period.",
   wkTrend: "Sedan {d}: {delta} kg ({pct} %). Det här är ingen diagnos. Prata med er klinik om förändringar.",
+  myPetsTitle: "Mina djur",
+  vcChipOk: "Vaccinationer aktuella",
+  vcChipSoon: "Vaccination snart aktuell",
+  vcChipExp: "Vaccination försenad",
+  qaTitle: "Snabbåtgärder",
+  qaMed: "Medicin",
+  qaDoc: "Ladda upp dokument",
+  qaAi: "AI-assistent",
 };

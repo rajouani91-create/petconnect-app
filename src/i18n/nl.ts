@@ -1259,4 +1259,12 @@ export const nl: Messages = {
   wkRangeAll: "Alles",
   wkRangeFew: "In deze periode zijn er minder dan twee metingen. Kies een langere periode.",
   wkTrend: "Sinds {d}: {delta} kg ({pct} %). Dit is geen diagnose. Bespreek veranderingen met uw praktijk.",
+  myPetsTitle: "Mijn dieren",
+  vcChipOk: "Vaccinaties actueel",
+  vcChipSoon: "Vaccinatie binnenkort aan de beurt",
+  vcChipExp: "Vaccinatie te laat",
+  qaTitle: "Snelle acties",
+  qaMed: "Medicijn",
+  qaDoc: "Document uploaden",
+  qaAi: "AI-assistent",
 };

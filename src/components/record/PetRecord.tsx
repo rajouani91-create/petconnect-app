@@ -30,6 +30,11 @@ export function PetRecord({ pet }: { pet: PetRow }) {
   const editable = canEdit(myRole(pet));
   const { hash, key: locKey } = useLocation();
 
+  // „Dokument hochladen“ aus den Schnellaktionen: Reiter Dokumente wählen
+  useEffect(() => {
+    if (hash === '#dokumente') setTab('docs');
+  }, [hash, locKey]);
+
   // „Gewicht & Verlauf“ unter „Mehr zu …“: Reiter Gewicht wählen und dorthin springen
   useEffect(() => {
     if (hash !== '#gewicht') return;
