@@ -13,10 +13,11 @@ import { DocumentSection } from './DocumentSection';
 import { VaccinationSection } from './VaccinationSection';
 import { WeightSection } from './WeightSection';
 import { LabSection } from './LabSection';
+import { VitalSection } from './VitalSection';
 
-const TABS = ['weight', 'vacc', 'docs', 'lab'] as const;
+const TABS = ['weight', 'vitals', 'vacc', 'docs', 'lab'] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABEL: Record<Tab, MessageKey> = { weight: 'recWeight', vacc: 'recVacc', docs: 'recDocs', lab: 'recLab' };
+const TAB_LABEL: Record<Tab, MessageKey> = { weight: 'recWeight', vitals: 'recVitals', vacc: 'recVacc', docs: 'recDocs', lab: 'recLab' };
 
 /** Tierakte unter dem Profil: Reiter Gewicht, Impfungen, Dokumente. Nur ansehen: ohne Knöpfe, mit Hinweis. */
 export function PetRecord({ pet }: { pet: PetRow }) {
@@ -102,6 +103,7 @@ export function PetRecord({ pet }: { pet: PetRow }) {
       {TABS.map((k) => (
         <div key={k} role="tabpanel" id={`${uid}-panel-${k}`} aria-labelledby={`${uid}-tab-${k}`} hidden={tab !== k}>
           {tab === k && k === 'weight' && <WeightSection key={pet.id} {...common} />}
+          {tab === k && k === 'vitals' && <VitalSection key={pet.id} {...common} />}
           {tab === k && k === 'vacc' && <VaccinationSection key={pet.id} {...common} />}
           {tab === k && k === 'docs' && <DocumentSection key={pet.id} {...common} />}
           {tab === k && k === 'lab' && <LabSection key={pet.id} {...common} />}

@@ -336,6 +336,32 @@ export async function deleteWeight(id: string): Promise<void> {
   checkChanged(await supabase.from('weights').delete().eq('id', id).select('id'));
 }
 
+// ---------- Tierakte: Vitalwerte (Temperatur, Herz- und Atemfrequenz; die App legt nur eigene an) ----------
+
+export type VitalRow = Database['public']['Tables']['vital_values']['Row'];
+export interface VitalInput {
+  kind: 'temperature' | 'heart_rate' | 'resp_rate';
+  value: number;
+  context: string | null;
+  measured_at: string;
+}
+
+export async function listVitals(petId: string, kind: VitalInput['kind']): Promise<VitalRow[]> {
+  return check(await supabase.from('vital_values').select('*').eq('pet_id', petId).eq('kind', kind).order('measured_at', { ascending: false }));
+}
+
+export async function addVital(petId: string, v: VitalInput): Promise<VitalRow> {
+  return check(await supabase.from('vital_values').insert({ pet_id: petId, ...v }).select('*').single());
+}
+
+export async function updateVital(id: string, v: Omit<VitalInput, 'kind'>): Promise<VitalRow> {
+  return checkChanged(await supabase.from('vital_values').update(v).eq('id', id).eq('source', 'owner').select('*'));
+}
+
+export async function deleteVital(id: string): Promise<void> {
+  checkChanged(await supabase.from('vital_values').delete().eq('id', id).eq('source', 'owner').select('id'));
+}
+
 // ---------- Tierakte: Impfungen ----------
 
 export interface VaccinationInput {
