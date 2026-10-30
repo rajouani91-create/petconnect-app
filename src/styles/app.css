@@ -848,3 +848,10 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .ai-send { width: 48px; height: 48px; flex: none; border: 0; border-radius: 999px; background: var(--brand); color: var(--on-brand); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .ai-send:disabled { opacity: 0.45; cursor: not-allowed; }
 .ai-foot { text-align: center; color: var(--muted); opacity: 1; }
+
+/* Erinnerungen nach Entwurf: Symbol-Kachel je Zeile, kleine Gruppen-Überschriften */
+.rem-row { align-items: center; }
+.rem-ic { background: var(--surface-2); color: var(--muted); }
+.rem-ic-once { background: var(--warn-soft); color: var(--warn-ink); }
+.rem-row.is-closed .rem-ic { opacity: 0.6; }
+.rem-group > h2 { font-family: var(--f-body); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }

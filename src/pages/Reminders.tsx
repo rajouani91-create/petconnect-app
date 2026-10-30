@@ -42,7 +42,7 @@ import {
 } from '../lib/schedule';
 import { Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
-import { IconCalendar, IconCheck, IconPlus, IconTrash } from '../components/Icons';
+import { IconBack, IconBell, IconCalendar, IconCheck, IconList, IconPlus, IconTrash } from '../components/Icons';
 import { Loading } from '../components/Loading';
 import { ConfirmDelete, StatusLine, useFocusAfter, useStatus } from '../components/record/shared';
 import { ALL_PETS, PetFilter, PetSelect, useLocalToday, usePetAccess } from '../components/schedule/shared';
@@ -155,6 +155,10 @@ export function Reminders() {
 
   return (
     <div className="page stack-lg">
+      <Link to="/mehr" className="back-link">
+        <IconBack size={20} />
+        {t('moreTitle')}
+      </Link>
       <header className="page-head">
         <h1 ref={register('top')} tabIndex={-1}>{t('nav_reminders')}</h1>
         <p className="muted">{t('rmSub')}</p>
@@ -352,6 +356,9 @@ export function ReminderItem({
   const repeat = r.repeat_days === null ? t('rmOnce') : t('rmEvery', { n: r.repeat_days });
   return (
     <li className={`record-row rem-row${done ? ' is-closed' : ''}`}>
+      <span className={`menu-ic rem-ic${r.repeat_days === null ? ' rem-ic-once' : ''}`} aria-hidden="true">
+        {r.repeat_days === null ? <IconBell size={20} /> : <IconList size={20} />}
+      </span>
       <div className="record-main">
         <span className="record-title">
           {onOpen ? <button type="button" className="rem-open" onClick={onOpen}>{r.title}</button> : r.title}
@@ -416,6 +423,7 @@ export function DerivedItem({ d, today, petName }: { d: DerivedVacc; today: stri
   const expired = d.validUntil < today;
   return (
     <li className="record-row rem-row rem-derived">
+      <span className="menu-ic rem-ic rem-ic-once" aria-hidden="true"><IconBell size={20} /></span>
       <div className="record-main">
         <span className="record-title">
           {t(expired ? 'rmVaccExpired' : 'rmVaccExpires', { x: d.name, d: formatIsoDateShort(d.validUntil, lang) })}
