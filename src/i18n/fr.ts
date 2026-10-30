@@ -1300,4 +1300,10 @@ export const fr: Messages = {
   vtValTemp: "{v} °C",
   vtValRate: "{v} par min.",
   aiU_vitals: "constantes",
+  moreGroupPets: "Pour vos animaux",
+  moreGroupAccount: "Compte",
+  moreGroupHelp: "Aide et mentions légales",
+  moreFamily: "Famille et co-utilisateurs",
+  moreAccount: "Langue et compte",
+  moreEmergencyCard: "Carte d'urgence",
 };

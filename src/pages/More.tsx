@@ -1,23 +1,37 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Link, Navigate, useLocation } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
-import { LANGUAGES, isLang, type Lang } from '../i18n';
+import type { MessageKey } from '../i18n';
 import { useAuth } from '../auth/AuthProvider';
-import { updateLanguage } from '../lib/api';
 import { staffRoleFor } from '../lib/staff';
-import { Field } from '../components/Field';
-import { FamilyCard } from '../components/FamilyCard';
-import { Link } from 'react-router';
-import { IconBell, IconEmergency, IconList } from '../components/Icons';
-import { Dialog } from '../components/Dialog';
-import { LEGAL, deleteAccountMailto } from '../lib/legal';
+import { IconBell, IconChart, IconChevron, IconEmergency, IconList, IconPeople, IconShield, IconSparkle, IconUser } from '../components/Icons';
 
+function Row({ to, icon, label }: { to: string; icon: ReactNode; label: string }) {
+  return (
+    <li>
+      <Link to={to} className="menu-row">
+        <span className="menu-ic">{icon}</span>
+        <span className="menu-label">{label}</span>
+        <IconChevron size={18} className="menu-chev" />
+      </Link>
+    </li>
+  );
+}
+
+function Group({ id, title, children }: { id: string; title: MessageKey; children: ReactNode }) {
+  const { t } = useI18n();
+  return (
+    <section aria-labelledby={id} className="menu-group">
+      <h2 id={id} className="menu-title">{t(title)}</h2>
+      <ul className="card menu-list">{children}</ul>
+    </section>
+  );
+}
+
+/** Mehr: ruhiges Menü in Gruppen; Familie und Konto liegen auf eigenen Seiten. */
 export function More() {
-  const { t, lang, setLang } = useI18n();
-  const { user, refreshProfile, signOut } = useAuth();
-  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [askDelete, setAskDelete] = useState(false);
+  const { t } = useI18n();
+  const { user } = useAuth();
   const { hash } = useLocation();
   const [isStaff, setIsStaff] = useState(false);
 
@@ -31,28 +45,8 @@ export function More() {
     return () => { alive = false; };
   }, [user]);
 
-  // „Personen verwalten“ auf der Tier-Seite springt zur Familie-Karte
-  useEffect(() => {
-    if (hash === '#familie') document.getElementById('familie')?.scrollIntoView({ block: 'start' });
-  }, [hash]);
-
-  async function changeLang(next: Lang) {
-    if (!user) return;
-    const prev = lang;
-    setLang(next);
-    setBusy(true);
-    try {
-      await updateLanguage(user.id, next);
-      await refreshProfile();
-      setStatus({ ok: true, text: '' });
-    } catch (e) {
-      console.error(e);
-      setLang(prev);
-      setStatus({ ok: false, text: '' });
-    } finally {
-      setBusy(false);
-    }
-  }
+  // Alte Verweise mit #familie führen auf die neue Seite
+  if (hash === '#familie') return <Navigate to="/mehr/familie" replace />;
 
   return (
     <div className="page stack-lg">
@@ -60,76 +54,25 @@ export function More() {
         <h1>{t('moreTitle')}</h1>
       </header>
 
-      <nav className="card stack more-areas" aria-labelledby="more-areas-h">
-        <h2 id="more-areas-h">{t('moreAreas')}</h2>
-        <ul className="more-grid">
-          <li><Link to="/erinnerungen" className="btn btn-secondary more-btn"><IconBell size={20} />{t('nav_reminders')}</Link></li>
-          <li><Link to="/alltag" className="btn btn-secondary more-btn"><IconList size={20} />{t('nav_routine')}</Link></li>
-          <li><Link to="/notfall" className="btn btn-secondary more-btn"><IconEmergency size={20} />{t('nav_notfall')}</Link></li>
-          <li><Link to="/mehr/benachrichtigungen" className="btn btn-secondary more-btn"><IconBell size={20} />{t('pnTitle')}</Link></li>
-          <li><Link to="/mehr/monatsuebersicht" className="btn btn-secondary more-btn">{t('moTitle')}</Link></li>
-          <li><Link to="/mehr/assistent" className="btn btn-secondary more-btn">{t('aiMenu')}</Link></li>
-          {isStaff && <li><Link to="/admin" className="btn btn-secondary more-btn">{t('adminTitle')}</Link></li>}
-        </ul>
-      </nav>
+      <Group id="more-pets-h" title="moreGroupPets">
+        <Row to="/erinnerungen" icon={<IconBell size={20} />} label={t('nav_reminders')} />
+        <Row to="/alltag" icon={<IconList size={20} />} label={t('nav_routine')} />
+        <Row to="/notfall" icon={<IconEmergency size={20} />} label={t('moreEmergencyCard')} />
+        <Row to="/mehr/monatsuebersicht" icon={<IconChart size={20} />} label={t('moTitle')} />
+        <Row to="/mehr/assistent" icon={<IconSparkle size={20} />} label={t('aiMenu')} />
+        {isStaff && <Row to="/admin" icon={<IconShield size={20} />} label={t('adminTitle')} />}
+      </Group>
 
-      <FamilyCard />
+      <Group id="more-account-h" title="moreGroupAccount">
+        <Row to="/mehr/familie" icon={<IconPeople size={20} />} label={t('moreFamily')} />
+        <Row to="/mehr/benachrichtigungen" icon={<IconBell size={20} />} label={t('pnTitle')} />
+        <Row to="/mehr/konto" icon={<IconUser size={20} />} label={t('moreAccount')} />
+      </Group>
 
-      <section className="card stack" aria-labelledby="lang-h">
-        <h2 id="lang-h">{t('langLabel')}</h2>
-        <Field id="more-lang" label={t('prefLang')}>
-          {(a) => (
-            <select {...a} value={lang} disabled={busy} onChange={(e) => isLang(e.target.value) && void changeLang(e.target.value)}>
-              {LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code} lang={l.code}>{l.name}</option>
-              ))}
-            </select>
-          )}
-        </Field>
-        <p role="status" className={status ? (status.ok ? 'notice notice-ok' : 'notice notice-crit') : 'sr-only'}>
-          {status ? t(status.ok ? 'langSaved' : 'errGeneric') : ''}
-        </p>
-      </section>
-
-      <section className="card stack" aria-labelledby="acc-h">
-        <h2 id="acc-h">{t('account')}</h2>
-        {user?.email && <p className="muted">{t('signedInAs', { email: user.email })}</p>}
-        <button type="button" className="btn btn-secondary" onClick={() => void signOut()}>
-          {t('logout')}
-        </button>
-        <button type="button" className="btn btn-ghost btn-start" onClick={() => setAskDelete(true)}>
-          {t('accDelete')}
-        </button>
-      </section>
-
-      <section className="card stack" aria-labelledby="legal-h">
-        <h2 id="legal-h">{t('legalH')}</h2>
-        <p className="row-actions">
-          <Link to="/datenschutz" className="link">{t('legalPrivacy')}</Link>
-          <Link to="/impressum" className="link">{t('legalImprint')}</Link>
-        </p>
-      </section>
-
-      <Dialog
-        open={askDelete}
-        title={t('accDeleteTitle')}
-        onClose={() => setAskDelete(false)}
-        actions={
-          <>
-            <button type="button" className="btn btn-ghost" onClick={() => setAskDelete(false)}>{t('cancelBtn')}</button>
-            <a
-              className="btn btn-danger"
-              href={deleteAccountMailto(LEGAL.email, user?.email ?? '', t('accDeleteSubject'), t('accDeleteBody'))}
-              onClick={() => setAskDelete(false)}
-            >
-              {t('accDeleteMail')}
-            </a>
-          </>
-        }
-      >
-        <p>{t('accDeleteWhat')}</p>
-        <p>{t('accDeleteHow')}</p>
-      </Dialog>
+      <Group id="more-help-h" title="moreGroupHelp">
+        <Row to="/datenschutz" icon={<IconShield size={20} />} label={t('legalPrivacy')} />
+        <Row to="/impressum" icon={<IconList size={20} />} label={t('legalImprint')} />
+      </Group>
     </div>
   );
 }

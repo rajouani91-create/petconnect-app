@@ -35,7 +35,7 @@ export function PetSharedWith({ pet }: { pet: PetRow }) {
   if (!members || (role === 'owner' && others.length === 0)) {
     return (
       <p className="shared-line">
-        <Link to="/mehr#familie" className="link">{t('hhManage')}</Link>
+        <Link to="/mehr/familie" className="link">{t('hhManage')}</Link>
       </p>
     );
   }
@@ -54,7 +54,7 @@ export function PetSharedWith({ pet }: { pet: PetRow }) {
         </p>
       )}
       <p>
-        <Link to="/mehr#familie" className="link">{t('hhManage')}</Link>
+        <Link to="/mehr/familie" className="link">{t('hhManage')}</Link>
       </p>
     </div>
   );
