@@ -1307,4 +1307,12 @@ export const nl: Messages = {
   moreAccount: "Taal en account",
   moreEmergencyCard: "Noodkaart",
   aiSugL: "Snelle vragen",
+  tlTitle: "Verloop",
+  tlFilterL: "Filter",
+  tlAll: "Alles",
+  tlValues: "Metingen",
+  tlEmpty: "Nog geen items.",
+  tlMore: "Meer tonen",
+  tlLabN: "Waarden: {n}",
+  tlMedStart: "Gestart",
 };

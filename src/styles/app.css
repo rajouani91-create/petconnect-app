@@ -855,3 +855,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .rem-ic-once { background: var(--warn-soft); color: var(--warn-ink); }
 .rem-row.is-closed .rem-ic { opacity: 0.6; }
 .rem-group > h2 { font-family: var(--f-body); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+
+/* Gesundheits-Verlauf */
+.tl-row { min-height: 64px; padding-block: var(--s-2); }
+.tl-row .menu-label { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.tl-title { font-weight: 600; }
+.tl-src { flex: none; }

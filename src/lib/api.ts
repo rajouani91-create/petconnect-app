@@ -350,6 +350,10 @@ export async function listVitals(petId: string, kind: VitalInput['kind']): Promi
   return check(await supabase.from('vital_values').select('*').eq('pet_id', petId).eq('kind', kind).order('measured_at', { ascending: false }));
 }
 
+export async function listAllVitals(petId: string): Promise<VitalRow[]> {
+  return check(await supabase.from('vital_values').select('*').eq('pet_id', petId).order('measured_at', { ascending: false }));
+}
+
 export async function addVital(petId: string, v: VitalInput): Promise<VitalRow> {
   return check(await supabase.from('vital_values').insert({ pet_id: petId, ...v }).select('*').single());
 }

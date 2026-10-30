@@ -1307,4 +1307,12 @@ export const tr: Messages = {
   moreAccount: "Dil ve hesap",
   moreEmergencyCard: "Acil durum kartı",
   aiSugL: "Hızlı sorular",
+  tlTitle: "Geçmiş",
+  tlFilterL: "Filtre",
+  tlAll: "Tümü",
+  tlValues: "Ölçümler",
+  tlEmpty: "Henüz kayıt yok.",
+  tlMore: "Daha fazla göster",
+  tlLabN: "Değer: {n}",
+  tlMedStart: "Başladı",
 };

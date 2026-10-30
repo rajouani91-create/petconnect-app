@@ -1307,4 +1307,12 @@ export const fr: Messages = {
   moreAccount: "Langue et compte",
   moreEmergencyCard: "Carte d'urgence",
   aiSugL: "Questions rapides",
+  tlTitle: "Historique",
+  tlFilterL: "Filtre",
+  tlAll: "Tous",
+  tlValues: "Mesures",
+  tlEmpty: "Aucune entrée.",
+  tlMore: "Afficher plus",
+  tlLabN: "Valeurs : {n}",
+  tlMedStart: "Commencé",
 };

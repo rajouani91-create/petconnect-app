@@ -1307,4 +1307,12 @@ export const ar: Messages = {
   moreAccount: "اللغة والحساب",
   moreEmergencyCard: "بطاقة الطوارئ",
   aiSugL: "أسئلة سريعة",
+  tlTitle: "السجل",
+  tlFilterL: "تصفية",
+  tlAll: "الكل",
+  tlValues: "القياسات",
+  tlEmpty: "لا توجد إدخالات بعد.",
+  tlMore: "عرض المزيد",
+  tlLabN: "القيم: {n}",
+  tlMedStart: "بدأ",
 };
