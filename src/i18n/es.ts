@@ -1320,4 +1320,10 @@ export const es: Messages = {
   vtUnitRate: "por min.",
   vtNormal: "Valor de referencia en reposo ({sp}, adulto): de {a} a {b} {u}. Los cachorros, los animales pequeños y la excitación se desvían.",
   vtNormalNone: "No hay valores de referencia generales para esta especie. Consulte a su clínica.",
+  regBirth: "Fecha de nacimiento",
+  regBirthHint: "Solo la usamos para comprobar la edad mínima (16 años) y no la guardamos.",
+  regPw2: "Repetir contraseña",
+  err_pwMismatch: "Las contraseñas no coinciden.",
+  err_birthInvalid: "Introduzca una fecha de nacimiento válida.",
+  err_underAge: "Una cuenta propia solo es posible a partir de los 16 años. Pida a sus padres que gestionen los animales en su cuenta.",
 };

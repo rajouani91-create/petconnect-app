@@ -10,6 +10,8 @@ export interface FieldError {
 export type Errors<F extends string> = Partial<Record<F, FieldError>>;
 
 export const PASSWORD_MIN = 8;
+/** Mindestalter für ein eigenes Konto (DSGVO-Grundregel 16, gilt in allen EU-Ländern) */
+export const MIN_AGE = 16;
 export const PET_NAME_MAX = 60;
 export const SPECIES_OTHER_MAX = 40;
 export const LABEL_MAX = 40;
@@ -27,6 +29,35 @@ export function emailError(email: string): FieldError | undefined {
 export function passwordError(pw: string): FieldError | undefined {
   if (!pw) return { key: 'err_required' };
   if (pw.length < PASSWORD_MIN) return { key: 'err_pw' };
+  return undefined;
+}
+
+export function passwordRepeatError(pw: string, repeat: string): FieldError | undefined {
+  if (!repeat) return { key: 'err_required' };
+  if (pw !== repeat) return { key: 'err_pwMismatch' };
+  return undefined;
+}
+
+/** Alter in vollen Jahren am Stichtag; beide Angaben als YYYY-MM-DD. */
+export function ageOn(birth: string, today: string): number | null {
+  const b = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birth);
+  const t = /^(\d{4})-(\d{2})-(\d{2})$/.exec(today);
+  if (!b || !t) return null;
+  const [by, bm, bd] = [Number(b[1]), Number(b[2]), Number(b[3])];
+  const [ty, tm, td] = [Number(t[1]), Number(t[2]), Number(t[3])];
+  const check = new Date(by, bm - 1, bd);
+  if (check.getFullYear() !== by || check.getMonth() !== bm - 1 || check.getDate() !== bd) return null;
+  let age = ty - by;
+  if (tm < bm || (tm === bm && td < bd)) age -= 1;
+  return age;
+}
+
+/** Geburtsdatum bei der Registrierung: gültig, nicht in der Zukunft, mindestens MIN_AGE Jahre. */
+export function birthDateError(birth: string, today: string): FieldError | undefined {
+  if (!birth) return { key: 'err_required' };
+  const age = ageOn(birth, today);
+  if (age === null || age < 0 || age > 120) return { key: 'err_birthInvalid' };
+  if (age < MIN_AGE) return { key: 'err_underAge' };
   return undefined;
 }
 

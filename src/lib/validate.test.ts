@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emailError, emptyPetForm, extractPhone, isDuplicateRoutine, passwordError, petFormToRow, validatePet, validateRoutine } from './validate';
+import { ageOn, birthDateError, emailError, passwordRepeatError, emptyPetForm, extractPhone, isDuplicateRoutine, passwordError, petFormToRow, validatePet, validateRoutine } from './validate';
 import { authErrorKey } from '../auth/authErrors';
 
 const TODAY = '2026-10-16';
@@ -63,5 +63,29 @@ describe('extractPhone', () => {
     expect(extractPhone('Praxis Dr. Muster, 030 / 123 456-7')).toBe('0301234567');
     expect(extractPhone('+49 170 1234567 (Anna)')).toBe('+491701234567');
     expect(extractPhone('Nachbarin Anna')).toBeNull();
+  });
+});
+
+describe('Registrierung: Passwort wiederholen und Mindestalter', () => {
+  it('Passwort-Wiederholung muss übereinstimmen', () => {
+    expect(passwordRepeatError('abcdefgh', '')).toEqual({ key: 'err_required' });
+    expect(passwordRepeatError('abcdefgh', 'abcdefgi')).toEqual({ key: 'err_pwMismatch' });
+    expect(passwordRepeatError('abcdefgh', 'abcdefgh')).toBeUndefined();
+  });
+  it('Alter in vollen Jahren am Stichtag', () => {
+    expect(ageOn('2010-10-30', '2026-10-30')).toBe(16);
+    expect(ageOn('2010-10-31', '2026-10-30')).toBe(15);
+    expect(ageOn('2000-02-29', '2026-02-28')).toBe(25);
+    expect(ageOn('2026-02-30', '2026-10-30')).toBeNull();
+    expect(ageOn('quatsch', '2026-10-30')).toBeNull();
+  });
+  it('Geburtsdatum: Pflicht, gültig, mindestens 16 Jahre', () => {
+    const today = '2026-10-30';
+    expect(birthDateError('', today)).toEqual({ key: 'err_required' });
+    expect(birthDateError('2026-11-01', today)).toEqual({ key: 'err_birthInvalid' });
+    expect(birthDateError('1890-01-01', today)).toEqual({ key: 'err_birthInvalid' });
+    expect(birthDateError('2010-10-31', today)).toEqual({ key: 'err_underAge' });
+    expect(birthDateError('2010-10-30', today)).toBeUndefined();
+    expect(birthDateError('1990-05-05', today)).toBeUndefined();
   });
 });

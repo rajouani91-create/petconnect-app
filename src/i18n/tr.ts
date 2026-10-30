@@ -1320,4 +1320,10 @@ export const tr: Messages = {
   vtUnitRate: "dakikada",
   vtNormal: "Dinlenirken yaklaşık değer ({sp}, yetişkin): {a} ile {b} {u}. Yavrular, küçük hayvanlar ve heyecan farklılık gösterir.",
   vtNormalNone: "Bu tür için burada genel referans değerleri yok. Kliniğinize danışın.",
+  regBirth: "Doğum tarihi",
+  regBirthHint: "Bunu yalnızca asgari yaşı (16) kontrol etmek için kullanırız ve doğum tarihini kaydetmeyiz.",
+  regPw2: "Parolayı tekrarla",
+  err_pwMismatch: "Parolalar eşleşmiyor.",
+  err_birthInvalid: "Lütfen geçerli bir doğum tarihi girin.",
+  err_underAge: "Kendi hesabınız yalnızca 16 yaşından itibaren mümkündür. Lütfen ebeveynlerinizden hayvanları kendi hesaplarında yönetmelerini isteyin.",
 };
