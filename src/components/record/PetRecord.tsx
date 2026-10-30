@@ -36,6 +36,17 @@ export function PetRecord({ pet }: { pet: PetRow }) {
     if (hash === '#dokumente') setTab('docs');
   }, [hash, locKey]);
 
+  // Verlauf: Tippen auf einen Eintrag wählt den passenden Reiter
+  useEffect(() => {
+    const map: Record<string, Tab> = { '#vitalwerte': 'vitals', '#impfungen': 'vacc', '#labor': 'lab' };
+    const target = map[hash];
+    if (!target) return;
+    setTab(target);
+    const el = tabRefs.current.get(target);
+    el?.scrollIntoView({ block: 'start' });
+    el?.focus();
+  }, [hash, locKey]);
+
   // „Gewicht & Verlauf“ unter „Mehr zu …“: Reiter Gewicht wählen und dorthin springen
   useEffect(() => {
     if (hash !== '#gewicht') return;

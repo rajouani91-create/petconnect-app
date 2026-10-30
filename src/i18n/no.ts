@@ -1307,4 +1307,12 @@ export const no: Messages = {
   moreAccount: "Språk og konto",
   moreEmergencyCard: "Nødkort",
   aiSugL: "Hurtigspørsmål",
+  tlTitle: "Forløp",
+  tlFilterL: "Filter",
+  tlAll: "Alle",
+  tlValues: "Målinger",
+  tlEmpty: "Ingen oppføringer ennå.",
+  tlMore: "Vis mer",
+  tlLabN: "Verdier: {n}",
+  tlMedStart: "Startet",
 };

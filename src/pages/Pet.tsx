@@ -16,6 +16,7 @@ import { PetPhotoControls } from '../components/PetPhotoControls';
 import { PetSharedWith } from '../components/PetSharedWith';
 import { PetRecord } from '../components/record/PetRecord';
 import { MedicationCard } from '../components/record/MedicationCard';
+import { HealthTimeline } from '../components/record/HealthTimeline';
 import { MoreAboutPet } from '../components/more/MoreAboutPet';
 import { IconAssistant, IconBack, IconCalendar, IconEmergency, IconList, IconPlus, KindIcon } from '../components/Icons';
 import { VaccChip } from '../components/VaccChip';
@@ -38,7 +39,7 @@ export function Pet() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const { hash, key: locKey } = useLocation();
-  const [tab, setTab] = useState<PetTab>(hash === '#gewicht' || hash === '#dokumente' || hash === '#medikation' ? 'health' : 'overview');
+  const [tab, setTab] = useState<PetTab>(['#gewicht', '#dokumente', '#medikation', '#vitalwerte', '#impfungen', '#labor'].includes(hash) ? 'health' : 'overview');
   const tabRefs = useRef(new Map<PetTab, HTMLButtonElement>());
   const uid = useId();
   const [photoOpen, setPhotoOpen] = useState(false);
@@ -46,7 +47,7 @@ export function Pet() {
 
   // „Gewicht & Verlauf“ unter „Mehr“ springt zum Reiter Gesundheit
   useEffect(() => {
-    if (hash === '#gewicht' || hash === '#dokumente' || hash === '#medikation') setTab('health');
+    if (['#gewicht', '#dokumente', '#medikation', '#vitalwerte', '#impfungen', '#labor'].includes(hash)) setTab('health');
   }, [hash, locKey]);
 
   // „Medikament“ in den Schnellaktionen: nach dem Wechsel zum Reiter Gesundheit zur Medikation springen
@@ -206,6 +207,7 @@ export function Pet() {
 
       {tab === 'health' && (
         <div role="tabpanel" id={`${uid}-panel-health`} aria-labelledby={`${uid}-tab-health`} className="stack-lg">
+          <HealthTimeline key={`timeline-${pet.id}`} pet={pet} />
           <PetRecord key={`record-${pet.id}`} pet={pet} />
           <MedicationCard key={`med-${pet.id}`} pet={pet} editable={editable} />
         </div>

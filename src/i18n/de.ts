@@ -1306,6 +1306,14 @@ export const de = {
   moreAccount: "Sprache und Konto",
   moreEmergencyCard: "Notfallkarte",
   aiSugL: "Schnellfragen",
+  tlTitle: "Verlauf",
+  tlFilterL: "Filter",
+  tlAll: "Alle",
+  tlValues: "Messwerte",
+  tlEmpty: "Noch keine Einträge.",
+  tlMore: "Mehr anzeigen",
+  tlLabN: "Werte: {n}",
+  tlMedStart: "Begonnen",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;

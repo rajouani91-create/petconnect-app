@@ -1307,4 +1307,12 @@ export const ru: Messages = {
   moreAccount: "Язык и аккаунт",
   moreEmergencyCard: "Карточка на случай ЧП",
   aiSugL: "Быстрые вопросы",
+  tlTitle: "История",
+  tlFilterL: "Фильтр",
+  tlAll: "Все",
+  tlValues: "Измерения",
+  tlEmpty: "Записей пока нет.",
+  tlMore: "Показать ещё",
+  tlLabN: "Значений: {n}",
+  tlMedStart: "Начато",
 };
