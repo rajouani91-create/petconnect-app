@@ -21,6 +21,8 @@ import {
   validateDocForm,
   validateVaccination,
   weightDeltas,
+  filterWeightsByRange,
+  weightTrend,
 } from './record';
 
 const TODAY = '2026-10-16';
@@ -190,5 +192,22 @@ describe('Fehler-Zuordnung', () => {
     expect(recordErrorKey({ code: '23514', message: 'check' })).toBe('errGeneric');
     expect(recordErrorKey(new Error('Netzwerk'))).toBe('errGeneric');
     expect(recordErrorKey(null)).toBe('errGeneric');
+  });
+});
+
+describe('Gewicht: Zeiträume und Verlauf', () => {
+  const rows = [w('a', '2026-10-10', 28.5), w('b', '2026-09-20', 28.8), w('c', '2026-07-01', 29.1), w('d', '2026-01-05', 30)];
+  it('filtert nach Zeitraum, „Alles“ behält alle', () => {
+    expect(filterWeightsByRange(rows, '30d', TODAY).map((r) => r.id)).toEqual(['a', 'b']);
+    expect(filterWeightsByRange(rows, '3m', TODAY).map((r) => r.id)).toEqual(['a', 'b']);
+    expect(filterWeightsByRange(rows, '6m', TODAY).map((r) => r.id)).toEqual(['a', 'b', 'c']);
+    expect(filterWeightsByRange(rows, 'all', TODAY)).toHaveLength(4);
+    expect(filterWeightsByRange([], '30d', TODAY)).toEqual([]);
+  });
+  it('Verlauf: Änderung in kg und Prozent, ohne zwei Werte keiner', () => {
+    expect(weightTrend(rows.slice(0, 1))).toBeNull();
+    expect(weightTrend([])).toBeNull();
+    expect(weightTrend(rows)).toEqual({ from: '2026-01-05', deltaKg: -1.5, pct: -5 });
+    expect(weightTrend([w('x', '2026-10-02', 10), w('y', '2026-10-01', 10)])).toEqual({ from: '2026-10-01', deltaKg: 0, pct: 0 });
   });
 });

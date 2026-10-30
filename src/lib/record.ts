@@ -74,6 +74,37 @@ export function weightDeltas<T extends WeightLike>(rowsDesc: readonly T[]): (num
   });
 }
 
+export type WeightRange = '30d' | '3m' | '6m' | 'all';
+export const WEIGHT_RANGES: readonly WeightRange[] = ['30d', '3m', '6m', 'all'];
+const RANGE_DAYS: Record<Exclude<WeightRange, 'all'>, number> = { '30d': 30, '3m': 91, '6m': 182 };
+
+/** Messungen im gewählten Zeitraum bis `today` (YYYY-MM-DD); „Alles“ lässt nichts weg. Reihenfolge bleibt erhalten. */
+export function filterWeightsByRange<T extends WeightLike>(rows: readonly T[], range: WeightRange, today: string): T[] {
+  if (range === 'all') return [...rows];
+  const max = RANGE_DAYS[range];
+  return rows.filter((r) => daysBetween(r.measured_on, today) <= max);
+}
+
+export interface WeightTrend {
+  /** Datum der ältesten Messung im Zeitraum */
+  from: string;
+  /** Änderung in kg (neueste minus älteste), auf 2 Stellen gerundet */
+  deltaKg: number;
+  /** Änderung in Prozent, ganze Zahl */
+  pct: number;
+}
+
+/** Ruhige Verlaufszahl aus der ältesten und neuesten Messung (Liste neueste zuerst); ohne zwei Werte null. Keine Bewertung. */
+export function weightTrend<T extends WeightLike>(rowsDesc: readonly T[]): WeightTrend | null {
+  if (rowsDesc.length < 2) return null;
+  const newest = rowsDesc[0]!;
+  const oldest = rowsDesc[rowsDesc.length - 1]!;
+  const base = Number(oldest.kg);
+  if (!(base > 0)) return null;
+  const deltaKg = Math.round((Number(newest.kg) - base) * 100) / 100;
+  return { from: oldest.measured_on, deltaKg, pct: Math.round((deltaKg / base) * 100) };
+}
+
 /** Zahl mit Dezimalkomma je Sprache, höchstens 2 Nachkommastellen: 12,4 */
 export function formatKg(kg: number, locale: string): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(kg);
