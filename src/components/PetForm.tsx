@@ -142,7 +142,7 @@ export function PetForm({ initial, withTemplate, submitLabel, onSubmit, onCancel
               species={breedSpecies}
               value={v.breed}
               onChange={(val) => set('breed', val)}
-              placeholder="Rasse eingeben…"
+              placeholder={t('breedPh')}
             />
           )}
         </Field>

@@ -11,5 +11,10 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts', 'supabase/**/*.test.ts'],
     environment: 'node',
+    // Platzhalter, damit Tests ohne .env.local laufen (z. B. in CI). Es werden keine Netzwerkaufrufe ausgeführt.
+    env: {
+      VITE_SUPABASE_URL: 'http://localhost:54321',
+      VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test_placeholder',
+    },
   },
 });

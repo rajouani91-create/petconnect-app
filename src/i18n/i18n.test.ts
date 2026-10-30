@@ -54,6 +54,13 @@ describe('Wörterbücher', () => {
     }
   });
 
+  it('moreTitle ist ohne Platzhalter, morePetTitle enthält {n}', () => {
+    for (const { code } of LANGUAGES) {
+      expect(DICTIONARIES[code].moreTitle, `${code}.moreTitle`).not.toContain('{');
+      expect(DICTIONARIES[code].morePetTitle, `${code}.morePetTitle`).toContain('{n}');
+    }
+  });
+
   it('Deutsch in der Sie-Form (kein „du“/„dein“)', () => {
     for (const text of Object.values(de)) expect(text).not.toMatch(/\b(du|dein|deine|dich|dir)\b/i);
   });

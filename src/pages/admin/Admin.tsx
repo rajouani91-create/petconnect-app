@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Navigate } from 'react-router';
+import { Link, Navigate } from 'react-router';
 import { useAuth } from '../../auth/AuthProvider';
 import { Loading } from '../../components/Loading';
 import { Tickets } from './Tickets';
@@ -121,6 +121,12 @@ export function Admin() {
     <main className="page" aria-labelledby="admin-title">
       <h1 id="admin-title">{t('adminTitle')}</h1>
       <p>{t('adminIntro')}</p>
+
+      {role === 'admin' && (
+        <p>
+          <Link className="btn btn-secondary" to="/admin/agenten">Agenten ansehen</Link>
+        </p>
+      )}
 
       {role === 'admin' && <Dashboard />}
 

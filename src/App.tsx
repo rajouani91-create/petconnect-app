@@ -31,6 +31,7 @@ import { Imprint, Privacy } from './pages/Legal';
 import DeleteAccount from './pages/DeleteAccount';
 import { UpdateBanner } from './components/UpdateBanner';
 import { Admin } from './pages/admin/Admin';
+import { Agents } from './pages/admin/Agents';
 
 export function App() {
   return (
@@ -75,6 +76,8 @@ export function App() {
               <Route path="mehr/monatsuebersicht" element={<MonthlyReport />} />
               <Route path="mehr/assistent" element={<Assistant />} />
               <Route path="admin" element={<Admin />} />
+              <Route path="admin/agenten" element={<Agents />} />
+              <Route path="admin/agenten/:agentId" element={<Agents />} />
               <Route path="notfall" element={<Emergency />} />
               <Route path="einladung/:token" element={<Invite />} />
             </Route>

@@ -26,7 +26,7 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
   const [pos, setPos] = useState<DropdownPos | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setQuery(value); }, [value]);
 
@@ -131,7 +131,7 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
         autoComplete="off"
       />
       {open && suggestions.length > 0 && pos && createPortal(
-        <ul
+        <div
           ref={listRef}
           className="breed-suggest-list"
           role="listbox"
@@ -146,18 +146,20 @@ export function BreedSuggest({ species, value, onChange, placeholder = 'Rasse ei
           }}
         >
           {suggestions.map((b) => (
-            <li
+            <div
               key={b.id}
               className="breed-suggest-item"
               role="option"
-              onMouseDown={() => handleSelect(b.name)}
+              aria-selected={false}
+              tabIndex={-1}
+              onMouseDown={(e) => { e.preventDefault(); handleSelect(b.name); }}
               onTouchEnd={(e) => { e.preventDefault(); handleSelect(b.name); }}
             >
               {b.name}
               {b.origin ? <span className="breed-suggest-origin"> · {b.origin}</span> : null}
-            </li>
+            </div>
           ))}
-        </ul>,
+        </div>,
         document.body
       )}
     </div>
