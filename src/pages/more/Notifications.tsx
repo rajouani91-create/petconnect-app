@@ -176,7 +176,7 @@ export function Notifications() {
   async function test() {
     if (!reg) return;
     try {
-      await showTestNotification(reg, t('pnTestTitle'), t('pnTestBody'));
+      await showTestNotification(reg, t('pnTestTitle'), t('pnTestBody'), t('odGive'));
       setStatus(t('pnTestShown'));
     } catch (e) {
       console.error(e);
