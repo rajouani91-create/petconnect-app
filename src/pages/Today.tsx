@@ -9,7 +9,8 @@ import { canEdit, doneByName } from '../lib/sharing';
 import type { PetRow, RoutineRow } from '../lib/supabase';
 import type { MedicationRow } from '../lib/api';
 import { nextDue, splitMinutes, toHHMM, toMinutes, zonedNow, type NextDue } from '../lib/time';
-import { amountText, doseState } from '../lib/medication';
+import { amountText, doseKey, doseState } from '../lib/medication';
+import { parsePushAction } from '../lib/pushAction';
 import { doneIds, planForDay, type PlanEntry } from '../lib/plan';
 import { routineTitle } from '../lib/labels';
 import { isKind, type Kind } from '../lib/domain';
@@ -149,6 +150,37 @@ export function Today() {
     }
   }
 
+  // Knopf „Gegeben“/„Erledigt“ aus der Benachrichtigung: Bestätigungskarte (nichts wird ohne Tipp eingetragen)
+  const pushAction = parsePushAction(location.search);
+  let confirm: ConfirmView | null = null;
+  if (pushAction?.kind === 'give' && doses.data) {
+    const p = doses.planned.find((x) => x.med.id === pushAction.medId && x.time === pushAction.time);
+    if (!p) confirm = { state: 'gone' };
+    else if (doses.data.doses.has(doseKey(p.med.id, doses.day, p.time))) confirm = { state: 'already' };
+    else {
+      const pet = doses.petNames.get(p.med.pet_id) ?? '';
+      confirm = {
+        state: 'ask',
+        text: t('pcGiveAsk', { p: pet, m: p.med.name, t: p.time }),
+        btn: t('odGive'),
+        pending: doseActions.pending === doseKey(p.med.id, doses.day, p.time),
+        onConfirm: () => void doseActions.give(p),
+      };
+    }
+  } else if (pushAction?.kind === 'done' && items) {
+    const item = items.find((x) => x.id === pushAction.id);
+    if (!item) confirm = { state: 'gone' };
+    else if (done.has(item.id)) confirm = { state: 'already' };
+    else
+      confirm = {
+        state: 'ask',
+        text: t('pcDoneAsk', { x: routineTitle(item, t), t: formatTime(toHHMM(item.time_of_day), lang) }),
+        btn: t('gpDoneBtn'),
+        pending: pending === item.id,
+        onConfirm: () => void toggle(item),
+      };
+  }
+
   return (
     <div className="page stack-lg">
       <header className="page-head">
@@ -157,6 +189,23 @@ export function Today() {
       </header>
 
       {flash && <p className="notice notice-ok" role="status">{flash}</p>}
+
+      {confirm && (
+        <section className="card stack" aria-label={t('pcLabel')}>
+          <p role="status">{confirm.state === 'ask' ? confirm.text : confirm.state === 'already' ? t('pcAlready') : t('pcGone')}</p>
+          <div className="actions">
+            {confirm.state === 'ask' && !readOnly && (
+              <button type="button" className="btn btn-primary" disabled={confirm.pending} aria-busy={confirm.pending} onClick={confirm.onConfirm}>
+                <IconCheck size={20} />
+                {confirm.btn}
+              </button>
+            )}
+            <button type="button" className="btn btn-ghost" onClick={() => navigate(pathname, { replace: true })}>
+              {t('close')}
+            </button>
+          </div>
+        </section>
+      )}
 
       {items && todays.length > 0 && (
         <section className="card today-hero" aria-labelledby="hero-h">
@@ -305,6 +354,10 @@ function NextCard({
     </section>
   );
 }
+
+type ConfirmView =
+  | { state: 'gone' | 'already' }
+  | { state: 'ask'; text: string; btn: string; pending: boolean; onConfirm: () => void };
 
 type Entry = PlanEntry<RoutineRow, MedicationRow>;
 

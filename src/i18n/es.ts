@@ -1326,4 +1326,9 @@ export const es: Messages = {
   err_pwMismatch: "Las contraseñas no coinciden.",
   err_birthInvalid: "Introduzca una fecha de nacimiento válida.",
   err_underAge: "Una cuenta propia solo es posible a partir de los 16 años. Pida a sus padres que gestionen los animales en su cuenta.",
+  pcLabel: "Confirmar notificación",
+  pcGiveAsk: "{p}: {m} a las {t}. ¿Se administró el medicamento?",
+  pcDoneAsk: "{x} a las {t}. ¿Hecho?",
+  pcAlready: "Esto ya está registrado.",
+  pcGone: "No encontramos esta entrada. Revise la lista de abajo.",
 };

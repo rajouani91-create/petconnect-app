@@ -1326,4 +1326,9 @@ export const tr: Messages = {
   err_pwMismatch: "Parolalar eşleşmiyor.",
   err_birthInvalid: "Lütfen geçerli bir doğum tarihi girin.",
   err_underAge: "Kendi hesabınız yalnızca 16 yaşından itibaren mümkündür. Lütfen ebeveynlerinizden hayvanları kendi hesaplarında yönetmelerini isteyin.",
+  pcLabel: "Bildirimi onayla",
+  pcGiveAsk: "{p}: {m}, saat {t}. İlaç verildi mi?",
+  pcDoneAsk: "{x}, saat {t}. Tamam mı?",
+  pcAlready: "Bu zaten kaydedilmiş.",
+  pcGone: "Bu kayıt artık bulunamıyor. Lütfen aşağıdaki listeyi kontrol edin.",
 };

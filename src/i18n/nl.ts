@@ -1326,4 +1326,9 @@ export const nl: Messages = {
   err_pwMismatch: "De wachtwoorden komen niet overeen.",
   err_birthInvalid: "Voer een geldige geboortedatum in.",
   err_underAge: "Een eigen account is pas mogelijk vanaf 16 jaar. Vraag uw ouders de dieren in hun account te beheren.",
+  pcLabel: "Melding bevestigen",
+  pcGiveAsk: "{p}: {m} om {t}. Is het medicijn gegeven?",
+  pcDoneAsk: "{x} om {t}. Gedaan?",
+  pcAlready: "Dit is al vastgelegd.",
+  pcGone: "We vinden dit item niet meer. Controleer de lijst hieronder.",
 };

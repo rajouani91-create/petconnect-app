@@ -1326,4 +1326,9 @@ export const fr: Messages = {
   err_pwMismatch: "Les mots de passe ne correspondent pas.",
   err_birthInvalid: "Veuillez saisir une date de naissance valide.",
   err_underAge: "Un compte personnel n'est possible qu'à partir de 16 ans. Demandez à vos parents de gérer les animaux dans leur compte.",
+  pcLabel: "Confirmer la notification",
+  pcGiveAsk: "{p} : {m} à {t}. Le médicament a-t-il été donné ?",
+  pcDoneAsk: "{x} à {t}. Fait ?",
+  pcAlready: "C'est déjà enregistré.",
+  pcGone: "Cette entrée est introuvable. Veuillez vérifier la liste ci-dessous.",
 };

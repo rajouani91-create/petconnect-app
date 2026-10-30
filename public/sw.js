@@ -2,7 +2,7 @@
  * - App-Shell offline: "/", "/index.html" und die gebauten Dateien aus index.html beim Installieren,
  *   danach /assets/* und Icons „stale-while-revalidate“.
  * - Antworten von Supabase (andere Origin) werden nie angefasst oder gespeichert.
- * - Push: Nachricht anzeigen; Klick öffnet „Heute“ (gleiche Origin).
+ * - Push: Nachricht anzeigen; Klick öffnet „Heute“ (gleiche Origin). Medikament/Alltag: Knopf „Gegeben“/„Erledigt“ öffnet „Heute“ mit Bestätigungskarte.
  */
 const VERSION = 'pc-v1';
 const SHELL = `${VERSION}-shell`;
@@ -70,6 +70,42 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
+/** Beschriftung der Knöpfe in der Benachrichtigung (Sprache des Geräts) */
+const ACTION_LABEL = {
+  give: { de: 'Gegeben', en: 'Given', fr: 'Donné', es: 'Administrado', nl: 'Gegeven', no: 'Gitt', nb: 'Gitt', sv: 'Givet', da: 'Givet', tr: 'Verildi', ru: 'Дано', ar: 'تم الإعطاء' },
+  done: { de: 'Erledigt', en: 'Done', fr: 'Fait', es: 'Hecho', nl: 'Gedaan', no: 'Ferdig', nb: 'Ferdig', sv: 'Klart', da: 'Klaret', tr: 'Tamam', ru: 'Готово', ar: 'تم' },
+};
+function actionLabel(kind) {
+  const lang = String((self.navigator && self.navigator.language) || 'de').slice(0, 2).toLowerCase();
+  return ACTION_LABEL[kind][lang] || ACTION_LABEL[kind].de;
+}
+
+/** Aus dem Kennzeichen „<Art>-<ID>-<Zeitpunkt>“ die Aktion ableiten (nur Medikament und Alltag) */
+function actionFromTag(tag) {
+  const m = /^(medication|routine)-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-(.+)$/i.exec(typeof tag === 'string' ? tag : '');
+  if (!m) return null;
+  return { kind: m[1] === 'medication' ? 'give' : 'done', id: m[2].toLowerCase(), slot: m[3] };
+}
+
+/** Uhrzeit des Zeitpunkts in Berlin (HH:MM) – so speichert die App die Zeiten der Medikamente */
+function berlinTime(slot) {
+  const d = new Date(slot);
+  if (Number.isNaN(d.getTime())) return null;
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(d);
+  const h = parts.find((x) => x.type === 'hour');
+  const mi = parts.find((x) => x.type === 'minute');
+  return h && mi ? `${h.value}:${mi.value}` : null;
+}
+
+/** Adresse für den Knopf: Heute-Seite mit Bestätigungskarte */
+function actionUrl(a) {
+  if (a.kind === 'give') {
+    const time = berlinTime(a.slot);
+    return time ? `/?gegeben=${a.id}&zeit=${time}` : TODAY_URL;
+  }
+  return `/?erledigt=${a.id}`;
+}
+
 /** Ziel beim Antippen einer Benachrichtigung: die Heute-Seite */
 const TODAY_URL = '/';
 
@@ -91,8 +127,16 @@ function readPush(data) {
       body: typeof msg.body === 'string' ? msg.body.slice(0, 300) : '',
       tag: typeof msg.tag === 'string' ? msg.tag.slice(0, 100) : 'petconnect',
       data: { url: TODAY_URL },
+      ...actionOptions(typeof msg.tag === 'string' ? msg.tag : ''),
     },
   };
+}
+
+/** Knopf „Gegeben“ bzw. „Erledigt“, wenn die Meldung zu einem Medikament oder Alltagspunkt gehört */
+function actionOptions(tag) {
+  const a = actionFromTag(tag);
+  if (!a) return {};
+  return { actions: [{ action: a.kind, title: actionLabel(a.kind) }], data: { url: actionUrl(a) } };
 }
 
 /** Nur Pfade der eigenen Origin zulassen */
@@ -132,5 +176,7 @@ async function openUrl(path) {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   // Jede Push-Meldung führt zu „Heute“ – dort werden Medikamente, Erinnerungen und Alltag abgehakt.
-  event.waitUntil(openUrl(TODAY_URL));
+  const data = event.notification.data;
+  const target = event.action && data && typeof data.url === 'string' ? data.url : TODAY_URL;
+  event.waitUntil(openUrl(target));
 });

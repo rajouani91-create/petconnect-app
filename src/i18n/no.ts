@@ -1326,4 +1326,9 @@ export const no: Messages = {
   err_pwMismatch: "Passordene stemmer ikke overens.",
   err_birthInvalid: "Oppgi en gyldig fødselsdato.",
   err_underAge: "En egen konto er først mulig fra 16 år. Be foreldrene dine om å administrere dyrene i sin konto.",
+  pcLabel: "Bekreft varsel",
+  pcGiveAsk: "{p}: {m} kl. {t}. Er medisinen gitt?",
+  pcDoneAsk: "{x} kl. {t}. Ferdig?",
+  pcAlready: "Dette er allerede registrert.",
+  pcGone: "Vi finner ikke denne oppføringen lenger. Sjekk listen under.",
 };

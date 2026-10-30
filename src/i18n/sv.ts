@@ -1326,4 +1326,9 @@ export const sv: Messages = {
   err_pwMismatch: "Lösenorden stämmer inte överens.",
   err_birthInvalid: "Ange ett giltigt födelsedatum.",
   err_underAge: "Ett eget konto är först möjligt från 16 år. Be dina föräldrar att hantera djuren i sitt konto.",
+  pcLabel: "Bekräfta avisering",
+  pcGiveAsk: "{p}: {m} kl. {t}. Har läkemedlet getts?",
+  pcDoneAsk: "{x} kl. {t}. Klart?",
+  pcAlready: "Detta är redan registrerat.",
+  pcGone: "Vi hittar inte posten längre. Kontrollera listan nedan.",
 };
