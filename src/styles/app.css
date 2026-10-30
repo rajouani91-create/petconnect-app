@@ -815,3 +815,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .date-block-day { font-family: var(--f-display); font-weight: 700; font-size: 1.5rem; }
 .appt-row.is-closed .date-block { background: var(--surface-2); color: var(--muted); }
 .next-card { background: color-mix(in srgb, var(--brand-soft) 55%, var(--surface)); }
+
+.today-hero { background: var(--brand); color: var(--on-brand); border-color: var(--brand); gap: var(--s-2); }
+.today-hero .label { color: inherit; opacity: 0.85; margin: 0; }
+.today-hero-count { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 1.6rem; }
+.today-hero-bar { width: 100%; height: 10px; border: 0; border-radius: var(--r-pill); overflow: hidden; background: color-mix(in srgb, var(--on-brand) 30%, transparent); accent-color: var(--on-brand); }
+.today-hero-bar::-webkit-progress-bar { background: color-mix(in srgb, var(--on-brand) 30%, transparent); }
+.today-hero-bar::-webkit-progress-value { background: var(--on-brand); border-radius: var(--r-pill); }
+.today-hero-bar::-moz-progress-bar { background: var(--on-brand); border-radius: var(--r-pill); }

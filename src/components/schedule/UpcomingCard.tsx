@@ -66,7 +66,11 @@ export function UpcomingCard({ onStatus }: { onStatus: (text: string) => void })
         ) : (
           <ul className="record-list">
             {next.map((a) => (
-              <li key={a.id} className="record-row">
+              <li key={a.id} className="record-row appt-row">
+                <span className="date-block" aria-hidden="true">
+                  <span className="date-block-mon">{new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(a.starts_at))}</span>
+                  <span className="date-block-day">{new Date(a.starts_at).getDate()}</span>
+                </span>
                 <div className="record-main">
                   <span className="appt-when mono">{formatDateTime(a.starts_at, locale)}</span>
                   <span className="record-title">{a.title}</span>

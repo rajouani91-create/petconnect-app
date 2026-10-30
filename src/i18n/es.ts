@@ -1267,4 +1267,5 @@ export const es: Messages = {
   qaMed: "Medicamento",
   qaDoc: "Subir documento",
   qaAi: "Asistente de IA",
+  todayProgress: "{done} de {total} hechos",
 };

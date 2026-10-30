@@ -159,6 +159,14 @@ export function Today() {
 
       {flash && <p className="notice notice-ok" role="status">{flash}</p>}
 
+      {items && todays.length > 0 && (
+        <section className="card today-hero" aria-labelledby="hero-h">
+          <h2 id="hero-h" className="label">{t('todayH')}</h2>
+          <p className="today-hero-count">{t('todayProgress', { done: todays.filter((e) => allDone.has(e.id)).length, total: todays.length })}</p>
+          <progress className="today-hero-bar" max={todays.length} value={todays.filter((e) => allDone.has(e.id)).length} aria-labelledby="hero-h" />
+        </section>
+      )}
+
       <EmergencyButton />
 
       <PetSwitcher />

@@ -1267,4 +1267,5 @@ export const nl: Messages = {
   qaMed: "Medicijn",
   qaDoc: "Document uploaden",
   qaAi: "AI-assistent",
+  todayProgress: "{done} van {total} gedaan",
 };

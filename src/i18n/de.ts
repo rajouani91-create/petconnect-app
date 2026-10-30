@@ -1266,6 +1266,7 @@ export const de = {
   qaMed: "Medikament",
   qaDoc: "Dokument hochladen",
   qaAi: "KI-Assistent",
+  todayProgress: "{done} von {total} erledigt",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;

@@ -1267,4 +1267,5 @@ export const en: Messages = {
   qaMed: "Medication",
   qaDoc: "Upload document",
   qaAi: "AI assistant",
+  todayProgress: "{done} of {total} done",
 };

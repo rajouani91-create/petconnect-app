@@ -1267,4 +1267,5 @@ export const da: Messages = {
   qaMed: "Medicin",
   qaDoc: "Upload dokument",
   qaAi: "AI-assistent",
+  todayProgress: "{done} af {total} udført",
 };
