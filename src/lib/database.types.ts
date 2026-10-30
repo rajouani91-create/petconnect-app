@@ -994,6 +994,53 @@ export type Database = {
         }
         Relationships: []
       }
+      vital_values: {
+        Row: {
+          context: string | null
+          created_at: string
+          id: string
+          kind: string
+          measured_at: string
+          note: string | null
+          owner_id: string
+          pet_id: string
+          source: string
+          value: number
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          measured_at?: string
+          note?: string | null
+          owner_id?: string
+          pet_id: string
+          source?: string
+          value: number
+        }
+        Update: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          measured_at?: string
+          note?: string | null
+          owner_id?: string
+          pet_id?: string
+          source?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vital_values_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weights: {
         Row: {
           created_at: string
