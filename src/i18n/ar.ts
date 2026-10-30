@@ -1300,4 +1300,10 @@ export const ar: Messages = {
   vtValTemp: "{v} °C",
   vtValRate: "{v} في الدقيقة",
   aiU_vitals: "العلامات الحيوية",
+  moreGroupPets: "لحيواناتك",
+  moreGroupAccount: "الحساب",
+  moreGroupHelp: "المساعدة والمعلومات القانونية",
+  moreFamily: "العائلة والمستخدمون المشاركون",
+  moreAccount: "اللغة والحساب",
+  moreEmergencyCard: "بطاقة الطوارئ",
 };

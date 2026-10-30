@@ -1300,4 +1300,10 @@ export const ru: Messages = {
   vtValTemp: "{v} °C",
   vtValRate: "{v} в мин.",
   aiU_vitals: "жизненные показатели",
+  moreGroupPets: "Для ваших питомцев",
+  moreGroupAccount: "Аккаунт",
+  moreGroupHelp: "Помощь и правовая информация",
+  moreFamily: "Семья и совместный доступ",
+  moreAccount: "Язык и аккаунт",
+  moreEmergencyCard: "Карточка на случай ЧП",
 };

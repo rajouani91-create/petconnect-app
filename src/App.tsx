@@ -28,6 +28,8 @@ import { Practices } from './pages/Practices';
 import { Notifications } from './pages/more/Notifications';
 import { MonthlyReport } from './pages/more/MonthlyReport';
 import { Assistant } from './pages/more/Assistant';
+import { Family } from './pages/more/Family';
+import { Account } from './pages/more/Account';
 import { Imprint, Privacy } from './pages/Legal';
 import DeleteAccount from './pages/DeleteAccount';
 import { UpdateBanner } from './components/UpdateBanner';
@@ -77,6 +79,8 @@ export function App() {
               <Route path="mehr/benachrichtigungen" element={<Notifications />} />
               <Route path="mehr/monatsuebersicht" element={<MonthlyReport />} />
               <Route path="mehr/assistent" element={<Assistant />} />
+              <Route path="mehr/familie" element={<Family />} />
+              <Route path="mehr/konto" element={<Account />} />
               <Route path="admin" element={<Admin />} />
               <Route path="admin/agenten" element={<Agents />} />
               <Route path="admin/agenten/:agentId" element={<Agents />} />

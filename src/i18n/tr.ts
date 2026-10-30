@@ -1300,4 +1300,10 @@ export const tr: Messages = {
   vtValTemp: "{v} °C",
   vtValRate: "dakikada {v}",
   aiU_vitals: "yaşamsal değerler",
+  moreGroupPets: "Hayvanlarınız için",
+  moreGroupAccount: "Hesap",
+  moreGroupHelp: "Yardım ve yasal",
+  moreFamily: "Aile ve ortak kullanıcılar",
+  moreAccount: "Dil ve hesap",
+  moreEmergencyCard: "Acil durum kartı",
 };

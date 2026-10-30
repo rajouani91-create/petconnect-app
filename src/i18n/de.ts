@@ -1299,6 +1299,12 @@ export const de = {
   vtValTemp: "{v} °C",
   vtValRate: "{v} pro Min.",
   aiU_vitals: "Vitalwerte",
+  moreGroupPets: "Für Ihre Tiere",
+  moreGroupAccount: "Konto",
+  moreGroupHelp: "Hilfe und Rechtliches",
+  moreFamily: "Familie und Mitnutzer",
+  moreAccount: "Sprache und Konto",
+  moreEmergencyCard: "Notfallkarte",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;

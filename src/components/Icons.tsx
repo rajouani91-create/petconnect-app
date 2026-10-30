@@ -264,3 +264,31 @@ const KIND_PATHS: Record<Kind, ReactNode> = {
 };
 
 export const KindIcon = ({ kind, ...p }: IconProps & { kind: Kind }) => <Svg {...p}>{KIND_PATHS[kind]}</Svg>;
+
+export const IconChevron = (p: IconProps) => (
+  <Svg {...p} className="flip-rtl">
+    <path d="m9 6 6 6-6 6" />
+  </Svg>
+);
+export const IconSparkle = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 3.5 14 10l6.5 2-6.5 2-2 6.5-2-6.5L3.5 12 10 10Z" />
+  </Svg>
+);
+export const IconChart = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M6 20v-7M12 20V5M18 20v-10" />
+  </Svg>
+);
+export const IconShield = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 3.5 5 6.2v5.3c0 4.2 2.8 7.4 7 9 4.2-1.6 7-4.8 7-9V6.2Z" />
+    <path d="m9 12 2.2 2.2L15 10.4" />
+  </Svg>
+);
+export const IconUser = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="8.5" r="3.5" />
+    <path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5" />
+  </Svg>
+);

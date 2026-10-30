@@ -163,7 +163,7 @@ function SittingView({ pet, editable }: { pet: PetRow; editable: boolean }) {
       <section className="card stack no-print" aria-labelledby="sit-fam-h">
         <h2 id="sit-fam-h">{t('sitFamTitle')}</h2>
         <p>{t('sitFamText')}</p>
-        <Link to="/mehr#familie" className="btn btn-secondary btn-start">{t('sitFamBtn')}</Link>
+        <Link to="/mehr/familie" className="btn btn-secondary btn-start">{t('sitFamBtn')}</Link>
       </section>
       <StatusLine status={status} />
 
