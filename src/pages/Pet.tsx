@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { formatIsoDate, type MessageKey } from '../i18n';
 import { usePets } from '../pets/PetsProvider';
@@ -22,6 +22,10 @@ import { SPECIES_LABEL } from '../components/SpeciesPicker';
 import { BreedInfoCard, BreedInfoSkeleton } from '../components/BreedInfoCard';
 import { useBreedInfo } from '../hooks/useBreedInfo';
 
+const PET_TABS = ['overview', 'health', 'more'] as const;
+type PetTab = (typeof PET_TABS)[number];
+const PET_TAB_LABEL: Record<PetTab, MessageKey> = { overview: 'petTabOverview', health: 'petTabHealth', more: 'petTabMore' };
+
 /** Stammdaten und Foto ansehen und bearbeiten, Tierakte (Gewicht, Impfungen, Dokumente), weiteres Tier anlegen, Tier löschen. */
 export function Pet() {
   const { t } = useI18n();
@@ -31,6 +35,25 @@ export function Pet() {
   const [status, setStatus] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
+  const { hash, key: locKey } = useLocation();
+  const [tab, setTab] = useState<PetTab>(hash === '#gewicht' ? 'health' : 'overview');
+  const tabRefs = useRef(new Map<PetTab, HTMLButtonElement>());
+  const uid = useId();
+
+  // „Gewicht & Verlauf“ unter „Mehr“ springt zum Reiter Gesundheit
+  useEffect(() => {
+    if (hash === '#gewicht') setTab('health');
+  }, [hash, locKey]);
+
+  function onTabKey(e: KeyboardEvent<HTMLButtonElement>) {
+    const i = PET_TABS.indexOf(tab);
+    const next =
+      e.key === 'ArrowRight' ? PET_TABS[(i + 1) % PET_TABS.length] : e.key === 'ArrowLeft' ? PET_TABS[(i + PET_TABS.length - 1) % PET_TABS.length] : e.key === 'Home' ? PET_TABS[0] : e.key === 'End' ? PET_TABS[PET_TABS.length - 1] : undefined;
+    if (!next) return;
+    e.preventDefault();
+    setTab(next);
+    tabRefs.current.get(next)?.focus();
+  }
 
   if (!active) return null;
   const role = myRole(active);
@@ -71,50 +94,85 @@ export function Pet() {
 
       <PetSwitcher />
 
-      {editing && editable ? (
-        <PetForm
-          key={`form-${pet.id}`}
-          initial={petToForm(pet)}
-          withTemplate={false}
-          submitLabel={t('saveBtn')}
-          onCancel={() => setEditing(false)}
-          onSubmit={async (values) => {
-            const updated = await updatePet(pet.id, values);
-            upsertLocal(updated);
-            setEditing(false);
-            setStatus(t('savedShort'));
-          }}
-        />
-      ) : (
-        <>
-          <PetDetails pet={pet} />
-          {(pet.species === 'dog' || pet.species === 'cat') && pet.breed && (
-            <BreedInfoSection species={pet.species} breed={pet.breed} />
-          )}
-          <div className="actions actions-start">
-            {editable && (
-              <button type="button" className="btn btn-primary" onClick={() => { setEditing(true); setStatus(''); }}>
-                {t('editBtn')}
-              </button>
-            )}
-            <Link to="/tier/neu" className="btn btn-secondary">
-              <IconPlus size={20} />
-              {t('addAnother')}
-            </Link>
-          </div>
-        </>
-      )}
-      <p className="sr-only" role="status" aria-live="polite">{status}</p>
-
-      {!editing && <PetRecord key={`record-${pet.id}`} pet={pet} />}
-      {!editing && <MedicationCard key={`med-${pet.id}`} pet={pet} editable={editable} />}
-      {!editing && <MoreAboutPet pet={pet} />}
-
-      {role === 'owner' && (
-        <div className="danger-zone">
-          <button type="button" className="btn btn-danger" onClick={() => setConfirmDelete(true)} disabled={busy} aria-busy={busy}>
-            {t('petDelete')}
+      <div className="tabs" role="tablist" aria-label={t('petTabsL')}>
+        {PET_TABS.map((k) => (
+          <button
+            key={k}
+            ref={(el) => {
+              if (el) tabRefs.current.set(k, el);
+            }}
+            type="button"
+            role="tab"
+            id={`${uid}-tab-${k}`}
+            aria-selected={tab === k}
+            aria-controls={`${uid}-panel-${k}`}
+            tabIndex={tab === k ? 0 : -1}
+            className="tab"
+            onClick={() => setTab(k)}
+            onKeyDown={onTabKey}
+          >
+            {t(PET_TAB_LABEL[k])}
           </button>
+        ))}
+      </div>
+
+      {tab === 'overview' && (
+        <div role="tabpanel" id={`${uid}-panel-overview`} aria-labelledby={`${uid}-tab-overview`} className="stack-lg">
+          {editing && editable ? (
+            <PetForm
+              key={`form-${pet.id}`}
+              initial={petToForm(pet)}
+              withTemplate={false}
+              submitLabel={t('saveBtn')}
+              onCancel={() => setEditing(false)}
+              onSubmit={async (values) => {
+                const updated = await updatePet(pet.id, values);
+                upsertLocal(updated);
+                setEditing(false);
+                setStatus(t('savedShort'));
+              }}
+            />
+          ) : (
+            <>
+              <PetDetails pet={pet} />
+              {(pet.species === 'dog' || pet.species === 'cat') && pet.breed && (
+                <BreedInfoSection species={pet.species} breed={pet.breed} />
+              )}
+              <div className="actions actions-start">
+                {editable && (
+                  <button type="button" className="btn btn-primary" onClick={() => { setEditing(true); setStatus(''); }}>
+                    {t('editBtn')}
+                  </button>
+                )}
+                <Link to="/tier/neu" className="btn btn-secondary">
+                  <IconPlus size={20} />
+                  {t('addAnother')}
+                </Link>
+              </div>
+            </>
+          )}
+          <p className="sr-only" role="status" aria-live="polite">{status}</p>
+
+          {role === 'owner' && !editing && (
+            <div className="danger-zone">
+              <button type="button" className="btn btn-danger" onClick={() => setConfirmDelete(true)} disabled={busy} aria-busy={busy}>
+                {t('petDelete')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'health' && (
+        <div role="tabpanel" id={`${uid}-panel-health`} aria-labelledby={`${uid}-tab-health`} className="stack-lg">
+          <PetRecord key={`record-${pet.id}`} pet={pet} />
+          <MedicationCard key={`med-${pet.id}`} pet={pet} editable={editable} />
+        </div>
+      )}
+
+      {tab === 'more' && (
+        <div role="tabpanel" id={`${uid}-panel-more`} aria-labelledby={`${uid}-tab-more`} className="stack-lg">
+          <MoreAboutPet pet={pet} />
         </div>
       )}
 

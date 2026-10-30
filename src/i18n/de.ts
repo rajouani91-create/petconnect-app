@@ -1247,6 +1247,17 @@ export const de = {
   aiErrVision: "Bilder können derzeit nicht ausgewertet werden. Bitte hängen Sie Text an.",
   aiErrAttach: "Der Anhang ist ungültig.",
   aiErrAttachBig: "Der Anhang ist zu groß.",
+  petTabsL: "Bereiche des Tierprofils",
+  petTabOverview: "Übersicht",
+  petTabHealth: "Gesundheit",
+  petTabMore: "Mehr",
+  wkRangeL: "Zeitraum",
+  wkRange30: "30 Tage",
+  wkRange3m: "3 Monate",
+  wkRange6m: "6 Monate",
+  wkRangeAll: "Alles",
+  wkRangeFew: "In diesem Zeitraum gibt es weniger als zwei Messungen. Wählen Sie einen längeren Zeitraum.",
+  wkTrend: "Seit {d}: {delta} kg ({pct} %). Das ist keine Diagnose. Besprechen Sie Veränderungen mit Ihrer Praxis.",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;

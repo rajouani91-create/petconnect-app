@@ -2,7 +2,8 @@ import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 
 import { useI18n } from '../../i18n/I18nProvider';
 import { formatIsoDateShort, localeOf } from '../../i18n';
 import { addWeight, deleteWeight, listWeights, updateWeight, type WeightRow } from '../../lib/api';
-import { KG_ERROR, chartPoints, formatDelta, formatKg, parseKg, pastDateError, recordErrorKey, sortWeightsDesc, weightDeltas } from '../../lib/record';
+import { KG_ERROR, WEIGHT_RANGES, chartPoints, filterWeightsByRange, formatDelta, formatKg, parseKg, pastDateError, recordErrorKey, sortWeightsDesc, weightDeltas, weightTrend, type WeightRange } from '../../lib/record';
+import type { MessageKey } from '../../i18n';
 import type { FieldError } from '../../lib/validate';
 import { Field } from '../Field';
 import { IconPlus, IconTrash } from '../Icons';
@@ -10,6 +11,8 @@ import { Loading } from '../Loading';
 import { ByLine, ConfirmDelete, StatusLine, useFocusAfter, useStatus } from './shared';
 
 type Mode = { kind: 'add' } | { kind: 'edit'; row: WeightRow } | null;
+
+const RANGE_LABEL: Record<WeightRange, MessageKey> = { '30d': 'wkRange30', '3m': 'wkRange3m', '6m': 'wkRange6m', all: 'wkRangeAll' };
 
 /** Gewicht: aktuelles Gewicht, Verlauf als Diagramm (ab 2 Werten) und Liste, Eintragen/Ändern/Löschen. */
 export function WeightSection({ petId, editable, today, myId, names }: { petId: string; editable: boolean; today: string; myId: string | undefined; names: ReadonlyMap<string, string> }) {
@@ -19,6 +22,7 @@ export function WeightSection({ petId, editable, today, myId, names }: { petId: 
   const [loadError, setLoadError] = useState(false);
   const [mode, setMode] = useState<Mode>(null);
   const [toDelete, setToDelete] = useState<WeightRow | null>(null);
+  const [range, setRange] = useState<WeightRange>('all');
   const [status, setStatus] = useStatus();
   const { register, focusLater } = useFocusAfter();
 
@@ -41,6 +45,8 @@ export function WeightSection({ petId, editable, today, myId, names }: { petId: 
   const sorted = rows ?? [];
   const deltas = weightDeltas(sorted);
   const current = sorted[0];
+  const inRange = filterWeightsByRange(sorted, range, today);
+  const trend = weightTrend(inRange);
 
   async function save(measuredOn: string, value: number) {
     if (mode?.kind === 'edit') {
@@ -88,7 +94,23 @@ export function WeightSection({ petId, editable, today, myId, names }: { petId: 
             <p className="muted">{t('wkNone')}</p>
           )}
 
-          {sorted.length >= 2 && <WeightChart rows={sorted} />}
+          {sorted.length >= 2 && (
+            <div className="stack">
+              <div className="range-chips" role="group" aria-label={t('wkRangeL')}>
+                {WEIGHT_RANGES.map((r) => (
+                  <button key={r} type="button" className="chip" aria-pressed={range === r} onClick={() => setRange(r)}>
+                    {t(RANGE_LABEL[r])}
+                  </button>
+                ))}
+              </div>
+              {inRange.length >= 2 ? <WeightChart rows={inRange} /> : <p className="muted">{t('wkRangeFew')}</p>}
+              {trend && (
+                <p className="muted small" role="status" aria-live="polite">
+                  {t('wkTrend', { d: date(trend.from), delta: formatDelta(trend.deltaKg, locale), pct: `${trend.pct > 0 ? '+' : trend.pct < 0 ? '−' : '±'}${Math.abs(trend.pct)}` })}
+                </p>
+              )}
+            </div>
+          )}
 
           {editable && mode === null && (
             <button type="button" ref={register('add')} className="btn btn-secondary btn-start" onClick={() => { setMode({ kind: 'add' }); setStatus(''); }}>
