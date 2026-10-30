@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { Link } from 'react-router';
+import { IconBack, IconSend } from '../../components/Icons';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { MessageKey } from '../../i18n';
 import { usePets } from '../../pets/PetsProvider';
@@ -98,12 +99,15 @@ export function Assistant() {
 
   return (
     <div className="page stack ai-page">
+      <Link to="/mehr" className="back-link">
+        <IconBack size={20} />
+        {t('moreTitle')}
+      </Link>
       <header className="page-head">
         <h1>{t('aiTitle')}</h1>
-        <p className="muted">{t('aiIntro')}</p>
       </header>
 
-      <p className="notice notice-info">{t('aiNotice')}</p>
+      <p className="notice notice-info ai-notice">{t('aiNotice')}</p>
 
       <label className="ai-pet" htmlFor="ai-pet">
         <span>{t('aiPet')}</span>
@@ -114,16 +118,9 @@ export function Assistant() {
       </label>
 
       <section className="ai-log" aria-label={t('aiTitle')} aria-live="polite">
-        {turns.length === 0 && (
-          <div className="ai-suggest">
-            {(['aiSug1', 'aiSug2', 'aiSug3'] as const).map((k) => (
-              <button key={k} type="button" className="chip" disabled={busy} onClick={() => void send(t(k))}>{t(k)}</button>
-            ))}
-          </div>
-        )}
         {turns.map((m, i) => (
           <article key={i} className={`ai-msg ai-${m.role}`}>
-            <h2 className="ai-who">{m.role === 'user' ? t('aiYou') : t('aiBot')}</h2>
+            <h2 className="ai-who sr-only">{m.role === 'user' ? t('aiYou') : t('aiBot')}</h2>
             {m.emergency && (
               <p className="notice notice-crit" role="alert">
                 <strong>{t('aiEmergency')}</strong>
@@ -140,7 +137,7 @@ export function Assistant() {
                 ))}
               </p>
             )}
-            {m.used && m.used.length > 0 && <p className="ai-meta">{t('aiUsed', { list: usedLabel(m.used) })}</p>}
+            {m.used && m.used.length > 0 && <p className="ai-meta ai-used">{t('aiUsed', { list: usedLabel(m.used) })}</p>}
           </article>
         ))}
         {busy && <p className="ai-msg ai-assistant ai-wait" role="status">{t('aiThinking')}</p>}
@@ -148,24 +145,36 @@ export function Assistant() {
         <div ref={endRef} />
       </section>
 
+      <div className="ai-suggest" role="group" aria-label={t('aiSugL')}>
+        {(['aiSug1', 'aiSug2', 'aiSug3'] as const).map((k) => (
+          <button key={k} type="button" className="chip" disabled={busy} onClick={() => void send(t(k))}>{t(k)}</button>
+        ))}
+      </div>
+
       <form className="ai-form stack" onSubmit={onSubmit}>
         <label className="sr-only" htmlFor="ai-input">{t('aiPlaceholder')}</label>
-        <textarea
-          id="ai-input"
-          rows={3}
-          maxLength={AI_MAX_INPUT}
-          value={text}
-          placeholder={t('aiPlaceholder')}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={onKey}
-          disabled={busy}
-        />
-        <AttachPanel petId={petId} disabled={busy} value={attach} onChange={setAttach} />
-        <div className="ai-actions">
-          <button type="submit" className="btn btn-primary" disabled={busy || text.trim() === ''}>{t('aiSend')}</button>
-          {turns.length > 0 && <button type="button" className="btn btn-secondary" onClick={reset}>{t('aiReset')}</button>}
+        <div className="ai-input-row">
+          <textarea
+            id="ai-input"
+            rows={1}
+            maxLength={AI_MAX_INPUT}
+            value={text}
+            placeholder={t('aiPlaceholder')}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={onKey}
+            disabled={busy}
+          />
+          <button type="submit" className="ai-send" aria-label={t('aiSend')} disabled={busy || text.trim() === ''}>
+            <IconSend size={22} />
+          </button>
         </div>
-        <p className="ai-meta">{t('aiNoDiagnosis')}{left !== null && ` ${t('aiLeft', { n: left })}`}</p>
+        <AttachPanel petId={petId} disabled={busy} value={attach} onChange={setAttach} />
+        {turns.length > 0 && (
+          <div className="ai-actions">
+            <button type="button" className="btn btn-secondary" onClick={reset}>{t('aiReset')}</button>
+          </div>
+        )}
+        <p className="ai-meta ai-foot">{t('aiNoDiagnosis')}{left !== null && ` ${t('aiLeft', { n: left })}`}</p>
       </form>
     </div>
   );

@@ -1306,4 +1306,5 @@ export const tr: Messages = {
   moreFamily: "Aile ve ortak kullanıcılar",
   moreAccount: "Dil ve hesap",
   moreEmergencyCard: "Acil durum kartı",
+  aiSugL: "Hızlı sorular",
 };

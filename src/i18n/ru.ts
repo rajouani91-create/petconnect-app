@@ -1306,4 +1306,5 @@ export const ru: Messages = {
   moreFamily: "Семья и совместный доступ",
   moreAccount: "Язык и аккаунт",
   moreEmergencyCard: "Карточка на случай ЧП",
+  aiSugL: "Быстрые вопросы",
 };

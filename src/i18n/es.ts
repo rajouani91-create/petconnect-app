@@ -1306,4 +1306,5 @@ export const es: Messages = {
   moreFamily: "Familia y coproprietarios",
   moreAccount: "Idioma y cuenta",
   moreEmergencyCard: "Tarjeta de emergencia",
+  aiSugL: "Preguntas rápidas",
 };

@@ -1306,4 +1306,5 @@ export const sv: Messages = {
   moreFamily: "Familj och medanvändare",
   moreAccount: "Språk och konto",
   moreEmergencyCard: "Nödkort",
+  aiSugL: "Snabbfrågor",
 };

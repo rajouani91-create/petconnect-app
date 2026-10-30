@@ -1306,4 +1306,5 @@ export const fr: Messages = {
   moreFamily: "Famille et co-utilisateurs",
   moreAccount: "Langue et compte",
   moreEmergencyCard: "Carte d'urgence",
+  aiSugL: "Questions rapides",
 };

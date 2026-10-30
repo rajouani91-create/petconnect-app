@@ -1305,6 +1305,7 @@ export const de = {
   moreFamily: "Familie und Mitnutzer",
   moreAccount: "Sprache und Konto",
   moreEmergencyCard: "Notfallkarte",
+  aiSugL: "Schnellfragen",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;

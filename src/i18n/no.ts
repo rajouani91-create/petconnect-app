@@ -1306,4 +1306,5 @@ export const no: Messages = {
   moreFamily: "Familie og medbrukere",
   moreAccount: "Språk og konto",
   moreEmergencyCard: "Nødkort",
+  aiSugL: "Hurtigspørsmål",
 };
