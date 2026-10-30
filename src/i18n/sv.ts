@@ -1299,4 +1299,5 @@ export const sv: Messages = {
   vtChartL: "Utveckling från {from} den {d1} till {to} den {d2}",
   vtValTemp: "{v} °C",
   vtValRate: "{v} per min.",
+  aiU_vitals: "vitalparametrar",
 };

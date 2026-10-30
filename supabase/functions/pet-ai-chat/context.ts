@@ -1,12 +1,13 @@
 /* Welche Tierdaten braucht die Frage? Und wie werden sie kompakt als Text an die KI gegeben? Reine Funktionen (testbar). */
 
-export type Topic = 'meds' | 'vaccines' | 'weight' | 'labs' | 'history' | 'docs';
+export type Topic = 'meds' | 'vaccines' | 'weight' | 'vitals' | 'labs' | 'history' | 'docs';
 
 /* Stichwörter in den App-Sprachen. Erkennt nichts → es gehen nur Kerndaten raus (Name, Tierart, Rasse, Alter, Allergien, Medikamentennamen). */
 const TOPIC_PATTERNS: Record<Topic, RegExp> = {
   meds: /medik|tablette|dosi|dosis|wurmkur|schmerzmittel|antibiot|tropfen|salbe|medicat|medicin|\bmeds?\b|\bdrugs?\b|\bdose|\bpills?\b|m[ée]dicament|medicamento|ila[cç]|лекарств|دواء|medicijn|läkemedel|medisin/i,
   vaccines: /impf|vaccin|vacun|aşı|прививк|لقاح|booster|titer|tollwut|rabies|staupe|parvo|katzenschnupfen|seuche/i,
   weight: /gewicht|abnehm|zunehm|übergewicht|zu dick|diät|weight|overweight|obes|diet\b|poids|peso\b|kilo|вес\b|وزن|vikt|vægt|vekt|füttern|futter|ernähr|food|feed|nutrition|alimentation|dieta|mama\b|корм|питани/i,
+  vitals: /fieber|temperatur|puls|herzfrequenz|herzschlag|atemfrequenz|atmung|atmet|hecheln|vital|fever|temperature|pulse|heart rate|breath|panting|f[ée]vre|temp[ée]rature|fr[ée]quence|fiebre|temperatura|pulso|respira|koorts|temperatuur|hartslag|ademhaling|feber|ateş|nabız|solunum|температур|жар|пульс|дыхани|حرارة|حمى|نبض|تنفس/i,
   labs: /labor|blutwert|blutbild|nierenwert|leberwert|blood (test|work|value)|\blab\b|bilan|analítica|kreatinin|creatinin|bloedwaarde|кровь|анализ/i,
   history: /vorerkrank|erkrank|krank|symptom|durchfall|erbrech|husten|humpel|lahm|juck|schmerz|operation|\bop\b|kastr|chronisch|allerg|illness|sick|vomit|diarrh|cough|limp|itch|pain|surgery|neuter|chronic|malad|enfermedad|hastal|болезн|مرض|sjuk|\bsyg|\bsyk|ziek|appetit|trink|urin|kot\b|stool/i,
   docs: /dokument|befund|diagnos|arztbrief|bericht|document|report|diagnosis|rapport|informe|rapor/i,
@@ -54,6 +55,7 @@ export interface MedRow {
 }
 export interface VaccRow { name: string; given_on: string | null; valid_until: string | null }
 export interface WeightRow { measured_on: string; kg: number }
+export interface VitalRow { kind: string; value: number; context: string | null; measured_at: string }
 export interface LabRow { measured_on: string; parameter: string; value: number; unit: string | null; ref_min: number | null; ref_max: number | null }
 export interface HistoryRow {
   neutered: string | null; housing: string | null; past_illness: string | null; surgeries: string | null;
@@ -65,6 +67,7 @@ export interface Extras {
   meds: MedRow[];            // laufende Medikamente (immer geladen, Details nur bei Thema „meds“)
   vaccinations?: VaccRow[];
   weights?: WeightRow[];
+  vitals?: VitalRow[];
   labs?: LabRow[];
   history?: HistoryRow | null;
   docs?: DocRow[];
@@ -152,6 +155,16 @@ export function buildPetContext(pet: PetCore, extras: Extras, topics: Set<Topic>
     lines.push(w.length ? 'weight history (newest first):' : 'weight: none documented');
     for (const x of w.slice(0, 6)) lines.push(`- ${x.measured_on}: ${x.kg} kg`);
     used.push('weight');
+  }
+  if (topics.has('vitals')) {
+    const v = extras.vitals ?? [];
+    lines.push(v.length ? 'vital signs measured by the owner at home (newest first; not a veterinary examination):' : 'vital signs: none documented');
+    const unit: Record<string, string> = { temperature: '°C', heart_rate: 'per minute', resp_rate: 'per minute' };
+    for (const x of v.slice(0, 15)) {
+      const ctx = x.context ? ` (${flat(x.context, 20)})` : '';
+      lines.push(`- ${flat(x.measured_at, 10)} ${flat(x.kind, 20)}: ${x.value} ${unit[x.kind] ?? ''}${ctx}`);
+    }
+    used.push('vitals');
   }
   if (topics.has('labs')) {
     const l = extras.labs ?? [];

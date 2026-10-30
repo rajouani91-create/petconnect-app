@@ -1299,4 +1299,5 @@ export const tr: Messages = {
   vtChartL: "{d1} tarihinde {from} değerinden {d2} tarihinde {to} değerine gidiş",
   vtValTemp: "{v} °C",
   vtValRate: "dakikada {v}",
+  aiU_vitals: "yaşamsal değerler",
 };

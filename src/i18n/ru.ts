@@ -1299,4 +1299,5 @@ export const ru: Messages = {
   vtChartL: "Динамика: {from} ({d1}) → {to} ({d2})",
   vtValTemp: "{v} °C",
   vtValRate: "{v} в мин.",
+  aiU_vitals: "жизненные показатели",
 };
