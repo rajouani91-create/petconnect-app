@@ -18,7 +18,6 @@ import { PetSwitcher } from '../components/PetSwitcher';
 import { PetAvatar } from '../components/PetAvatar';
 import { UpcomingCard } from '../components/schedule/UpcomingCard';
 import { NextDoseCard, stateText, useDoseActions, useTodayDoses } from '../components/schedule/TodayMeds';
-import { EmergencyButton } from '../components/more/EmergencyButton';
 import { IconCheck, KindIcon } from '../components/Icons';
 import { Loading } from '../components/Loading';
 
@@ -166,8 +165,6 @@ export function Today() {
           <progress className="today-hero-bar" max={todays.length} value={todays.filter((e) => allDone.has(e.id)).length} aria-labelledby="hero-h" />
         </section>
       )}
-
-      <EmergencyButton />
 
       <PetSwitcher />
 
