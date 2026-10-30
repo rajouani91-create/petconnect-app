@@ -23,6 +23,7 @@ import {
   weightDeltas,
   filterWeightsByRange,
   weightTrend,
+  overallVaccStatus,
 } from './record';
 
 const TODAY = '2026-10-16';
@@ -209,5 +210,15 @@ describe('Gewicht: Zeiträume und Verlauf', () => {
     expect(weightTrend([])).toBeNull();
     expect(weightTrend(rows)).toEqual({ from: '2026-01-05', deltaKg: -1.5, pct: -5 });
     expect(weightTrend([w('x', '2026-10-02', 10), w('y', '2026-10-01', 10)])).toEqual({ from: '2026-10-01', deltaKg: 0, pct: 0 });
+  });
+});
+
+describe('Impfungen: Gesamtstatus', () => {
+  it('der ungünstigste Status gewinnt, ohne Datum keiner', () => {
+    expect(overallVaccStatus(['2027-10-15', '2026-10-20'], TODAY)).toBe('soon');
+    expect(overallVaccStatus(['2027-10-15', '2026-10-01'], TODAY)).toBe('expired');
+    expect(overallVaccStatus(['2027-10-15'], TODAY)).toBe('valid');
+    expect(overallVaccStatus([null], TODAY)).toBeNull();
+    expect(overallVaccStatus([], TODAY)).toBeNull();
   });
 });

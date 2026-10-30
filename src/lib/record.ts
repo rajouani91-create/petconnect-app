@@ -158,6 +158,13 @@ export function vaccStatus(validUntil: string | null | undefined, today: string)
   return 'valid';
 }
 
+/** Gesamtstatus der Impfungen eines Tiers: der ungünstigste Einzelstatus; ohne Datum bei allen null */
+export function overallVaccStatus(validUntils: readonly (string | null | undefined)[], today: string): VaccStatus | null {
+  const order: VaccStatus[] = ['expired', 'soon', 'valid'];
+  const all = validUntils.map((v) => vaccStatus(v, today)).filter((x): x is VaccStatus => x !== null);
+  return order.find((o) => all.includes(o)) ?? null;
+}
+
 export const VACC_STATUS_LABEL: Record<VaccStatus, MessageKey> = {
   valid: 'vcValid',
   soon: 'vcSoon',

@@ -17,7 +17,9 @@ import { PetSharedWith } from '../components/PetSharedWith';
 import { PetRecord } from '../components/record/PetRecord';
 import { MedicationCard } from '../components/record/MedicationCard';
 import { MoreAboutPet } from '../components/more/MoreAboutPet';
-import { IconPlus } from '../components/Icons';
+import { IconAssistant, IconBack, IconCalendar, IconEmergency, IconList, IconPlus, KindIcon } from '../components/Icons';
+import { VaccChip } from '../components/VaccChip';
+import { useVaccStatus } from '../hooks/useVaccStatus';
 import { SPECIES_LABEL } from '../components/SpeciesPicker';
 import { BreedInfoCard, BreedInfoSkeleton } from '../components/BreedInfoCard';
 import { useBreedInfo } from '../hooks/useBreedInfo';
@@ -36,14 +38,22 @@ export function Pet() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const { hash, key: locKey } = useLocation();
-  const [tab, setTab] = useState<PetTab>(hash === '#gewicht' ? 'health' : 'overview');
+  const [tab, setTab] = useState<PetTab>(hash === '#gewicht' || hash === '#dokumente' || hash === '#medikation' ? 'health' : 'overview');
   const tabRefs = useRef(new Map<PetTab, HTMLButtonElement>());
   const uid = useId();
+  const [photoOpen, setPhotoOpen] = useState(false);
+  const vacc = useVaccStatus(active ? [active.id] : []);
 
   // „Gewicht & Verlauf“ unter „Mehr“ springt zum Reiter Gesundheit
   useEffect(() => {
-    if (hash === '#gewicht') setTab('health');
+    if (hash === '#gewicht' || hash === '#dokumente' || hash === '#medikation') setTab('health');
   }, [hash, locKey]);
+
+  // „Medikament“ in den Schnellaktionen: nach dem Wechsel zum Reiter Gesundheit zur Medikation springen
+  useEffect(() => {
+    if (hash !== '#medikation' || tab !== 'health') return;
+    document.getElementById('medikation')?.scrollIntoView({ block: 'start' });
+  }, [hash, locKey, tab]);
 
   function onTabKey(e: KeyboardEvent<HTMLButtonElement>) {
     const i = PET_TABS.indexOf(tab);
@@ -78,17 +88,35 @@ export function Pet() {
 
   return (
     <div className="page stack-lg">
-      <header className="page-head pet-head">
-        <div className="pet-ava pet-ava-lg">
-          <PetAvatar key={pet.id} pet={pet} size={112} iconSize={48} alt={t('photoAlt', { n: pet.name })} />
-        </div>
-        <div className="pet-head-text">
-          <h1>{pet.name}</h1>
-          <p className="muted">{speciesText(pet, t)}</p>
-        </div>
-      </header>
+      <Link to="/tiere" className="back-link">
+        <IconBack size={20} />
+        {t('myPetsTitle')}
+      </Link>
 
-      {editable && <PetPhotoControls key={`photo-${pet.id}`} pet={pet} onChange={upsertLocal} />}
+      <section className="card pet-hero" aria-labelledby={`${uid}-name`}>
+        <div className="pet-ava pet-ava-hero">
+          <PetAvatar key={pet.id} pet={pet} size={84} iconSize={40} alt={t('photoAlt', { n: pet.name })} />
+        </div>
+        <div className="pet-hero-text">
+          <h1 id={`${uid}-name`}>{pet.name}</h1>
+          <p className="muted">{speciesText(pet, t)}</p>
+          <VaccChip status={vacc.get(pet.id)} />
+        </div>
+        {editable && (
+          <button type="button" className="btn btn-ghost pet-hero-edit" aria-expanded={photoOpen} onClick={() => setPhotoOpen((o) => !o)}>
+            {t('photoChange')}
+          </button>
+        )}
+      </section>
+
+      {editable && photoOpen && <PetPhotoControls key={`photo-${pet.id}`} pet={pet} onChange={upsertLocal} />}
+
+      {(pet.allergies?.trim() || pet.emergency_contact?.trim()) && (
+        <aside className="notice notice-warn pet-alert" aria-label={t('healthH')}>
+          {pet.allergies?.trim() && <p><strong>{t('allergies')}:</strong> {pet.allergies.trim()}</p>}
+          {pet.emergency_contact?.trim() && <p className="small pre"><strong>{t('emergencyContact')}:</strong> {pet.emergency_contact.trim()}</p>}
+        </aside>
+      )}
 
       <PetSharedWith pet={pet} />
 
@@ -118,6 +146,19 @@ export function Pet() {
 
       {tab === 'overview' && (
         <div role="tabpanel" id={`${uid}-panel-overview`} aria-labelledby={`${uid}-tab-overview`} className="stack-lg">
+          {!editing && (
+            <section aria-labelledby={`${uid}-qa`} className="stack">
+              <h2 id={`${uid}-qa`}>{t('qaTitle')}</h2>
+              <ul className="quick-grid">
+                <li><Link to="/termine" className="quick-btn"><IconCalendar size={26} />{t('apAdd')}</Link></li>
+                <li><Link to={{ hash: 'medikation' }} className="quick-btn"><KindIcon kind="med" size={26} />{t('qaMed')}</Link></li>
+                <li><Link to={{ hash: 'dokumente' }} className="quick-btn"><IconList size={26} />{t('qaDoc')}</Link></li>
+                <li><Link to={{ hash: 'gewicht' }} className="quick-btn"><IconPlus size={26} />{t('wkAdd')}</Link></li>
+                <li><Link to={`/tier/${encodeURIComponent(pet.id)}/notfallkarte`} className="quick-btn"><IconEmergency size={26} />{t('mCard')}</Link></li>
+                <li><Link to="/mehr/assistent" className="quick-btn"><IconAssistant size={26} />{t('qaAi')}</Link></li>
+              </ul>
+            </section>
+          )}
           {editing && editable ? (
             <PetForm
               key={`form-${pet.id}`}

@@ -1258,6 +1258,14 @@ export const de = {
   wkRangeAll: "Alles",
   wkRangeFew: "In diesem Zeitraum gibt es weniger als zwei Messungen. Wählen Sie einen längeren Zeitraum.",
   wkTrend: "Seit {d}: {delta} kg ({pct} %). Das ist keine Diagnose. Besprechen Sie Veränderungen mit Ihrer Praxis.",
+  myPetsTitle: "Meine Tiere",
+  vcChipOk: "Impfungen aktuell",
+  vcChipSoon: "Impfung bald fällig",
+  vcChipExp: "Impfung überfällig",
+  qaTitle: "Schnellaktionen",
+  qaMed: "Medikament",
+  qaDoc: "Dokument hochladen",
+  qaAi: "KI-Assistent",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;

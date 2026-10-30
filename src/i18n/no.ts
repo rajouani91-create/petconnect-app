@@ -1259,4 +1259,12 @@ export const no: Messages = {
   wkRangeAll: "Alt",
   wkRangeFew: "Det er færre enn to målinger i denne perioden. Velg en lengre periode.",
   wkTrend: "Siden {d}: {delta} kg ({pct} %). Dette er ikke en diagnose. Snakk med klinikken din om endringer.",
+  myPetsTitle: "Mine dyr",
+  vcChipOk: "Vaksiner oppdatert",
+  vcChipSoon: "Vaksine snart påkrevd",
+  vcChipExp: "Vaksine forfalt",
+  qaTitle: "Hurtighandlinger",
+  qaMed: "Medisin",
+  qaDoc: "Last opp dokument",
+  qaAi: "KI-assistent",
 };

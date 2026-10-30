@@ -10,6 +10,7 @@ import { Register } from './pages/Register';
 import { ResetPassword } from './pages/ResetPassword';
 import { Today } from './pages/Today';
 import { Routine } from './pages/Routine';
+import { Pets } from './pages/Pets';
 import { Pet } from './pages/Pet';
 import { PetNew } from './pages/PetNew';
 import { More } from './pages/More';
@@ -61,6 +62,7 @@ export function App() {
             >
               <Route index element={<Today />} />
               <Route path="termine" element={<Appointments />} />
+              <Route path="tiere" element={<Pets />} />
               <Route path="tier" element={<Pet />} />
               <Route path="tier/neu" element={<PetNew />} />
               <Route path="tier/:petId/notfallkarte" element={<EmergencyCard />} />

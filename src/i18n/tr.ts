@@ -1259,4 +1259,12 @@ export const tr: Messages = {
   wkRangeAll: "Tümü",
   wkRangeFew: "Bu aralıkta ikiden az ölçüm var. Daha uzun bir aralık seçin.",
   wkTrend: "{d} tarihinden beri: {delta} kg (%{pct}). Bu bir teşhis değildir. Değişiklikleri kliniğinizle konuşun.",
+  myPetsTitle: "Hayvanlarım",
+  vcChipOk: "Aşılar güncel",
+  vcChipSoon: "Aşı yakında gerekli",
+  vcChipExp: "Aşı gecikmiş",
+  qaTitle: "Hızlı işlemler",
+  qaMed: "İlaç",
+  qaDoc: "Belge yükle",
+  qaAi: "Yapay zekâ asistanı",
 };
