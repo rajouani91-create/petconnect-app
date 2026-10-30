@@ -1320,4 +1320,10 @@ export const sv: Messages = {
   vtUnitRate: "per min.",
   vtNormal: "Riktvärde i vila ({sp}, vuxen): {a} till {b} {u}. Valpar, små djur och upphetsning avviker.",
   vtNormalNone: "Det finns inga allmänna riktvärden för det här djurslaget. Fråga din klinik.",
+  regBirth: "Födelsedatum",
+  regBirthHint: "Vi använder det bara för att kontrollera minimiåldern (16 år) och sparar inte födelsedatumet.",
+  regPw2: "Upprepa lösenord",
+  err_pwMismatch: "Lösenorden stämmer inte överens.",
+  err_birthInvalid: "Ange ett giltigt födelsedatum.",
+  err_underAge: "Ett eget konto är först möjligt från 16 år. Be dina föräldrar att hantera djuren i sitt konto.",
 };

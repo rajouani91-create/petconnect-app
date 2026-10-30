@@ -1320,4 +1320,10 @@ export const nl: Messages = {
   vtUnitRate: "per min.",
   vtNormal: "Richtwaarde in rust ({sp}, volwassen): {a} tot {b} {u}. Pups, kleine dieren en opwinding wijken af.",
   vtNormalNone: "Voor deze diersoort zijn hier geen algemene richtwaarden. Vraag het uw praktijk.",
+  regBirth: "Geboortedatum",
+  regBirthHint: "We gebruiken dit alleen om de minimumleeftijd (16 jaar) te controleren en slaan de geboortedatum niet op.",
+  regPw2: "Wachtwoord herhalen",
+  err_pwMismatch: "De wachtwoorden komen niet overeen.",
+  err_birthInvalid: "Voer een geldige geboortedatum in.",
+  err_underAge: "Een eigen account is pas mogelijk vanaf 16 jaar. Vraag uw ouders de dieren in hun account te beheren.",
 };

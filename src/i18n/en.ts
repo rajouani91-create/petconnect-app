@@ -1320,4 +1320,10 @@ export const en: Messages = {
   vtUnitRate: "per min.",
   vtNormal: "Typical resting range ({sp}, adult): {a} to {b} {u}. Puppies, small animals and excitement differ.",
   vtNormalNone: "There are no general reference values for this species here. Ask your practice.",
+  regBirth: "Date of birth",
+  regBirthHint: "We only use this to check the minimum age (16) and do not store your date of birth.",
+  regPw2: "Repeat password",
+  err_pwMismatch: "The passwords do not match.",
+  err_birthInvalid: "Please enter a valid date of birth.",
+  err_underAge: "Your own account is only possible from age 16. Please ask your parents to manage the pets in their account.",
 };

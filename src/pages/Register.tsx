@@ -3,26 +3,32 @@ import { Link } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { LANGUAGES, isLang, type Lang } from '../i18n';
 import { supabase } from '../lib/supabase';
-import { DISPLAY_NAME_MAX, emailError, hasErrors, passwordError, requiredMax, type Errors, type FieldError } from '../lib/validate';
+import { localDate } from '../lib/schedule';
+import { DISPLAY_NAME_MAX, birthDateError, emailError, hasErrors, passwordError, passwordRepeatError, requiredMax, type Errors, type FieldError } from '../lib/validate';
 import { authErrorKey } from '../auth/authErrors';
 import { AuthLayout } from '../components/AuthLayout';
 import { Field } from '../components/Field';
 import { GoogleButton } from '../components/GoogleButton';
 
-type F = 'displayName' | 'email' | 'password';
-const ORDER: F[] = ['displayName', 'email', 'password'];
+type F = 'displayName' | 'email' | 'birth' | 'password' | 'password2';
+const ORDER: F[] = ['displayName', 'email', 'birth', 'password', 'password2'];
 
 export function Register() {
   const { t, lang: uiLang, setLang } = useI18n();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
+  const [birth, setBirth] = useState('');
   const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
   const [language, setLanguage] = useState<Lang>(uiLang);
   const [errors, setErrors] = useState<Errors<F>>({});
   const [formError, setFormError] = useState<FieldError | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const refs = { displayName: useRef<HTMLInputElement>(null), email: useRef<HTMLInputElement>(null), password: useRef<HTMLInputElement>(null) };
+  const refs = {
+    displayName: useRef<HTMLInputElement>(null), email: useRef<HTMLInputElement>(null), birth: useRef<HTMLInputElement>(null),
+    password: useRef<HTMLInputElement>(null), password2: useRef<HTMLInputElement>(null),
+  };
 
   const clear = (f: F) => setErrors((p) => ({ ...p, [f]: undefined }));
 
@@ -31,7 +37,9 @@ export function Register() {
     const errs: Errors<F> = {
       displayName: requiredMax(displayName, DISPLAY_NAME_MAX),
       email: emailError(email),
+      birth: birthDateError(birth, localDate(new Date())),
       password: passwordError(password),
+      password2: passwordRepeatError(password, password2),
     };
     setErrors(errs);
     setFormError(null);
@@ -102,10 +110,22 @@ export function Register() {
               onChange={(e) => { setEmail(e.target.value); clear('email'); }} />
           )}
         </Field>
+        <Field id="reg-birth" label={t('regBirth')} hint={t('regBirthHint')} error={errors.birth} required>
+          {(a) => (
+            <input {...a} ref={refs.birth} type="date" autoComplete="bday" max={localDate(new Date())} value={birth}
+              onChange={(e) => { setBirth(e.target.value); clear('birth'); }} />
+          )}
+        </Field>
         <Field id="reg-pw" label={t('password')} hint={t('pwHint')} error={errors.password} required>
           {(a) => (
             <input {...a} ref={refs.password} type="password" autoComplete="new-password" minLength={8} value={password}
               onChange={(e) => { setPassword(e.target.value); clear('password'); }} />
+          )}
+        </Field>
+        <Field id="reg-pw2" label={t('regPw2')} error={errors.password2} required>
+          {(a) => (
+            <input {...a} ref={refs.password2} type="password" autoComplete="new-password" value={password2}
+              onChange={(e) => { setPassword2(e.target.value); clear('password2'); }} />
           )}
         </Field>
         <Field id="reg-lang" label={t('prefLang')}>

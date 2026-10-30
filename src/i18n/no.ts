@@ -1320,4 +1320,10 @@ export const no: Messages = {
   vtUnitRate: "per min.",
   vtNormal: "Veiledende verdi i hvile ({sp}, voksen): {a} til {b} {u}. Valper, små dyr og opphisselse avviker.",
   vtNormalNone: "Det finnes ingen generelle veiledende verdier for dette dyreslaget her. Spør klinikken din.",
+  regBirth: "Fødselsdato",
+  regBirthHint: "Vi bruker dette bare til å kontrollere minstealderen (16 år) og lagrer ikke fødselsdatoen.",
+  regPw2: "Gjenta passord",
+  err_pwMismatch: "Passordene stemmer ikke overens.",
+  err_birthInvalid: "Oppgi en gyldig fødselsdato.",
+  err_underAge: "En egen konto er først mulig fra 16 år. Be foreldrene dine om å administrere dyrene i sin konto.",
 };

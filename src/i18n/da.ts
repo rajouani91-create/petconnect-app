@@ -1320,4 +1320,10 @@ export const da: Messages = {
   vtUnitRate: "pr. min.",
   vtNormal: "Vejledende værdi i hvile ({sp}, voksen): {a} til {b} {u}. Hvalpe, små dyr og ophidselse afviger.",
   vtNormalNone: "Der findes ingen generelle vejledende værdier for dette dyr her. Spørg din klinik.",
+  regBirth: "Fødselsdato",
+  regBirthHint: "Vi bruger den kun til at kontrollere mindstealderen (16 år) og gemmer ikke fødselsdatoen.",
+  regPw2: "Gentag adgangskode",
+  err_pwMismatch: "Adgangskoderne stemmer ikke overens.",
+  err_birthInvalid: "Angiv en gyldig fødselsdato.",
+  err_underAge: "En egen konto er først mulig fra 16 år. Bed dine forældre om at administrere dyrene i deres konto.",
 };

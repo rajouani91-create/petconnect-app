@@ -1319,6 +1319,12 @@ export const de = {
   vtUnitRate: "pro Min.",
   vtNormal: "Richtwert in Ruhe ({sp}, erwachsen): {a} bis {b} {u}. Welpen, kleine Tiere und Aufregung weichen ab.",
   vtNormalNone: "Für diese Tierart gibt es hier keine allgemeinen Richtwerte. Fragen Sie Ihre Praxis.",
+  regBirth: "Geburtsdatum",
+  regBirthHint: "Wir prüfen damit nur das Mindestalter (16 Jahre) und speichern das Geburtsdatum nicht.",
+  regPw2: "Passwort wiederholen",
+  err_pwMismatch: "Die Passwörter stimmen nicht überein.",
+  err_birthInvalid: "Bitte geben Sie ein gültiges Geburtsdatum an.",
+  err_underAge: "Ein eigenes Konto ist erst ab 16 Jahren möglich. Bitten Sie Ihre Eltern, die Tiere in ihrem Konto zu verwalten.",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;
