@@ -19,8 +19,8 @@ const DeleteAccount: React.FC = () => {
     <div className="min-h-screen bg-[#121a17] text-white">
       <div className="bg-[#1a2520] border-b border-[#2a3830] px-6 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <img src="/icons/icon-192.png" alt="PetConnect" className="w-8 h-8 rounded-lg" />
-          <span className="text-xl font-bold text-[#4CAF82]">PetConnect</span>
+          <img src="/icons/icon-192.png" alt="PetConnect24" className="w-8 h-8 rounded-lg" />
+          <span className="text-xl font-bold text-[#4CAF82]">PetConnect24</span>
         </div>
       </div>
 

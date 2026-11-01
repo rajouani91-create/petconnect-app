@@ -125,7 +125,7 @@ export const da: Messages = {
   apTitleHint: "f.eks. ørekontrol",
   apUpdated: "Aftale rettet: {x}.",
   apViewOnly: "Du kan se aftalerne, men ikke ændre dem.",
-  appName: "PetConnect",
+  appName: "PetConnect24",
   back: "Tilbage",
   bird: "Fugl",
   birth: "Fødselsdato",

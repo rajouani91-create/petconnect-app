@@ -125,7 +125,7 @@ export const sv: Messages = {
   apTitleHint: "t.ex. öronkontroll",
   apUpdated: "Tid ändrad: {x}.",
   apViewOnly: "Du kan se tiderna men inte ändra dem.",
-  appName: "PetConnect",
+  appName: "PetConnect24",
   back: "Tillbaka",
   bird: "Fågel",
   birth: "Födelsedatum",

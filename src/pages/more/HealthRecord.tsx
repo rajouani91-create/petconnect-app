@@ -82,7 +82,7 @@ function HealthRecordView({ pet }: { pet: PetRow }) {
       {data && (
         <article className="vault print-a4" aria-labelledby={`${uid}-doc`}>
           <header className="vault-head">
-            <span className="brand"><LogoMark /><span>PetConnect</span></span>
+            <span className="brand"><LogoMark /><span>PetConnect24</span></span>
             <h2 id={`${uid}-doc`}>{t('vltDocTitle', { n: pet.name })}</h2>
           </header>
 

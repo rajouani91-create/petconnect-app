@@ -60,7 +60,7 @@ export function SitterPublic() {
       <header className="auth-top">
         <span className="brand">
           <LogoMark />
-          <span>PetConnect</span>
+          <span>PetConnect24</span>
         </span>
       </header>
       <main id="main" className="public-main">

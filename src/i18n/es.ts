@@ -125,7 +125,7 @@ export const es: Messages = {
   apTitleHint: "p. ej. revisión del oído",
   apUpdated: "Cita modificada: {x}.",
   apViewOnly: "Puede ver las citas, pero no modificarlas.",
-  appName: "PetConnect",
+  appName: "PetConnect24",
   back: "Volver",
   bird: "Ave",
   birth: "Fecha de nacimiento",

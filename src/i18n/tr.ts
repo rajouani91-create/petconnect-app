@@ -125,7 +125,7 @@ export const tr: Messages = {
   apTitleHint: "ör. kulak kontrolü",
   apUpdated: "Randevu değiştirildi: {x}.",
   apViewOnly: "Randevuları görüntüleyebilirsiniz, ancak değiştiremezsiniz.",
-  appName: "PetConnect",
+  appName: "PetConnect24",
   back: "Geri",
   bird: "Kuş",
   birth: "Doğum tarihi",

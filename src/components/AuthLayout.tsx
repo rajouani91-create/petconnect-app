@@ -14,7 +14,7 @@ export function AuthLayout({ title, sub, children, inviteHint = false }: { title
       <header className="auth-top">
         <span className="brand">
           <LogoMark />
-          <span>PetConnect</span>
+          <span>PetConnect24</span>
         </span>
         <label className="lang-select">
           <span className="sr-only">{t('langLabel')}</span>

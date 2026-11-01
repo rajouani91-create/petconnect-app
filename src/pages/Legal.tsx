@@ -17,7 +17,7 @@ function LegalFrame({ title, children }: { title: string; children: ReactNode })
       <header className="auth-top">
         <Link to={user ? '/mehr' : '/login'} className="brand">
           <LogoMark />
-          <span>PetConnect</span>
+          <span>PetConnect24</span>
         </Link>
       </header>
       <main id="main" className="public-main">

@@ -125,7 +125,7 @@ export const ru: Messages = {
   apTitleHint: "например, осмотр уха",
   apUpdated: "Запись изменена: {x}.",
   apViewOnly: "Вы можете просматривать записи, но не изменять их.",
-  appName: "PetConnect",
+  appName: "PetConnect24",
   back: "Назад",
   bird: "Птица",
   birth: "Дата рождения",
