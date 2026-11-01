@@ -125,7 +125,7 @@ export const nl: Messages = {
   apTitleHint: "bijv. controle oor",
   apUpdated: "Afspraak gewijzigd: {x}.",
   apViewOnly: "U kunt de afspraken bekijken, maar niet wijzigen.",
-  appName: "PetConnect",
+  appName: "PetConnect24",
   back: "Terug",
   bird: "Vogel",
   birth: "Geboortedatum",

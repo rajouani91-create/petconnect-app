@@ -124,7 +124,7 @@ export const de = {
   apTitleHint: "z. B. Kontrolle Ohr",
   apUpdated: "Termin geändert: {x}.",
   apViewOnly: "Sie können die Termine ansehen, aber nicht ändern.",
-  appName: "PetConnect",
+  appName: "PetConnect24",
   back: "Zurück",
   bird: "Vogel",
   birth: "Geburtsdatum",

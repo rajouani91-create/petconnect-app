@@ -103,7 +103,7 @@ export function FamilyCard() {
   async function share(link: string, petNames: string) {
     if (typeof navigator.share === 'function') {
       try {
-        await navigator.share({ title: 'PetConnect', text: shareText(petNames), url: link });
+        await navigator.share({ title: 'PetConnect24', text: shareText(petNames), url: link });
       } catch (e) {
         // Abbrechen im Teilen-Menü ist kein Fehler.
         if (!(e instanceof DOMException && e.name === 'AbortError')) setStatus(t('errGeneric'), false);

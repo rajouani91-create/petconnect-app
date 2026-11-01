@@ -29,7 +29,7 @@ export function AppShell() {
       <header className="topbar">
         <Link to="/" className="brand">
           <LogoMark />
-          <span>PetConnect</span>
+          <span>PetConnect24</span>
         </Link>
         <Link to="/notfall" className="btn btn-emergency" aria-label={t('emergencyOpen')}>
           <IconEmergency size={20} />

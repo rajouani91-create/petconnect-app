@@ -125,7 +125,7 @@ export const en: Messages = {
   apTitleHint: "e.g. ear check-up",
   apUpdated: "Appointment changed: {x}.",
   apViewOnly: "You can view the appointments but not change them.",
-  appName: "PetConnect",
+  appName: "PetConnect24",
   back: "Back",
   bird: "Bird",
   birth: "Date of birth",

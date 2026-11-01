@@ -35,7 +35,7 @@ export function BottomNav() {
     <nav className="nav" aria-label={t('nav_main')}>
       <div className="nav-brand" aria-hidden="true">
         <LogoMark />
-        <span>PetConnect</span>
+        <span>PetConnect24</span>
       </div>
       <ul>
         {ITEMS.map(({ to, key, Icon, end, secondary }) => (

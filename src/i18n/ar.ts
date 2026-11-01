@@ -125,7 +125,7 @@ export const ar: Messages = {
   apTitleHint: "مثلًا فحص الأذن",
   apUpdated: "تم تعديل الموعد: {x}.",
   apViewOnly: "يمكنك عرض المواعيد، لكن لا يمكنك تغييرها.",
-  appName: "PetConnect",
+  appName: "PetConnect24",
   back: "رجوع",
   bird: "طائر",
   birth: "تاريخ الميلاد",
