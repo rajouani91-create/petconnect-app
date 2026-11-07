@@ -1,10 +1,13 @@
-﻿[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "com.petconnect24.app",
-    "sha256_cert_fingerprints": [
-      "6A:8D:09:F3:48:FC:0F:D0:8D:D0:EC:68:D5:DB:2C:D6:75:8D:F9:01:32:3D:60:50:51:03:EF:D5:C7:59:71:CB"
-    ]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.petconnect24.app",
+      "sha256_cert_fingerprints": [
+        "8C:C3:89:35:D4:59:AC:70:26:E9:3E:81:43:8B:C7:CA:BA:28:43:24:E7:6A:0F:6C:9D:89:12:84:44:67:11:25",
+        "6A:8D:09:F3:48:FC:0F:D0:8D:D0:EC:68:D5:DB:2C:D6:75:8D:F9:01:32:3D:60:50:51:03:EF:D5:C7:59:71:CB"
+      ]
+    }
   }
-}]
+]
