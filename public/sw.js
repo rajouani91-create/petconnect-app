@@ -1,6 +1,6 @@
 /* PetConnect Service Worker – bewusst ohne Bibliothek.
- * - App-Shell offline: "/", "/index.html" und die gebauten Dateien aus index.html beim Installieren,
- *   danach /assets/* und Icons „stale-while-revalidate“.
+ * - App-Shell offline: Startseite der App, index.html und die gebauten Dateien aus index.html beim Installieren,
+ *   danach Assets und Icons „stale-while-revalidate“. Nur Adressen der App (siehe APP_BASE) werden bearbeitet.
  * - Antworten von Supabase (andere Origin) werden nie angefasst oder gespeichert.
  * - Push: Nachricht anzeigen; Klick öffnet „Heute“ (gleiche Origin). Medikament/Alltag: Knopf „Gegeben“/„Erledigt“ öffnet „Heute“ mit Bestätigungskarte.
  */
@@ -8,17 +8,35 @@ const VERSION = 'pc-v1';
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 
+/* Pfad, unter dem die App ausgeliefert wird: '' = Wurzel (heute) oder z. B. '/app' (nach dem Umzug).
+ * Muss mit APP_BASE in src/lib/appUrl.ts übereinstimmen (ein Test prüft das).
+ * Der Service Worker selbst bleibt unter /sw.js mit Scope „/“, damit bestehende Push-Abos erhalten bleiben. */
+const APP_BASE = '';
+const APP_HOME = `${APP_BASE}/`;
+const SHELL_URL = `${APP_BASE}/index.html`;
+const ASSET_PREFIX = `${APP_BASE}/assets/`;
+
+/** Gehört der Pfad zur App? (Ohne APP_BASE: alles. Mit APP_BASE: nur /app und darunter – Landing und Rechtsseiten bleiben unberührt.) */
+function inApp(pathname) {
+  return APP_BASE === '' || pathname === APP_BASE || pathname.startsWith(`${APP_BASE}/`);
+}
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(SHELL);
       try {
-        const res = await fetch('/index.html', { cache: 'no-store' });
+        const res = await fetch(SHELL_URL, { cache: 'no-store' });
         if (res.ok) {
           const html = await res.clone().text();
-          await cache.put('/index.html', res.clone());
-          await cache.put('/', res);
-          const assets = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map((m) => m[1]);
+          await cache.put(SHELL_URL, res.clone());
+          await cache.put(APP_HOME, res);
+          const assetRe = new RegExp(`(?:src|href)="(${escapeRegExp(ASSET_PREFIX)}[^"]+)"`, 'g');
+          const assets = [...html.matchAll(assetRe)].map((m) => m[1]);
           await cache.addAll([...new Set(assets)]);
         }
       } catch {
@@ -58,14 +76,17 @@ self.addEventListener('fetch', (event) => {
   // Nur eigene Origin; Supabase und alles andere geht immer ins Netz
   if (url.origin !== self.location.origin) return;
   if (url.pathname === '/sw.js') return;
+  const appPath = inApp(url.pathname);
   if (req.mode === 'navigate') {
-    // Seiten: Netz zuerst, offline die App-Shell
+    // Seiten außerhalb der App (Landing, Rechtsseiten): nicht anfassen
+    if (!appPath) return;
+    // Seiten der App: Netz zuerst, offline die App-Shell
     event.respondWith(
-      fetch(req).catch(async () => (await caches.match('/index.html')) || (await caches.match('/')) || Response.error()),
+      fetch(req).catch(async () => (await caches.match(SHELL_URL)) || (await caches.match(APP_HOME)) || Response.error()),
     );
     return;
   }
-  if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/icons/') || /\.(?:svg|png|woff2?|webmanifest)$/.test(url.pathname)) {
+  if (url.pathname.startsWith(ASSET_PREFIX) || url.pathname.startsWith('/icons/') || (appPath && /\.(?:svg|png|woff2?|webmanifest)$/.test(url.pathname))) {
     event.respondWith(staleWhileRevalidate(req));
   }
 });
@@ -101,13 +122,13 @@ function berlinTime(slot) {
 function actionUrl(a) {
   if (a.kind === 'give') {
     const time = berlinTime(a.slot);
-    return time ? `/?gegeben=${a.id}&zeit=${time}` : TODAY_URL;
+    return time ? `${APP_HOME}?gegeben=${a.id}&zeit=${time}` : TODAY_URL;
   }
-  return `/?erledigt=${a.id}`;
+  return `${APP_HOME}?erledigt=${a.id}`;
 }
 
 /** Ziel beim Antippen einer Benachrichtigung: die Heute-Seite */
-const TODAY_URL = '/';
+const TODAY_URL = APP_HOME;
 
 const FALLBACK_TITLE = 'PetConnect – Neue Benachrichtigung';
 
@@ -120,7 +141,7 @@ function readPush(data) {
     msg = null;
   }
   const ok = msg && typeof msg === 'object' && typeof msg.title === 'string' && msg.title.trim();
-  if (!ok) return { title: FALLBACK_TITLE, options: { body: '', tag: 'petconnect', data: { url: '/' } } };
+  if (!ok) return { title: FALLBACK_TITLE, options: { body: '', tag: 'petconnect', data: { url: TODAY_URL } } };
   return {
     title: msg.title.slice(0, 120),
     options: {
@@ -139,13 +160,15 @@ function actionOptions(tag) {
   return { actions: [{ action: a.kind, title: actionLabel(a.kind) }], data: { url: actionUrl(a) } };
 }
 
-/** Nur Pfade der eigenen Origin zulassen */
+/** Nur Pfade der eigenen Origin zulassen. Alte Adressen „/?gegeben=…“ (bereits angezeigte Benachrichtigungen) führen zur Startseite der App. */
 function safeUrl(u) {
   try {
     const url = new URL(typeof u === 'string' ? u : '/', self.location.origin);
-    return url.origin === self.location.origin ? url.pathname + url.search + url.hash : '/';
+    if (url.origin !== self.location.origin) return TODAY_URL;
+    const path = APP_BASE !== '' && url.pathname === '/' ? APP_HOME : url.pathname;
+    return path + url.search + url.hash;
   } catch {
-    return '/';
+    return TODAY_URL;
   }
 }
 
@@ -164,7 +187,10 @@ self.addEventListener('push', (event) => {
 async function openUrl(path) {
   const target = new URL(safeUrl(path), self.location.origin).href;
   const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-  const win = wins.find((c) => new URL(c.url).origin === self.location.origin);
+  const win = wins.find((c) => {
+    const u = new URL(c.url);
+    return u.origin === self.location.origin && inApp(u.pathname);
+  });
   if (win) {
     const nav = win.url === target ? win : await win.navigate(target).catch(() => win);
     await (nav || win).focus().catch(() => undefined);

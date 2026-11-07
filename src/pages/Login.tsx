@@ -2,6 +2,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { supabase } from '../lib/supabase';
+import { appUrl } from '../lib/appUrl';
 import { emailError, hasErrors, type Errors, type FieldError } from '../lib/validate';
 import { authErrorKey } from '../auth/authErrors';
 import { readPendingInvite } from '../lib/sharing';
@@ -62,7 +63,7 @@ export function Login() {
     }
     setBusy(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/passwort-neu`,
+      redirectTo: appUrl('/passwort-neu'),
     });
     setBusy(false);
     if (error) setFormError({ key: authErrorKey(error.code) });

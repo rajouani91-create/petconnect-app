@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useI18n } from '../i18n/I18nProvider';
 import { supabase } from '../lib/supabase';
 import { rememberOauthLang } from '../lib/oauth';
+import { appUrl } from '../lib/appUrl';
 
 function GoogleG() {
   return (
@@ -24,7 +25,7 @@ export function GoogleButton({ onError }: { onError: (key: 'err_oauth') => void 
     rememberOauthLang(lang);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin, queryParams: { prompt: 'select_account' } },
+      options: { redirectTo: appUrl('/'), queryParams: { prompt: 'select_account' } },
     });
     // Bei Erfolg verlässt der Browser die Seite; hier landen wir nur bei einem Fehler.
     if (error) {

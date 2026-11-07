@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { LANGUAGES, isLang, type Lang } from '../i18n';
 import { supabase } from '../lib/supabase';
+import { appUrl } from '../lib/appUrl';
 import { localDate } from '../lib/schedule';
 import { DISPLAY_NAME_MAX, birthDateError, emailError, hasErrors, passwordError, passwordRepeatError, requiredMax, type Errors, type FieldError } from '../lib/validate';
 import { authErrorKey } from '../auth/authErrors';
@@ -54,7 +55,7 @@ export function Register() {
       password,
       options: {
         data: { display_name: displayName.trim(), language },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: appUrl('/'),
       },
     });
     setBusy(false);
