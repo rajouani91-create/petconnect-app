@@ -1,8 +1,8 @@
-/* PetConnect24 – Weiterleitung von der Landingpage in die App.
- * Wer schon angemeldet ist, aus der installierten App / Android-App kommt oder über eine alte Adresse
- * (Benachrichtigung, Bestätigungs- oder Passwort-Mail) hier landet, geht direkt nach /app/.
- * Alle anderen sehen die Landingpage. Mit ?keep=1 bleibt die Landingpage auch angemeldet sichtbar.
- * Keine Verbindung nach außen; es wird nur lokal gelesen. Fehler (z. B. gesperrter Speicher) zeigen einfach die Landingpage. */
+/* PetConnect24 - Weiterleitung von der Landingpage in die App.
+ * Wer schon angemeldet ist, aus der installierten App / Android-App kommt oder ueber eine alte Adresse
+ * (Benachrichtigung, Bestaetigungs- oder Passwort-Mail) hier landet, geht direkt nach /app/.
+ * Alle anderen sehen die Landingpage; ebenso, wer von einer Landing-/Rechtsseite derselben Adresse kommt (Sprachwechsel). Mit ?keep=1 bleibt die Landingpage auch angemeldet sichtbar.
+ * Keine Verbindung nach aussen; es wird nur lokal gelesen. Fehler (z. B. gesperrter Speicher) zeigen einfach die Landingpage. */
 (function () {
   try {
     var loc = window.location;
@@ -10,14 +10,21 @@
     var hash = loc.hash || '';
     if (/[?&]keep=1(&|$)/.test(search)) return;
     var go = false;
-    // 1) Alte Benachrichtigungs- und Mail-Adressen: /?gegeben=…, /?erledigt=…, Anmelde-Rücksprung
+    // 1) Alte Benachrichtigungs- und Mail-Adressen: /?gegeben=..., /?erledigt=..., Anmelde-Ruecksprung
     if (/[?&](gegeben|erledigt|code|error_code)=/.test(search)) go = true;
     if (/[#&](access_token|refresh_token|error_code|type)=/.test(hash)) go = true;
     // 2) Installierte App (PWA) oder Android-App (Trusted Web Activity)
     if (!go && window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) go = true;
     if (!go && typeof document.referrer === 'string' && document.referrer.indexOf('android-app://') === 0) go = true;
-    // 3) Angemeldete Browser-Nutzer: Sitzung von Supabase im lokalen Speicher
-    if (!go && window.localStorage) {
+    // 3) Angemeldete Browser-Nutzer: Sitzung von Supabase im lokalen Speicher.
+    //    Ausnahme: Wer innerhalb der Landingpage navigiert (Sprachwechsel DE/EN, Rechtsseite -> Startseite), bleibt dort.
+    var ref = typeof document.referrer === 'string' ? document.referrer : '';
+    var internal = false;
+    if (loc.origin && ref.indexOf(loc.origin + '/') === 0) {
+      var refPath = ref.slice(loc.origin.length).split(/[?#]/)[0];
+      internal = refPath === '/' || refPath === '/en' || refPath === '/en/' || refPath === '/impressum' || refPath === '/datenschutz' || refPath === '/konto-loeschen';
+    }
+    if (!go && !internal && window.localStorage) {
       for (var i = 0; i < window.localStorage.length && !go; i++) {
         var key = window.localStorage.key(i);
         if (key && /^sb-.+-auth-token$/.test(key)) {
