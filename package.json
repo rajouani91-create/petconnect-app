@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/build-site.mjs",
     "preview": "vite preview --port 3000",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "lint": "oxlint --deny-warnings src"
+    "lint": "oxlint --deny-warnings src site scripts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

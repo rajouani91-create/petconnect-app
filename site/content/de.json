@@ -1,0 +1,223 @@
+{
+  "meta": {
+    "title": "PetConnect24 – Gesundheit Ihres Tieres an einem Ort",
+    "description": "Erinnerungen für Medikamente, Impfungen und Termine, digitale Tierakte, Notfallkarte und Notdienste in der Nähe. PetConnect24 im Browser nutzen – ohne Werbung.",
+    "ogAlt": "PetConnect24: Gesundheit Ihres Tieres an einem Ort",
+    "appDescription": "Tier-Gesundheits-App mit Medikamenten-Erinnerungen, Tierakte, Notfallkarte und Notdiensten."
+  },
+  "skip": "Zum Inhalt springen",
+  "nav": {
+    "features": "Funktionen",
+    "ai": "KI-Assistent",
+    "vets": "Für Praxen",
+    "how": "So geht es",
+    "faq": "Fragen",
+    "login": "Anmelden",
+    "start": "Konto erstellen",
+    "language": "Sprache",
+    "home": "PetConnect24 Startseite"
+  },
+  "hero": {
+    "eyebrow": "Die App für Tierhalter:innen",
+    "title": "Alles rund um Ihr Tier, an einem Ort",
+    "sub": "PetConnect24 erinnert Sie an Medikamente, Impfungen und Termine, bündelt die Tierakte und hält im Notfall die wichtigsten Angaben bereit.",
+    "cta": "Konto erstellen",
+    "ctaSecondary": "Anmelden",
+    "note": "Läuft im Browser und lässt sich wie eine App auf dem Startbildschirm installieren.",
+    "imageAlt": "Die Heute-Ansicht der App mit der nächsten Aufgabe und dem Tagesplan"
+  },
+  "features": {
+    "title": "Was PetConnect24 für Sie erledigt",
+    "intro": "Weniger Zettel, weniger Nachdenken: Alles Wichtige zu Ihrem Tier ist an einer Stelle und zur richtigen Zeit zur Hand.",
+    "items": [
+      {
+        "icon": "bell",
+        "title": "Erinnerungen, die ankommen",
+        "text": "Medikamente, Impfungen und Termine mit Push-Benachrichtigung. „Gegeben“ oder „Erledigt“ tippen Sie direkt in der Meldung."
+      },
+      {
+        "icon": "folder",
+        "title": "Digitale Tierakte",
+        "text": "Gewicht, Befunde, Laborwerte, Vitalwerte und Dokumente zu jedem Tier – übersichtlich und immer dabei."
+      },
+      {
+        "icon": "alert",
+        "title": "Notfallkarte und Notdienste",
+        "text": "Name, Allergien, Medikamente und Kontakt auf einen Blick, dazu Praxen und Notdienste in Ihrer Nähe."
+      },
+      {
+        "icon": "users",
+        "title": "Familie und Betreuung",
+        "text": "Laden Sie Mithalter:innen ein oder teilen Sie die wichtigsten Infos per Link mit der Urlaubsbetreuung – ohne dass diese ein Konto braucht."
+      },
+      {
+        "icon": "sun",
+        "title": "Tagesplan für den Alltag",
+        "text": "Gassirunde, Füttern, Pflege: Alltagsroutinen mit Uhrzeit und Haken, damit nichts untergeht."
+      },
+      {
+        "icon": "sparkle",
+        "title": "KI-Assistent – optional",
+        "text": "Informationen und Orientierung zu Pflege und Alltag, wenn Sie möchten. Keine Diagnose, kein Ersatz für die Tierarztpraxis."
+      }
+    ]
+  },
+  "how": {
+    "title": "In drei Schritten startklar",
+    "steps": [
+      {
+        "title": "Konto anlegen",
+        "text": "Mit E-Mail-Adresse oder Google-Konto. Die Oberfläche gibt es in elf Sprachen."
+      },
+      {
+        "title": "Tier anlegen",
+        "text": "Name, Tierart und Rasse genügen für den Anfang. Alles Weitere tragen Sie nach und nach ein."
+      },
+      {
+        "title": "Erinnerungen einrichten",
+        "text": "Medikamente, Impfungen und Termine eintragen – PetConnect24 meldet sich zur richtigen Zeit."
+      }
+    ]
+  },
+  "gallery": {
+    "title": "So sieht es aus",
+    "note": "Aufnahmen der aktuellen App mit Beispieldaten (deutsche Oberfläche). Beim KI-Assistenten ist die Startansicht gezeigt.",
+    "items": [
+      {
+        "img": "tierakte",
+        "caption": "Tierakte: Verlauf mit Impfungen und Medikamenten",
+        "alt": "Tierakte eines Hundes mit dem Verlauf nach Monaten: Impfungen und Medikamente"
+      },
+      {
+        "img": "erinnerungen",
+        "caption": "Medikamente abhaken",
+        "alt": "Erinnerungen mit Medikamenten, die als gegeben abgehakt werden"
+      },
+      {
+        "img": "heute",
+        "caption": "Tagesplan",
+        "alt": "Ansicht „Heute“ mit Fortschritt, der nächsten Gassirunde und dem Tagesplan"
+      },
+      {
+        "img": "assistent",
+        "caption": "KI-Assistent",
+        "alt": "Startansicht des KI-Assistenten mit Datenschutzhinweis und Schnellfragen"
+      }
+    ]
+  },
+  "ai": {
+    "eyebrow": "KI-Assistent (optional)",
+    "title": "Orientierung, wenn Fragen aufkommen",
+    "text": "Der Assistent beantwortet Fragen zu Pflege, Ernährung, Verhalten und Gesundheit Ihres Tieres und berücksichtigt dabei, was die Frage braucht, aus dem Profil des gewählten Tieres. Er gibt Informationen und Orientierung – eine tierärztliche Diagnose ersetzt er nicht.",
+    "points": [
+      {
+        "title": "Keine Diagnose, keine Dosierung",
+        "text": "Der Assistent stellt keine Diagnosen, nennt keine Dosierungen und ersetzt keine Tierärztin und keinen Tierarzt."
+      },
+      {
+        "title": "Hinweis bei möglichem Notfall",
+        "text": "Deuten Ihre Angaben auf eine Notfallsituation, rät er, sofort eine Tierarztpraxis oder Tierklinik zu kontaktieren."
+      },
+      {
+        "title": "Sie bestimmen, was mitgeht",
+        "text": "Übermittelt wird nur, was die Frage braucht. Der Inhalt von Dokumenten und Fotos geht nur mit, wenn Sie ihn selbst anhängen und freigeben. Die Chip-Nummer wird nie gesendet."
+      },
+      {
+        "title": "Externer Anbieter",
+        "text": "Ihre Frage wird an einen externen KI-Dienst gesendet, dessen Server auch außerhalb der EU stehen können. Die übrige App funktioniert vollständig ohne Assistenten."
+      }
+    ],
+    "note": "Bei gesundheitlichen Sorgen wenden Sie sich immer an Ihre Tierarztpraxis."
+  },
+  "trust": {
+    "title": "Transparent beim Datenschutz",
+    "items": [
+      {
+        "title": "Tierdaten in Frankfurt",
+        "text": "Konto und Inhalte liegen bei Supabase in Frankfurt am Main."
+      },
+      {
+        "title": "Keine Werbung, kein Tracking",
+        "text": "Keine Werbe- oder Analyse-Dienste und keine Cookies zu Werbe- oder Analysezwecken."
+      },
+      {
+        "title": "Teilen nur mit Ihrer Freigabe",
+        "text": "Familie und Betreuung sehen Angaben nur, wenn Sie einladen oder einen Link teilen. Unser Support sieht keine Gesundheitsdaten, Dokumente oder Notizen."
+      },
+      {
+        "title": "Löschung auf Anfrage",
+        "text": "Sie können Ihr Konto samt Daten jederzeit in der App oder per E-Mail zur Löschung anfragen."
+      }
+    ],
+    "note": "Gut zu wissen: Die Webseite wird über Netlify (USA) ausgeliefert, Push-Benachrichtigungen laufen über Google, und der optionale KI-Assistent nutzt einen Anbieter in den USA. Alle Einzelheiten stehen in der Datenschutzerklärung.",
+    "link": "Datenschutzerklärung lesen",
+    "deleteLink": "Konto löschen"
+  },
+  "vets": {
+    "eyebrow": "Für Tierarztpraxen",
+    "title": "Gut vorbereitete Halter:innen erleichtern den Praxisalltag",
+    "text": "PetConnect24 hilft Tierhalter:innen, Medikamente, Impfungen und Vorgeschichte ihres Tieres geordnet zur Hand zu haben – im Termin und im Notfall.",
+    "benefits": [
+      {
+        "title": "Vollständigere Angaben im Termin",
+        "text": "Medikamente, Impfungen, Vorgeschichte, Laborwerte und Dokumente sind in der Tierakte der Halter:innen gebündelt."
+      },
+      {
+        "title": "Verlässlichere Medikamentengabe",
+        "text": "Erinnerungen mit Push-Meldung helfen, verordnete Medikamente und Impftermine nicht zu vergessen."
+      },
+      {
+        "title": "Ihre Praxis im Notfall griffbereit",
+        "text": "Halter:innen hinterlegen ihre Stammpraxis; sie lässt sich in der App direkt anrufen."
+      }
+    ],
+    "status": "Aktueller Stand: PetConnect24 ist eine App für Tierhalter:innen. Einen eigenen Zugang für Praxen oder Schnittstellen zur Praxissoftware gibt es noch nicht. Wir möchten gemeinsam mit Praxen herausfinden, was im Alltag wirklich hilft.",
+    "cta": "Kontakt für Praxen",
+    "ctaNote": "Antwort per E-Mail an info@petconnect24.com",
+    "mailSubject": "PetConnect24 für Tierarztpraxen",
+    "mailBody": "Guten Tag,\n\nwir sind eine Tierarztpraxis und interessieren uns für PetConnect24.\n\nPraxis / Ort:\nAnsprechperson:\nTelefon (optional):\nIhr Anliegen:\n\nMit freundlichen Grüßen"
+  },
+  "faq": {
+    "title": "Häufige Fragen",
+    "items": [
+      {
+        "q": "Muss ich eine App installieren?",
+        "a": "Nein. PetConnect24 läuft im Browser. Auf dem Smartphone können Sie es zusätzlich auf den Startbildschirm legen."
+      },
+      {
+        "q": "Funktioniert es ohne Internet?",
+        "a": "Die App-Oberfläche startet auch ohne Verbindung. Ihre Daten laden und speichern Sie, sobald Sie online sind."
+      },
+      {
+        "q": "Welche Sprachen gibt es?",
+        "a": "Die App gibt es auf Deutsch, Englisch, Französisch, Spanisch, Niederländisch, Norwegisch, Schwedisch, Dänisch, Türkisch, Russisch und Arabisch. Diese Startseite gibt es bisher auf Deutsch und Englisch."
+      },
+      {
+        "q": "Wer sieht die Daten meines Tieres?",
+        "a": "Sie und die Personen, die Sie selbst einladen oder denen Sie einen Betreuungs-Link geben. Unser Support kann auf Konten zugreifen, sieht dabei aber nur E-Mail-Adresse, Anzeigenname, Registrierungsdatum, Kontostatus sowie Namen und Tierarten – keine Gesundheitsdaten, Dokumente oder Notizen."
+      },
+      {
+        "q": "Ersetzt PetConnect24 die Tierärztin?",
+        "a": "Nein. PetConnect24 stellt keine Diagnosen und berechnet keine Dosierungen. Das gilt auch für den KI-Assistenten. Bei Notfällen oder gesundheitlichen Sorgen wenden Sie sich immer an eine Tierarztpraxis."
+      },
+      {
+        "q": "Wie lösche ich mein Konto?",
+        "a": "In der App unter „Mehr → Konto → Konto löschen“ oder per E-Mail über die Seite „Konto löschen“. Die Löschung erfolgt innerhalb von 30 Tagen."
+      }
+    ]
+  },
+  "final": {
+    "title": "Bereit, nichts mehr zu vergessen?",
+    "text": "Legen Sie in wenigen Minuten das erste Tier an.",
+    "cta": "Konto erstellen"
+  },
+  "footer": {
+    "tagline": "PetConnect24 – Gesundheit Ihres Tieres an einem Ort.",
+    "imprint": "Impressum",
+    "privacy": "Datenschutz",
+    "deleteAccount": "Konto löschen",
+    "contact": "Kontakt",
+    "legalNote": "",
+    "disclaimer": "PetConnect24 ersetzt keine tierärztliche Beratung."
+  }
+}

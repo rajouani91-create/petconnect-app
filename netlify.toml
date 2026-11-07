@@ -12,3 +12,11 @@
     X-Robots-Tag = "noindex, nofollow"
     Referrer-Policy = "no-referrer"
     Cache-Control = "no-store"
+
+# Dasselbe unter der neuen Adresse der App
+[[headers]]
+  for = "/app/betreuung/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"

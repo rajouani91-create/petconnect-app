@@ -1,1 +1,29 @@
-/*  /index.html  200
+# Netlify-Weiterleitungen (die erste passende Regel gewinnt; vorhandene Dateien haben immer Vorrang vor Regeln ohne "!").
+#
+# 1) Die App liegt unter /app/. Alle Unterseiten liefern die App-Datei aus; Router und Anmeldung übernehmen.
+/app                  /app/                  301
+/app/*                /app/index.html        200
+
+# 2) Alte Adressen der App (Lesezeichen, Mails, Benachrichtigungen, geteilte Links) → neue Adresse unter /app.
+#    Zunächst 302 (vorläufig); nach erfolgreichem Test auf 301 umstellen. Query-String und #-Teil bleiben erhalten.
+#    Betreuungs- und Einladungslinks werden weiterhin als https://petconnect24.com/betreuung/<code> bzw. /einladung/<code> erzeugt.
+/login                /app/login                  302
+/registrieren         /app/registrieren           302
+/passwort-neu         /app/passwort-neu           302
+/betreuung/*          /app/betreuung/:splat       302
+/einladung/*          /app/einladung/:splat       302
+/termine              /app/termine                302
+/tiere                /app/tiere                  302
+/tier                 /app/tier                   302
+/tier/*               /app/tier/:splat            302
+/praxen               /app/praxen                 302
+/erinnerungen         /app/erinnerungen           302
+/alltag               /app/alltag                 302
+/mehr                 /app/mehr                   302
+/mehr/*               /app/mehr/:splat            302
+/admin                /app/admin                  302
+/admin/*              /app/admin/:splat           302
+/notfall              /app/notfall                302
+
+# 3) Öffentliche Seiten (Landingpage, Impressum, Datenschutz, Konto löschen) sind statische Dateien.
+#    Die Regeln für diese Seiten hängt das Build-Skript (scripts/build-site.mjs) unten automatisch an.
