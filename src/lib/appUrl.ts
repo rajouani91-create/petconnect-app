@@ -1,8 +1,8 @@
-// Zentrale Adressen der App. Die App läuft heute unter „/“; für den Umzug nach „/app“ gibt es genau eine Stelle.
-// APP_BASE ist leer (= heutiges Verhalten) oder ein Pfad wie '/app' (ohne Schrägstrich am Ende).
+// Zentrale Adressen der App. Die App läuft unter „/app/“ (die Startseite „/“ ist die öffentliche Landingpage).
+// APP_BASE ist ein Pfad wie '/app' (ohne Schrägstrich am Ende); '' wäre die Wurzel.
 // Wichtig: Derselbe Wert steht in public/sw.js (APP_BASE) – ein Test stellt sicher, dass beide übereinstimmen.
 
-export const APP_BASE = '';
+export const APP_BASE = '/app';
 
 /** Pfad innerhalb der App → vollständige Adresse (für Rücksprünge aus Anmelde-, Bestätigungs- und Reset-Mails). */
 export function appUrl(path = '/', origin: string = window.location.origin): string {

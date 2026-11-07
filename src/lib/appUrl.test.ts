@@ -5,22 +5,23 @@ import { APP_BASE, appUrl } from './appUrl';
 const ORIGIN = 'https://petconnect24.com';
 
 describe('appUrl', () => {
-  it('Start der App: bisheriges Verhalten (nur Origin) solange APP_BASE leer ist', () => {
-    const expected = APP_BASE === '' ? ORIGIN : `${ORIGIN}${APP_BASE}/`;
-    expect(appUrl('/', ORIGIN)).toBe(expected);
+  it('Die App liegt unter /app', () => {
+    expect(APP_BASE).toBe('/app');
+  });
+
+  it('Start der App: .../app/ (passt zum Supabase-Eintrag /app/**)', () => {
+    expect(appUrl('/', ORIGIN)).toBe(`${ORIGIN}/app/`);
+    expect(appUrl('', ORIGIN)).toBe(`${ORIGIN}/app/`);
   });
 
   it('Passwort-Reset-Ziel', () => {
-    expect(appUrl('/passwort-neu', ORIGIN)).toBe(`${ORIGIN}${APP_BASE}/passwort-neu`);
-    expect(appUrl('passwort-neu', ORIGIN)).toBe(`${ORIGIN}${APP_BASE}/passwort-neu`);
+    expect(appUrl('/passwort-neu', ORIGIN)).toBe(`${ORIGIN}/app/passwort-neu`);
+    expect(appUrl('passwort-neu', ORIGIN)).toBe(`${ORIGIN}/app/passwort-neu`);
   });
 
-  it('leerer Pfad zählt als Start der App', () => {
-    expect(appUrl('', ORIGIN)).toBe(appUrl('/', ORIGIN));
-  });
-
-  it('APP_BASE ist leer oder ein Pfad ohne Schrägstrich am Ende', () => {
-    expect(APP_BASE === '' || /^\/[a-z0-9-]+$/.test(APP_BASE)).toBe(true);
+  it('APP_BASE ist ein Pfad ohne Schrägstrich am Ende', () => {
+    const base: string = APP_BASE;
+    expect(base === '' || /^\/[a-z0-9-]+$/.test(base)).toBe(true);
   });
 
   it('APP_BASE stimmt mit dem Service Worker überein', () => {
@@ -28,5 +29,18 @@ describe('appUrl', () => {
     const m = /^const APP_BASE = '([^']*)';/m.exec(sw);
     expect(m).not.toBeNull();
     expect(m?.[1]).toBe(APP_BASE);
+  });
+
+  it('Router-Basis, Vite-Ausgabe und Manifest passen zusammen', () => {
+    const manifest = JSON.parse(readFileSync(new URL('../../public/manifest.webmanifest', import.meta.url), 'utf8')) as {
+      start_url: string;
+      scope: string;
+      shortcuts: { url: string }[];
+    };
+    expect(manifest.start_url).toBe(`${APP_BASE}/`);
+    expect(manifest.scope).toBe(`${APP_BASE}/`);
+    for (const s of manifest.shortcuts) expect(s.url.startsWith(`${APP_BASE}/`)).toBe(true);
+    const vite = readFileSync(new URL('../../vite.config.ts', import.meta.url), 'utf8');
+    expect(vite).toContain(`assetsDir: '${APP_BASE.slice(1)}/assets'`);
   });
 });

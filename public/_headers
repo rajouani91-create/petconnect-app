@@ -1,12 +1,40 @@
-# Service Worker immer frisch (Updates kommen sofort an)
+# Service Worker immer frisch (Updates kommen sofort an). Er liegt bewusst im Wurzelverzeichnis (Scope "/"),
+# damit bestehende Push-Abonnements erhalten bleiben.
 /sw.js
   Cache-Control: no-cache
   Service-Worker-Allowed: /
 
-# Digital Asset Links für die Android-App (Trusted Web Activity)
+# Digital Asset Links für die Android-App (Trusted Web Activity) – nie weiterleiten
 /.well-known/assetlinks.json
   Content-Type: application/json
   Access-Control-Allow-Origin: *
 
 /manifest.webmanifest
   Content-Type: application/manifest+json
+  Cache-Control: no-cache
+
+# App (/app/): nicht indexieren; gebaute Dateien haben Hash im Namen und dürfen lange zwischengespeichert werden
+/app/*
+  X-Robots-Tag: noindex
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/app/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Einladungslinks: nicht indexieren (die Betreuungs-Regeln stehen in netlify.toml)
+/einladung/*
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+  Cache-Control: no-store
+
+/app/einladung/*
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+  Cache-Control: no-store
+
+# Landingpage und Rechtsseiten (Dateien unter /site/ haben Hash im Namen)
+/site/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Die Kopfzeilen der einzelnen Seiten (Sicherheits-Header, Cache) hängt das Build-Skript (scripts/build-site.mjs) unten automatisch an.

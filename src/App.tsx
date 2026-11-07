@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
+import { APP_BASE } from './lib/appUrl';
 import { I18nProvider } from './i18n/I18nProvider';
 import { AuthProvider } from './auth/AuthProvider';
 import { RedirectIfAuthed, RequireAuth } from './auth/RequireAuth';
@@ -40,7 +41,7 @@ export function App() {
   return (
     <I18nProvider>
       <AuthProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={APP_BASE}>
           <Routes>
             <Route path="/login" element={<RedirectIfAuthed><Login /></RedirectIfAuthed>} />
             <Route path="/registrieren" element={<RedirectIfAuthed><Register /></RedirectIfAuthed>} />

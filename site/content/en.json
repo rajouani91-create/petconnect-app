@@ -1,0 +1,223 @@
+{
+  "meta": {
+    "title": "PetConnect24 – your pet's health in one place",
+    "description": "Reminders for medication, vaccinations and appointments, a digital pet record, an emergency card and nearby emergency services. Use PetConnect24 in your browser – no ads.",
+    "ogAlt": "PetConnect24: your pet's health in one place",
+    "appDescription": "Pet health app with medication reminders, a pet record, an emergency card and emergency services."
+  },
+  "skip": "Skip to content",
+  "nav": {
+    "features": "Features",
+    "ai": "AI assistant",
+    "vets": "For practices",
+    "how": "How it works",
+    "faq": "FAQ",
+    "login": "Sign in",
+    "start": "Create account",
+    "language": "Language",
+    "home": "PetConnect24 home"
+  },
+  "hero": {
+    "eyebrow": "The app for pet owners",
+    "title": "Everything for your pet, in one place",
+    "sub": "PetConnect24 reminds you of medication, vaccinations and appointments, keeps your pet's record together and has the key details ready in an emergency.",
+    "cta": "Create account",
+    "ctaSecondary": "Sign in",
+    "note": "Works in your browser and can be added to your home screen like an app.",
+    "imageAlt": "The Today view of the app with the next task and the daily plan"
+  },
+  "features": {
+    "title": "What PetConnect24 takes off your plate",
+    "intro": "Fewer notes, less guesswork: everything important about your pet is in one place and at hand when you need it.",
+    "items": [
+      {
+        "icon": "bell",
+        "title": "Reminders that reach you",
+        "text": "Medication, vaccinations and appointments with push notifications. Tap “Given” or “Done” right in the notification."
+      },
+      {
+        "icon": "folder",
+        "title": "Digital pet record",
+        "text": "Weight, findings, lab values, vital signs and documents for each pet – clear and always with you."
+      },
+      {
+        "icon": "alert",
+        "title": "Emergency card and emergency services",
+        "text": "Name, allergies, medication and contact at a glance, plus vets and emergency services near you."
+      },
+      {
+        "icon": "users",
+        "title": "Family and pet sitting",
+        "text": "Invite co-owners or share the key details with your holiday pet sitter by link – no account needed for the sitter."
+      },
+      {
+        "icon": "sun",
+        "title": "Daily plan for everyday life",
+        "text": "Walks, feeding, grooming: daily routines with a time and a tick, so nothing gets forgotten."
+      },
+      {
+        "icon": "sparkle",
+        "title": "AI assistant – optional",
+        "text": "Information and guidance on care and everyday life, if you like. Not a diagnosis, not a replacement for your vet."
+      }
+    ]
+  },
+  "how": {
+    "title": "Ready in three steps",
+    "steps": [
+      {
+        "title": "Create an account",
+        "text": "With your email address or Google account. The app is available in eleven languages."
+      },
+      {
+        "title": "Add your pet",
+        "text": "Name, species and breed are enough to begin. You can add the rest bit by bit."
+      },
+      {
+        "title": "Set up reminders",
+        "text": "Enter medication, vaccinations and appointments – PetConnect24 reminds you at the right time."
+      }
+    ]
+  },
+  "gallery": {
+    "title": "What it looks like",
+    "note": "Screenshots of the current app with sample data (German interface). The AI assistant is shown in its start view.",
+    "items": [
+      {
+        "img": "tierakte",
+        "caption": "Pet record: history with vaccinations and medication",
+        "alt": "A dog's pet record with the history by month: vaccinations and medication"
+      },
+      {
+        "img": "erinnerungen",
+        "caption": "Tick off medication",
+        "alt": "Reminders with medication being ticked off as given"
+      },
+      {
+        "img": "heute",
+        "caption": "Daily plan",
+        "alt": "Today view with progress, the next walk and the daily plan"
+      },
+      {
+        "img": "assistent",
+        "caption": "AI assistant",
+        "alt": "Start view of the AI assistant with the privacy notice and quick questions"
+      }
+    ]
+  },
+  "ai": {
+    "eyebrow": "AI assistant (optional)",
+    "title": "Guidance when questions come up",
+    "text": "The assistant answers questions about your pet's care, nutrition, behaviour and health and, where the question needs it, takes details from the selected pet's profile into account. It offers information and guidance – it does not replace a veterinary diagnosis.",
+    "points": [
+      {
+        "title": "No diagnosis, no dosing",
+        "text": "The assistant does not diagnose, does not give doses and does not replace a vet."
+      },
+      {
+        "title": "A pointer in a possible emergency",
+        "text": "If your details suggest an emergency, it tells you to contact a veterinary practice or clinic straight away."
+      },
+      {
+        "title": "You decide what is sent",
+        "text": "Only what the question needs is sent. The contents of documents and photos go along only if you attach and approve them yourself. The microchip number is never sent."
+      },
+      {
+        "title": "External provider",
+        "text": "Your question is sent to an external AI service whose servers may be outside the EU. The rest of the app works fully without the assistant."
+      }
+    ],
+    "note": "If you are worried about your pet's health, always contact your veterinary practice."
+  },
+  "trust": {
+    "title": "Transparent about privacy",
+    "items": [
+      {
+        "title": "Pet data in Frankfurt",
+        "text": "Your account and content are stored with Supabase in Frankfurt am Main, Germany."
+      },
+      {
+        "title": "No ads, no tracking",
+        "text": "No advertising or analytics services and no cookies for advertising or analytics."
+      },
+      {
+        "title": "Shared only with your say-so",
+        "text": "Family and sitters see details only if you invite them or share a link. Our support team cannot see health data, documents or notes."
+      },
+      {
+        "title": "Deletion on request",
+        "text": "You can request deletion of your account and data at any time, in the app or by email."
+      }
+    ],
+    "note": "Good to know: the website is delivered via Netlify (USA), push notifications run through Google, and the optional AI assistant uses a provider in the USA. Full details are in the privacy policy.",
+    "link": "Read the privacy policy (German)",
+    "deleteLink": "Delete account"
+  },
+  "vets": {
+    "eyebrow": "For veterinary practices",
+    "title": "Well-prepared owners make practice life easier",
+    "text": "PetConnect24 helps pet owners keep their pet's medication, vaccinations and history in order and to hand – at the appointment and in an emergency.",
+    "benefits": [
+      {
+        "title": "More complete information at the appointment",
+        "text": "Medication, vaccinations, history, lab values and documents are collected in the owner's pet record."
+      },
+      {
+        "title": "More reliable medication",
+        "text": "Push reminders help owners not to forget prescribed medication and vaccination dates."
+      },
+      {
+        "title": "Your practice at hand in an emergency",
+        "text": "Owners store their regular practice; it can be called directly from the app."
+      }
+    ],
+    "status": "Where we are today: PetConnect24 is an app for pet owners. There is no separate access for practices and no interface to practice software yet. We would like to find out together with practices what really helps in daily work.",
+    "cta": "Contact for practices",
+    "ctaNote": "We reply by email from info@petconnect24.com",
+    "mailSubject": "PetConnect24 for veterinary practices",
+    "mailBody": "Hello,\n\nwe are a veterinary practice and are interested in PetConnect24.\n\nPractice / location:\nContact person:\nPhone (optional):\nYour request:\n\nKind regards"
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "items": [
+      {
+        "q": "Do I have to install an app?",
+        "a": "No. PetConnect24 runs in your browser. On your smartphone you can also add it to your home screen."
+      },
+      {
+        "q": "Does it work without internet?",
+        "a": "The app interface starts even without a connection. You load and save your data as soon as you are online."
+      },
+      {
+        "q": "Which languages are available?",
+        "a": "The app is available in German, English, French, Spanish, Dutch, Norwegian, Swedish, Danish, Turkish, Russian and Arabic. This home page is so far available in German and English."
+      },
+      {
+        "q": "Who can see my pet's data?",
+        "a": "You and the people you invite yourself or give a sitter link to. Our support team can access accounts but sees only the email address, display name, registration date, account status and your pets' names and species – no health data, documents or notes."
+      },
+      {
+        "q": "Does PetConnect24 replace a vet?",
+        "a": "No. PetConnect24 does not give diagnoses or calculate doses. This also applies to the AI assistant. In an emergency or if you are worried about your pet's health, always contact a veterinary practice."
+      },
+      {
+        "q": "How do I delete my account?",
+        "a": "In the app under “More → Account → Delete account”, or by email via the “Delete account” page. Deletion takes place within 30 days."
+      }
+    ]
+  },
+  "final": {
+    "title": "Ready to stop forgetting things?",
+    "text": "Add your first pet in a few minutes.",
+    "cta": "Create account"
+  },
+  "footer": {
+    "tagline": "PetConnect24 – your pet's health in one place.",
+    "imprint": "Legal notice",
+    "privacy": "Privacy policy",
+    "deleteAccount": "Delete account",
+    "contact": "Contact",
+    "legalNote": "Legal notice and privacy policy are available in German only.",
+    "disclaimer": "PetConnect24 does not replace veterinary advice."
+  }
+}

@@ -4,14 +4,14 @@
  * - Antworten von Supabase (andere Origin) werden nie angefasst oder gespeichert.
  * - Push: Nachricht anzeigen; Klick öffnet „Heute“ (gleiche Origin). Medikament/Alltag: Knopf „Gegeben“/„Erledigt“ öffnet „Heute“ mit Bestätigungskarte.
  */
-const VERSION = 'pc-v1';
+const VERSION = 'pc-v2';
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 
 /* Pfad, unter dem die App ausgeliefert wird: '' = Wurzel (heute) oder z. B. '/app' (nach dem Umzug).
  * Muss mit APP_BASE in src/lib/appUrl.ts übereinstimmen (ein Test prüft das).
  * Der Service Worker selbst bleibt unter /sw.js mit Scope „/“, damit bestehende Push-Abos erhalten bleiben. */
-const APP_BASE = '';
+const APP_BASE = '/app';
 const APP_HOME = `${APP_BASE}/`;
 const SHELL_URL = `${APP_BASE}/index.html`;
 const ASSET_PREFIX = `${APP_BASE}/assets/`;
