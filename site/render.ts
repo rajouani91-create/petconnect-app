@@ -210,7 +210,7 @@ ${header(c, lang, 'landing')}
 <p class="cta-row"><a class="btn btn-primary" href="${APP_PATH}registrieren">${esc(c.hero.cta)}</a><a class="btn btn-ghost" href="${APP_PATH}login">${esc(c.hero.ctaSecondary)}</a></p>
 <p class="muted small">${esc(c.hero.note)}</p>
 </div>
-<div class="hero-art"><div class="phone"><img src="${img('heute')}" width="540" height="1200" fetchpriority="high" decoding="async" alt="${esc(c.hero.imageAlt)}"></div></div>
+<div class="hero-art"><div class="phone phone-back" aria-hidden="true"><img src="${img('erinnerungen')}" width="540" height="1200" alt=""></div><div class="phone phone-front"><img src="${img('heute')}" width="540" height="1200" fetchpriority="high" decoding="async" alt="${esc(c.hero.imageAlt)}"></div></div>
 </div></section>
 
 <section id="funktionen" class="section"><div class="wrap">
@@ -277,7 +277,7 @@ ${trust}
 ${faq}
 </div></section>
 
-<section class="section final"><div class="wrap">
+<section class="section final"><div class="wrap final-panel">
 <h2>${esc(c.final.title)}</h2>
 <p class="lead">${esc(c.final.text)}</p>
 <p class="cta-row center"><a class="btn btn-primary" href="${APP_PATH}registrieren">${esc(c.final.cta)}</a></p>
