@@ -11,11 +11,17 @@ import { AuthLayout } from '../components/AuthLayout';
 import { Field } from '../components/Field';
 import { GoogleButton } from '../components/GoogleButton';
 
-type F = 'displayName' | 'email' | 'birth' | 'password' | 'password2';
-const ORDER: F[] = ['displayName', 'email', 'birth', 'password', 'password2'];
+type F = 'practiceName' | 'displayName' | 'email' | 'birth' | 'password' | 'password2';
+const ORDER: F[] = ['practiceName', 'displayName', 'email', 'birth', 'password', 'password2'];
+const PRACTICE_NAME_MAX = 120;
+type AccountType = 'owner' | 'practice';
 
 export function Register() {
   const { t, lang: uiLang, setLang } = useI18n();
+  // „Ich bin: Halter:in / Praxis“ wie im Prototyp; ?praxis öffnet direkt die Praxis-Registrierung
+  const [accountType, setAccountType] = useState<AccountType>(() => (new URLSearchParams(window.location.search).has('praxis') ? 'practice' : 'owner'));
+  const [practiceName, setPracticeName] = useState('');
+  const [today] = useState(() => localDate(new Date()));
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [birth, setBirth] = useState('');
@@ -27,7 +33,7 @@ export function Register() {
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const refs = {
-    displayName: useRef<HTMLInputElement>(null), email: useRef<HTMLInputElement>(null), birth: useRef<HTMLInputElement>(null),
+    practiceName: useRef<HTMLInputElement>(null), displayName: useRef<HTMLInputElement>(null), email: useRef<HTMLInputElement>(null), birth: useRef<HTMLInputElement>(null),
     password: useRef<HTMLInputElement>(null), password2: useRef<HTMLInputElement>(null),
   };
 
@@ -35,10 +41,13 @@ export function Register() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    const isPractice = accountType === 'practice';
     const errs: Errors<F> = {
+      practiceName: isPractice ? requiredMax(practiceName, PRACTICE_NAME_MAX) : undefined,
       displayName: requiredMax(displayName, DISPLAY_NAME_MAX),
       email: emailError(email),
-      birth: birthDateError(birth, localDate(new Date())),
+      // Mindestalter gilt für private Konten; ein Praxiskonto ist ein beruflicher Zugang
+      birth: isPractice ? undefined : birthDateError(birth, localDate(new Date())),
       password: passwordError(password),
       password2: passwordRepeatError(password, password2),
     };
@@ -54,8 +63,10 @@ export function Register() {
       email: email.trim(),
       password,
       options: {
-        data: { display_name: displayName.trim(), language },
-        emailRedirectTo: appUrl('/'),
+        data: isPractice
+          ? { display_name: displayName.trim(), language, account_type: 'practice', practice_name: practiceName.trim() }
+          : { display_name: displayName.trim(), language },
+        emailRedirectTo: appUrl(isPractice ? '/praxis/einrichten' : '/'),
       },
     });
     setBusy(false);
@@ -93,13 +104,38 @@ export function Register() {
   }
 
   return (
-    <AuthLayout title={t('reg_title')} sub={t('reg_sub')} inviteHint>
-      <GoogleButton onError={(key) => setFormError({ key })} />
-      <p className="auth-or" aria-hidden="true">
-        <span>{t('orDivider')}</span>
-      </p>
+    <AuthLayout title={t('reg_title')} sub={accountType === 'practice' ? t('pp_step1') : t('reg_sub')} inviteHint>
+      <div className="iam" role="radiogroup" aria-label={t('iAm')}>
+        <span className="iam-label" aria-hidden="true">{t('iAm')}</span>
+        <div className="dash-seg iam-seg">
+          {(['owner', 'practice'] as const).map((a) => (
+            <button key={a} type="button" role="radio" aria-checked={accountType === a} className={accountType === a ? 'on' : undefined}
+              onClick={() => { setAccountType(a); setErrors({}); setFormError(null); }}>
+              {t(a === 'owner' ? 'iAmOwner' : 'iAmPractice')}
+            </button>
+          ))}
+        </div>
+      </div>
+      {accountType === 'owner' ? (
+        <>
+          <GoogleButton onError={(key) => setFormError({ key })} />
+          <p className="auth-or" aria-hidden="true">
+            <span>{t('orDivider')}</span>
+          </p>
+        </>
+      ) : (
+        <p className="notice notice-info">{t('regPracticeHint')}</p>
+      )}
       <form className="stack" onSubmit={submit} noValidate>
-        <Field id="reg-name" label={t('displayName')} hint={t('displayNameHint')} error={errors.displayName} required>
+        {accountType === 'practice' && (
+          <Field id="reg-practice" label={t('practiceName')} error={errors.practiceName} required>
+            {(a) => (
+              <input {...a} ref={refs.practiceName} type="text" autoComplete="organization" maxLength={PRACTICE_NAME_MAX} value={practiceName}
+                onChange={(e) => { setPracticeName(e.target.value); clear('practiceName'); }} />
+            )}
+          </Field>
+        )}
+        <Field id="reg-name" label={accountType === 'practice' ? t('regYourName') : t('displayName')} hint={accountType === 'practice' ? undefined : t('displayNameHint')} error={errors.displayName} required>
           {(a) => (
             <input {...a} ref={refs.displayName} type="text" autoComplete="nickname" maxLength={DISPLAY_NAME_MAX} value={displayName}
               onChange={(e) => { setDisplayName(e.target.value); clear('displayName'); }} />
@@ -111,12 +147,14 @@ export function Register() {
               onChange={(e) => { setEmail(e.target.value); clear('email'); }} />
           )}
         </Field>
-        <Field id="reg-birth" label={t('regBirth')} hint={t('regBirthHint')} error={errors.birth} required>
-          {(a) => (
-            <input {...a} ref={refs.birth} type="date" autoComplete="bday" max={localDate(new Date())} value={birth}
-              onChange={(e) => { setBirth(e.target.value); clear('birth'); }} />
-          )}
-        </Field>
+        {accountType === 'owner' && (
+          <Field id="reg-birth" label={t('regBirth')} hint={t('regBirthHint')} error={errors.birth} required>
+            {(a) => (
+              <input {...a} ref={refs.birth} type="date" autoComplete="bday" max={today} value={birth}
+                onChange={(e) => { setBirth(e.target.value); clear('birth'); }} />
+            )}
+          </Field>
+        )}
         <Field id="reg-pw" label={t('password')} hint={t('pwHint')} error={errors.password} required>
           {(a) => (
             <input {...a} ref={refs.password} type="password" autoComplete="new-password" minLength={8} value={password}

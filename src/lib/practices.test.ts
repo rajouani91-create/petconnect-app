@@ -36,6 +36,10 @@ describe('Filter → RPC-Parameter', () => {
     expect(hasOfferFilters(EMPTY_FILTERS)).toBe(false);
     expect(hasOfferFilters({ ...EMPTY_FILTERS, species: 'cat' })).toBe(true);
     expect(hasOfferFilters({ ...EMPTY_FILTERS, titles: ['birds'] })).toBe(true);
+    expect(hasOfferFilters({ ...EMPTY_FILTERS, languages: ['tr'] })).toBe(true);
+    // Sprachen nur senden, wenn gewählt (ältere Datenbank kennt den Parameter nicht)
+    expect(toRpcParams(EMPTY_FILTERS, { lat: 1, lon: 2 })).not.toHaveProperty('p_languages');
+    expect(toRpcParams({ ...EMPTY_FILTERS, languages: ['tr', 'de'] }, { lat: 1, lon: 2 })).toMatchObject({ p_languages: ['de', 'tr'] });
     expect(toggle(['a', 'b'], 'a')).toEqual(['b']);
     expect(toggle(['a'], 'b')).toEqual(['a', 'b']);
   });
@@ -47,9 +51,9 @@ describe('URL ↔ Filter', () => {
     expect(queryToFilters(new URLSearchParams('plz=65428&r=10&tier=reptile&l=hibernation&t=reptiles'))).toEqual(reptileSearch);
   });
   it('hin und zurück mit allen Feldern', () => {
-    const f: PracticeFilters = { country: 'DE', place: 'Mainz', radius: 25, species: 'horse', services: ['equine_mobile', 'imaging'], titles: ['horses', 'surgery'], q: 'Pferde', openNow: true, sort: 'name' };
+    const f: PracticeFilters = { country: 'DE', place: 'Mainz', radius: 25, species: 'horse', services: ['equine_mobile', 'imaging'], titles: ['horses', 'surgery'], languages: ['tr', 'de'], features: ['saturday', 'parking'], q: 'Pferde', openNow: true, sort: 'name' };
     const back = queryToFilters(filtersToQuery(f));
-    expect(back).toEqual({ ...f, services: ['imaging', 'equine_mobile'], titles: ['surgery', 'horses'] });
+    expect(back).toEqual({ ...f, services: ['imaging', 'equine_mobile'], titles: ['surgery', 'horses'], languages: ['de', 'tr'], features: ['parking', 'saturday'] });
     expect(filtersToQuery(EMPTY_FILTERS).toString()).toBe('');
   });
   it('Unbekanntes wird ignoriert, Standardwerte greifen', () => {

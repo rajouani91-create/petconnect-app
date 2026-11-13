@@ -4,7 +4,7 @@ import { buildMail, cleanName, pickLang, type Mail } from './build.ts';
 import { KINDS, type MailKind } from './mailTexts.ts';
 
 export interface HookPayload {
-  user: { email?: string; user_metadata?: { language?: unknown; display_name?: unknown } | null };
+  user: { email?: string; user_metadata?: { language?: unknown; display_name?: unknown; practice_name?: unknown } | null };
   email_data: { token_hash?: string; redirect_to?: string; email_action_type?: string };
 }
 export interface Deps {
@@ -39,6 +39,7 @@ export async function handleHook(body: string, headers: Record<string, string>, 
     kind,
     link: verifyUrl(deps.supabaseUrl, hash, kind, payload.email_data.redirect_to),
     name: cleanName(meta.display_name),
+    practice: cleanName(meta.practice_name),
   });
   try {
     await deps.send(to, mail);

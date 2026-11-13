@@ -36,11 +36,18 @@ import DeleteAccount from './pages/DeleteAccount';
 import { UpdateBanner } from './components/UpdateBanner';
 import { Admin } from './pages/admin/Admin';
 import { Agents } from './pages/admin/Agents';
+import { OwnerOnly, PracticeOnly, PracticeProvider } from './practice/PracticeProvider';
+import { PracticeShell } from './practice/PracticeShell';
+import { PracticeProfile } from './practice/PracticeProfile';
+import { PracticeTeam } from './practice/PracticeTeam';
+import { PracticeSetup } from './practice/PracticeSetup';
+import { PracticeInvite } from './practice/PracticeInvite';
 
 export function App() {
   return (
     <I18nProvider>
       <AuthProvider>
+        <PracticeProvider>
         <BrowserRouter basename={APP_BASE}>
           <Routes>
             <Route path="/login" element={<RedirectIfAuthed><Login /></RedirectIfAuthed>} />
@@ -52,14 +59,23 @@ export function App() {
             <Route path="/datenschutz" element={<Privacy />} />
             <Route path="/impressum" element={<Imprint />} />
             <Route path="/konto-loeschen" element={<DeleteAccount />} />
+            {/* Praxissicht (Etappe P1): Einladung annehmen (eigene Sitzungsprüfung), Einrichtung, Profil und Team */}
+            <Route path="/praxis/einladung" element={<PracticeInvite />} />
+            <Route path="/praxis/einrichten" element={<RequireAuth><PracticeSetup /></RequireAuth>} />
+            <Route path="/praxis" element={<RequireAuth><PracticeOnly><PracticeShell /></PracticeOnly></RequireAuth>}>
+              <Route index element={<PracticeProfile />} />
+              <Route path="/praxis/team" element={<PracticeTeam />} />
+            </Route>
             <Route
               element={
                 <RequireAuth>
+                  <OwnerOnly>
                   <PetsProvider>
                     <DosesProvider>
                       <AppShell />
                     </DosesProvider>
                   </PetsProvider>
+                  </OwnerOnly>
                 </RequireAuth>
               }
             >
@@ -92,6 +108,7 @@ export function App() {
           </Routes>
           <UpdateBanner />
         </BrowserRouter>
+        </PracticeProvider>
       </AuthProvider>
     </I18nProvider>
   );

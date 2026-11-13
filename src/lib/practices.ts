@@ -2,7 +2,9 @@
 import type { MessageKey } from '../i18n';
 import {
   PRACTICE_SERVICES,
+  PRACTICE_FEATURES,
   PRACTICE_TITLES,
+  TEAM_LANGUAGES,
   isPracticeSpecies,
   nameHintsSpecies,
   type PracticeService,
@@ -27,16 +29,20 @@ export interface PracticeFilters {
   species: PracticeSpecies | null;
   services: PracticeService[];
   titles: PracticeTitle[];
+  /** Sprachen im Team (mindestens eine muss passen) */
+  languages: string[];
+  /** Ausstattung, Zahlung, Abläufe (alle müssen zutreffen) */
+  features: string[];
   q: string;
   openNow: boolean;
   sort: SortBy;
 }
 
-export const EMPTY_FILTERS: PracticeFilters = { country: DEFAULT_COUNTRY, place: '', radius: DEFAULT_RADIUS, species: null, services: [], titles: [], q: '', openNow: false, sort: 'distance' };
+export const EMPTY_FILTERS: PracticeFilters = { country: DEFAULT_COUNTRY, place: '', radius: DEFAULT_RADIUS, species: null, services: [], titles: [], languages: [], features: [], q: '', openNow: false, sort: 'distance' };
 
 /** Sind Angebots-Filter gesetzt (Tierart, Leistung, Fachtitel)? */
-export function hasOfferFilters(f: Pick<PracticeFilters, 'species' | 'services' | 'titles'>): boolean {
-  return f.species !== null || f.services.length > 0 || f.titles.length > 0;
+export function hasOfferFilters(f: Pick<PracticeFilters, 'species' | 'services' | 'titles'> & { languages?: readonly string[]; features?: readonly string[] }): boolean {
+  return f.species !== null || f.services.length > 0 || f.titles.length > 0 || (f.languages?.length ?? 0) > 0 || (f.features?.length ?? 0) > 0;
 }
 
 /** Filter + Mittelpunkt → Parameter für search_practices */
@@ -50,6 +56,9 @@ export function toRpcParams(f: PracticeFilters, center: { lat: number; lon: numb
     p_titles: [...f.titles].sort(),
     p_q: f.q.trim() || null,
     p_limit: SEARCH_LIMIT,
+    // nur senden, wenn gewählt (ältere Datenbankstände kennen den Parameter nicht)
+    ...(f.languages.length > 0 ? { p_languages: [...f.languages].sort() } : {}),
+    ...(f.features.length > 0 ? { p_features: [...f.features].sort() } : {}),
   };
 }
 
@@ -62,6 +71,8 @@ export function filtersToQuery(f: PracticeFilters): URLSearchParams {
   if (f.species) p.set('tier', f.species);
   for (const s of PRACTICE_SERVICES) if (f.services.includes(s)) p.append('l', s);
   for (const t of PRACTICE_TITLES) if (f.titles.includes(t)) p.append('t', t);
+  for (const l of TEAM_LANGUAGES) if (f.languages.includes(l)) p.append('sp', l);
+  for (const x of PRACTICE_FEATURES) if (f.features.includes(x)) p.append('a', x);
   if (f.q.trim()) p.set('q', f.q.trim());
   if (f.openNow) p.set('offen', '1');
   if (f.sort === 'name') p.set('sort', 'name');
@@ -80,6 +91,8 @@ export function queryToFilters(p: URLSearchParams): PracticeFilters {
     species: isPracticeSpecies(tier) ? tier : null,
     services: PRACTICE_SERVICES.filter((s) => p.getAll('l').includes(s)),
     titles: PRACTICE_TITLES.filter((t) => p.getAll('t').includes(t)),
+    languages: TEAM_LANGUAGES.filter((l) => p.getAll('sp').includes(l)),
+    features: PRACTICE_FEATURES.filter((x) => p.getAll('a').includes(x)),
     q: (p.get('q') ?? '').slice(0, 80),
     openNow: p.get('offen') === '1',
     sort: p.get('sort') === 'name' ? 'name' : 'distance',
@@ -179,7 +192,7 @@ export type EmptyState =
 export function emptyState(
   shown: number,
   counts: readonly RadiusCount[] | null,
-  f: Pick<PracticeFilters, 'radius' | 'species' | 'services' | 'titles' | 'q' | 'openNow'>,
+  f: Pick<PracticeFilters, 'radius' | 'species' | 'services' | 'titles' | 'q' | 'openNow'> & { languages?: readonly string[]; features?: readonly string[] },
 ): EmptyState {
   if (shown > 0) return { kind: 'results' };
   if (!counts || counts.length === 0) return { kind: 'noMatch' };

@@ -34,6 +34,17 @@ describe('buildMail', () => {
       expect(m.html).toContain('Anna');
     }
   });
+  it('Einladung durch eine Praxis nennt die Praxis (HTML unschädlich), andere Mailarten nicht', () => {
+    for (const l of LANGS) {
+      expect(TEXTS[l].invitePractice, l).toContain('{practice}');
+      const m = buildMail({ lang: l, kind: 'invite', link: LINK, name: 'Anna', practice: 'Praxis <Ost>' });
+      expect(m.html, l).toContain('Praxis Ost');
+      expect(m.text, l).toContain('Praxis Ost');
+      expect(m.html, l).not.toContain(TEXTS[l].kinds.invite.intro);
+    }
+    expect(buildMail({ lang: 'de', kind: 'signup', link: LINK, practice: 'Praxis Ost' }).text).not.toContain('Praxis Ost');
+    expect(buildMail({ lang: 'de', kind: 'invite', link: LINK }).text).toContain(TEXTS.de.kinds.invite.intro);
+  });
   it('Arabisch läuft von rechts nach links, alle anderen nicht', () => {
     expect(buildMail({ lang: 'ar', kind: 'signup', link: LINK }).html).toContain('dir="rtl"');
     expect(buildMail({ lang: 'de', kind: 'signup', link: LINK }).html).toContain('dir="ltr"');

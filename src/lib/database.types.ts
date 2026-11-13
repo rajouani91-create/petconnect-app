@@ -905,6 +905,18 @@ export type Database = {
           },
         ]
       }
+      practice_title_proofs: {
+        Row: { id: string; practice_id: string; title: string; person_name: string; path: string; mime: string; size: number; uploaded_by: string | null; created_at: string; read_status: string; reading: Json | null; read_at: string | null; decision: string | null; decision_reason: string | null; decided_by: string | null; decided_at: string | null; file_deleted_at: string | null }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      practice_staff_invites: {
+        Row: { id: string; practice_id: string; email: string; name: string; role: string; invited_by: string | null; created_at: string; expires_at: string; accepted_at: string | null; accepted_by: string | null; revoked_at: string | null }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       staff_roles: {
         Row: { user_id: string; role: string; created_at: string }
         Insert: { user_id: string; role: string; created_at?: string }
@@ -1081,6 +1093,62 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      practice_me: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      practice_directory_search: {
+        Args: { p_q: string; p_country?: string }
+        Returns: { id: string; name: string; street: string | null; housenumber: string | null; postcode: string | null; city: string | null; phone: string | null; website: string | null; email: string | null; opening_hours: string | null }[]
+      }
+      practice_register: {
+        Args: { p_directory_id: string | null; p: Json }
+        Returns: string
+      }
+      practice_update_profile: {
+        Args: { p: Json }
+        Returns: undefined
+      }
+      practice_team: {
+        Args: Record<PropertyKey, never>
+        Returns: { user_id: string; email: string; display_name: string | null; role: string; created_at: string }[]
+      }
+      practice_set_role: {
+        Args: { p_user: string; p_role: string }
+        Returns: undefined
+      }
+      practice_remove_member: {
+        Args: { p_user: string }
+        Returns: undefined
+      }
+      practice_accept_invite: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      staff_practices: {
+        Args: { p_status?: string | null }
+        Returns: { id: string; name: string; postcode: string | null; city: string | null; country: string; phone: string | null; email: string | null; status: string; package: string; directory_id: string | null; members: number; lead_email: string | null; created_at: string; approved_at: string | null; titles: string[]; titles_verified: boolean }[]
+      }
+      practice_add_proof: {
+        Args: { p_id: string; p_title: string; p_person: string; p_path: string; p_mime: string; p_size: number }
+        Returns: string
+      }
+      practice_remove_proof: {
+        Args: { p_id: string }
+        Returns: string
+      }
+      staff_practice_proofs: {
+        Args: { p_open?: boolean }
+        Returns: { id: string; practice_id: string; practice_name: string; title: string; person_name: string; path: string; mime: string; created_at: string; read_status: string; reading: Json | null; decision: string | null; decision_reason: string | null; decided_at: string | null; file_deleted_at: string | null }[]
+      }
+      staff_set_titles_verified: {
+        Args: { p_id: string; verified: boolean; reason: string }
+        Returns: undefined
+      }
+      staff_set_practice_status: {
+        Args: { p_id: string; new_status: string; reason: string }
+        Returns: string | null
+      }
       staff_stats: {
         Args: Record<PropertyKey, never>
         Returns: { accounts: number; profiles: number; accounts_with_pets: number; pets: number; pets_by_species: Record<string, number>; locked_accounts: number; tickets_open: number; tickets_in_progress: number; tickets_closed: number }
@@ -1136,6 +1204,8 @@ export type Database = {
         Args: {
           p_lat: number
           p_lon: number
+          p_languages?: string[]
+          p_features?: string[]
           p_q?: string | null
           p_services?: string[]
           p_species?: string | null
@@ -1180,8 +1250,12 @@ export type Database = {
           p_services?: string[]
           p_species?: string | null
           p_titles?: string[]
+          p_languages?: string[]
+          p_features?: string[]
         }
         Returns: {
+          languages?: string[]
+          features?: string[]
           city: string | null
           country: string | null
           distance_km: number
