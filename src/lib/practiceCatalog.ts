@@ -12,6 +12,24 @@ export type PracticeService = (typeof PRACTICE_SERVICES)[number];
 export const PRACTICE_TITLES = ['small_animals', 'surgery', 'reptiles', 'birds', 'horses'] as const;
 export type PracticeTitle = (typeof PRACTICE_TITLES)[number];
 
+/** Sprachen im Team (ISO 639-1): die 11 App-Sprachen und weitere häufige Sprachen in Deutschland. Namen liefert Intl.DisplayNames. */
+export const TEAM_LANGUAGES = ['de', 'en', 'fr', 'es', 'it', 'nl', 'pl', 'pt', 'ru', 'uk', 'tr', 'ar', 'fa', 'sv', 'da', 'no'] as const;
+export type TeamLanguage = (typeof TEAM_LANGUAGES)[number];
+export const isTeamLanguage = (v: unknown): v is TeamLanguage => typeof v === 'string' && (TEAM_LANGUAGES as readonly string[]).includes(v);
+
+/** Name einer Sprache in der Sprache der Oberfläche (z. B. „tr“ → „Türkisch“), sonst der Code */
+export function languageName(code: string, locale: string): string {
+  try {
+    const n = new Intl.DisplayNames([locale], { type: 'language' }).of(code);
+    return n && n !== code ? n.charAt(0).toLocaleUpperCase(locale) + n.slice(1) : code;
+  } catch {
+    return code;
+  }
+}
+
+/** Leistungen, die nur zu einer bestimmten Tierart passen (Folgefragen im Fragebogen der Praxis) */
+export const SERVICE_NEEDS_SPECIES: Partial<Record<PracticeService, PracticeSpecies>> = { hibernation: 'reptile', equine_mobile: 'horse' };
+
 /** Tierarten-Texte: dieselben wie bei „Welches Tier?“ in der Tierakte */
 export const SPECIES_TEXT: Record<PracticeSpecies, MessageKey> = {
   dog: 'dog',

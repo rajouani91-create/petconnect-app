@@ -24,6 +24,8 @@
 /admin                /app/admin                  302
 /admin/*              /app/admin/:splat           302
 /notfall              /app/notfall                302
+/praxis               /app/praxis                 302
+/praxis/*             /app/praxis/:splat          302
 
 # 3) Öffentliche Seiten (Landingpage, Impressum, Datenschutz, Konto löschen) sind statische Dateien.
 #    Die Regeln für diese Seiten hängt das Build-Skript (scripts/build-site.mjs) unten automatisch an.

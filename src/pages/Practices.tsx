@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
-import type { MessageKey } from '../i18n';
+import { localeOf, type MessageKey } from '../i18n';
 import { usePets } from '../pets/PetsProvider';
 import {
   addFavoritePractice,
@@ -24,8 +24,10 @@ import {
   PRACTICE_TITLES,
   SERVICE_TEXT,
   SPECIES_TEXT,
+  TEAM_LANGUAGES,
   TITLE_TEXT,
   isPracticeSpecies,
+  languageName,
 } from '../lib/practiceCatalog';
 import { INPUT_DELAY_MS, searchText } from '../lib/debounce';
 import { COUNTRY_TEXT, ENABLED_COUNTRIES, countryForLang, isPracticeCountry, type PracticeCountry } from '../lib/practiceCountries';
@@ -433,6 +435,12 @@ export function Practices() {
           <h3 id={`${uid}-g-ti`}>{t('psSpecH')}</h3>
           <div className="pet-switcher">
             {PRACTICE_TITLES.map((s) => chip(filters.titles.includes(s), t(TITLE_TEXT[s]), () => setFilters({ titles: toggle(filters.titles, s) }), s))}
+          </div>
+        </div>
+        <div role="group" aria-labelledby={`${uid}-g-lg`} className="stack">
+          <h3 id={`${uid}-g-lg`}>{t('psLangH')}</h3>
+          <div className="pet-switcher">
+            {TEAM_LANGUAGES.map((l) => chip(filters.languages.includes(l), languageName(l, localeOf(lang)), () => setFilters({ languages: toggle(filters.languages, l) }), `lg-${l}`))}
           </div>
         </div>
         <Switch checked={filters.openNow} onChange={(on) => setFilters({ openNow: on })} label={t('psOpenSwitch')} />

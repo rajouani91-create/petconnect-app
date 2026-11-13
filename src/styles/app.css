@@ -282,7 +282,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .hint { font-size: 0.85rem; color: var(--muted); }
 .error { display: flex; align-items: flex-start; gap: 6px; font-size: 0.9rem; color: var(--crit); font-weight: 600; }
 .error svg { flex: none; margin-top: 2px; }
-input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="time"], input[type="tel"], select, textarea {
+input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="time"], input[type="tel"], input[type="url"], .practice-search, select, textarea {
   width: 100%; min-height: var(--tap); padding: 10px 12px;
   background: var(--surface); color: var(--fg);
   border: 1px solid var(--control); border-radius: var(--r);
@@ -861,3 +861,30 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .tl-row .menu-label { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
 .tl-title { font-weight: 600; }
 .tl-src { flex: none; }
+
+/* ---------- Praxissicht (Etappe P1): Profil, Team, Einrichtung, Angebots-Fragebogen ---------- */
+.practice-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); align-items: start; }
+@media (min-width: 1000px) { .practice-cards { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .practice-cards > :last-child { grid-column: 1 / -1; } }
+.chips-wrap { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.h-sub { font-size: 1.125rem; margin: 0; }
+.h-sub:focus { outline: none; }
+.dir-hit { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: start; min-height: var(--tap); padding: var(--s-3) var(--s-4); border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--fg); font: inherit; cursor: pointer; }
+.dir-hit:hover { border-color: var(--brand); }
+.dir-hit:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+ul.choose-list { list-style: none; margin: 0; padding: 0; }
+.team-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-4); }
+.team-row select { min-height: var(--tap); }
+.topbar-practice { margin-inline-start: auto; max-width: 50vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-practice ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 900px) { .nav-practice ul { grid-template-columns: none; } }
+.iam { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); margin-bottom: var(--s-4); }
+.iam-label { font-weight: 600; }
+.iam-seg button { min-height: var(--tap); padding-inline: var(--s-4); }
+.offer-q fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.offer-q legend { font-weight: 700; font-size: 1.05rem; padding: 0; margin-bottom: var(--s-2); }
+.oq-num { display: block; font-weight: 500; }
+.oq-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-1); }
+.oq-list .switch { width: 100%; justify-content: space-between; }
+.oq-follow { padding-inline-start: var(--s-4); border-inline-start: 3px solid var(--brand-soft); }
+.team-row .member-text { flex: 1 1 220px; min-width: 0; }
+.team-row .row-actions { flex-wrap: nowrap; align-items: center; }

@@ -19,12 +19,14 @@ export function cleanName(value: unknown): string {
   return value.replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
 }
 
-export interface BuildInput { lang: MailLang; kind: MailKind; link: string; name?: string }
+export interface BuildInput { lang: MailLang; kind: MailKind; link: string; name?: string; practice?: string }
 export interface Mail { subject: string; html: string; text: string }
 
-export function buildMail({ lang, kind, link, name }: BuildInput): Mail {
+export function buildMail({ lang, kind, link, name, practice }: BuildInput): Mail {
   const t = TEXTS[lang];
-  const k = t.kinds[kind];
+  const pName = cleanName(practice);
+  // Einladung durch eine Praxis: die Praxis im Text nennen
+  const k = kind === 'invite' && pName ? { ...t.kinds.invite, intro: t.invitePractice.replace('{practice}', pName) } : t.kinds[kind];
   const clean = cleanName(name);
   const hello = clean ? t.hello.replace('{name}', clean) : t.helloAnon;
   const dir = t.rtl ? 'rtl' : 'ltr';
