@@ -24,6 +24,8 @@ import {
   PRACTICE_TITLES,
   SERVICE_TEXT,
   SPECIES_TEXT,
+  FEATURE_TEXT,
+  PRACTICE_FEATURES,
   TEAM_LANGUAGES,
   TITLE_TEXT,
   isPracticeSpecies,
@@ -441,6 +443,12 @@ export function Practices() {
           <h3 id={`${uid}-g-lg`}>{t('psLangH')}</h3>
           <div className="pet-switcher">
             {TEAM_LANGUAGES.map((l) => chip(filters.languages.includes(l), languageName(l, localeOf(lang)), () => setFilters({ languages: toggle(filters.languages, l) }), `lg-${l}`))}
+          </div>
+        </div>
+        <div role="group" aria-labelledby={`${uid}-g-ft`} className="stack">
+          <h3 id={`${uid}-g-ft`}>{t('psFeatH')}</h3>
+          <div className="pet-switcher">
+            {PRACTICE_FEATURES.map((x) => chip(filters.features.includes(x), t(FEATURE_TEXT[x]), () => setFilters({ features: toggle(filters.features, x) }), `ft-${x}`))}
           </div>
         </div>
         <Switch checked={filters.openNow} onChange={(on) => setFilters({ openNow: on })} label={t('psOpenSwitch')} />

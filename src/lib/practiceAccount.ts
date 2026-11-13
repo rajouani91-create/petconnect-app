@@ -4,8 +4,8 @@ import type { MessageKey } from '../i18n';
 import { supabase } from './supabase';
 import type { Json } from './database.types';
 import {
-  PRACTICE_SERVICES, PRACTICE_SPECIES, PRACTICE_TITLES, SERVICE_NEEDS_SPECIES, TEAM_LANGUAGES, isPracticeService, isPracticeSpecies, isPracticeTitle, isTeamLanguage,
-  type PracticeService, type PracticeSpecies, type PracticeTitle, type TeamLanguage,
+  PRACTICE_FEATURES, PRACTICE_SERVICES, PRACTICE_SPECIES, PRACTICE_TITLES, SERVICE_NEEDS_SPECIES, TEAM_LANGUAGES, isPracticeFeature, isPracticeService, isPracticeSpecies,
+  isPracticeTitle, isTeamLanguage, type PracticeFeature, type PracticeService, type PracticeSpecies, type PracticeTitle, type TeamLanguage,
 } from './practiceCatalog';
 
 /** Antworten des Angebots-Fragebogens – dieselben Werte, nach denen Halter:innen in der Praxissuche filtern. */
@@ -14,9 +14,10 @@ export interface PracticeOffer {
   services: PracticeService[];
   titles: PracticeTitle[];
   languages: TeamLanguage[];
+  features: PracticeFeature[];
 }
 
-export const EMPTY_OFFER: PracticeOffer = { species: [], services: [], titles: [], languages: [] };
+export const EMPTY_OFFER: PracticeOffer = { species: [], services: [], titles: [], languages: [], features: [] };
 
 /** Tierart an- oder abwählen; Leistungen, die nur zu dieser Tierart passen (Folgefragen), fallen beim Abwählen weg. */
 export function toggleSpecies(o: PracticeOffer, s: PracticeSpecies): PracticeOffer {
@@ -38,9 +39,9 @@ export function setIn<T extends string>(catalog: readonly T[], list: readonly T[
 }
 
 /** Leerer Fragebogen? (dann ist die Praxis in der Suche „Angebot unbekannt“) */
-export const offerIsEmpty = (o: PracticeOffer) => o.species.length + o.services.length + o.titles.length + o.languages.length === 0;
+export const offerIsEmpty = (o: PracticeOffer) => o.species.length + o.services.length + o.titles.length + o.languages.length + o.features.length === 0;
 
-export { PRACTICE_SERVICES, PRACTICE_SPECIES, PRACTICE_TITLES, TEAM_LANGUAGES };
+export { PRACTICE_FEATURES, PRACTICE_SERVICES, PRACTICE_SPECIES, PRACTICE_TITLES, TEAM_LANGUAGES };
 
 export const STAFF_ROLES = ['lead', 'vet', 'team'] as const;
 export type StaffRole = (typeof STAFF_ROLES)[number];
@@ -63,6 +64,8 @@ export interface PracticeAccount {
   website: string | null;
   hours_text: string | null;
   offer: PracticeOffer;
+  /** vom Betreiber geprüfte Fachtitel */
+  verified_titles: PracticeTitle[];
   titles_verified: boolean;
   package: string;
   status: PracticeStatus;
@@ -114,7 +117,9 @@ export function parseMe(raw: unknown): PracticeMe {
             services: PRACTICE_SERVICES.filter((x) => listOf(p.services, isPracticeService).includes(x)),
             titles: PRACTICE_TITLES.filter((x) => listOf(p.titles, isPracticeTitle).includes(x)),
             languages: TEAM_LANGUAGES.filter((x) => listOf(p.languages, isTeamLanguage).includes(x)),
+            features: PRACTICE_FEATURES.filter((x) => listOf(p.features, isPracticeFeature).includes(x)),
           },
+          verified_titles: PRACTICE_TITLES.filter((x) => listOf(p.verified_titles, isPracticeTitle).includes(x)),
           titles_verified: p.titles_verified === true,
           package: str(p.package) ?? 'basis',
           status,
@@ -204,6 +209,7 @@ export function formToPayload(f: PracticeForm, offer: PracticeOffer, country = '
     services: PRACTICE_SERVICES.filter((x) => offer.services.includes(x) && serviceAsked(offer, x)),
     titles: PRACTICE_TITLES.filter((x) => offer.titles.includes(x)),
     languages: TEAM_LANGUAGES.filter((x) => offer.languages.includes(x)),
+    features: PRACTICE_FEATURES.filter((x) => offer.features.includes(x)),
   };
 }
 
@@ -259,6 +265,12 @@ export function practiceErrorKey(code: string | undefined | null): MessageKey {
       return 'pf_nameShort';
     case 'offer_invalid':
       return 'pe_generic';
+    case 'practice_suspended':
+      return 'pp_suspended';
+    case 'file_too_big':
+      return 'pv_tooBig';
+    case 'file_type':
+      return 'pv_type';
     case 'forbidden':
       return 'pe_forbidden';
     case 'mail_failed':
@@ -379,5 +391,94 @@ export async function setPracticeStatus(id: string, status: 'active' | 'suspende
 
 export async function setTitlesVerified(id: string, verified: boolean, reason: string): Promise<void> {
   const { error } = await supabase.rpc('staff_set_titles_verified', { p_id: id, verified, reason: reason.trim() });
+  if (error) throw error;
+}
+
+// ---------- Nachweise für Fachtitel ----------
+
+export const PROOF_BUCKET = 'practice-proofs';
+export const PROOF_MAX_BYTES = 10 * 1024 * 1024;
+export const PROOF_TYPES: Record<string, string> = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
+/** Datei prüfen, bevor sie hochgeladen wird. Liefert einen Fehlercode oder null. */
+export function proofFileError(f: { type: string; size: number }): 'file_type' | 'file_too_big' | null {
+  if (!PROOF_TYPES[f.type]) return 'file_type';
+  if (f.size > PROOF_MAX_BYTES || f.size <= 0) return 'file_too_big';
+  return null;
+}
+
+/** Ablageort: <praxis-id>/<nachweis-id>.<endung> (die Speicherregeln erlauben nur den eigenen Praxis-Ordner) */
+export function proofPath(practiceId: string, proofId: string, mime: string): string {
+  return `${practiceId}/${proofId}.${PROOF_TYPES[mime] ?? 'bin'}`;
+}
+
+export interface ProofReading { matches?: boolean; is_certificate?: boolean; title_match?: boolean; name_match?: boolean; chamber_found?: boolean; method?: string; note?: string; title_text?: string; holder_name?: string; issuer?: string; issue_date?: string }
+export interface ProofRow {
+  id: string; title: PracticeTitle; person_name: string; created_at: string; read_status: string; reading: ProofReading | null;
+  decision: 'approved' | 'rejected' | null; decision_reason: string | null; file_deleted_at: string | null;
+}
+
+/** Status eines Nachweises für die Anzeige */
+export type ProofState = 'reading' | 'review' | 'approved' | 'rejected';
+export function proofState(p: Pick<ProofRow, 'decision' | 'read_status'>): ProofState {
+  if (p.decision === 'approved') return 'approved';
+  if (p.decision === 'rejected') return 'rejected';
+  return p.read_status === 'pending' ? 'reading' : 'review';
+}
+
+export async function practiceProofs(): Promise<ProofRow[]> {
+  const { data, error } = await supabase
+    .from('practice_title_proofs')
+    .select('id, title, person_name, created_at, read_status, reading, decision, decision_reason, file_deleted_at')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).filter((r) => isPracticeTitle(r.title)) as unknown as ProofRow[];
+}
+
+/** Urkunde hochladen, eintragen und vorlesen lassen. Das Vorlesen darf scheitern – dann sieht der Betreiber selbst nach. */
+export async function uploadProof(practiceId: string, title: PracticeTitle, person: string, file: File): Promise<void> {
+  const err = proofFileError(file);
+  if (err) throw new Error(err);
+  const id = crypto.randomUUID();
+  const path = proofPath(practiceId, id, file.type);
+  const up = await supabase.storage.from(PROOF_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+  if (up.error) throw new Error('db_error');
+  const { error } = await supabase.rpc('practice_add_proof', { p_id: id, p_title: title, p_person: person.trim(), p_path: path, p_mime: file.type, p_size: file.size });
+  if (error) {
+    await supabase.storage.from(PROOF_BUCKET).remove([path]);
+    throw error;
+  }
+  await supabase.functions.invoke('practice-proof', { body: { action: 'read', id } }).catch(() => undefined);
+}
+
+export async function removeProof(id: string): Promise<void> {
+  const { data, error } = await supabase.rpc('practice_remove_proof', { p_id: id });
+  if (error) throw error;
+  if (data) await supabase.storage.from(PROOF_BUCKET).remove([data]);
+}
+
+export interface StaffProofRow extends ProofRow { practice_id: string; practice_name: string; path: string; mime: string; decided_at: string | null }
+
+export async function staffProofs(open = true): Promise<StaffProofRow[]> {
+  const { data, error } = await supabase.rpc('staff_practice_proofs', { p_open: open });
+  if (error) throw error;
+  return (data ?? []) as unknown as StaffProofRow[];
+}
+
+/** Admin: Urkunde kurz ansehen (signierter Link, 5 Minuten) */
+export async function proofUrl(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from(PROOF_BUCKET).createSignedUrl(path, 300);
+  if (error || !data) throw error ?? new Error('storage');
+  return data.signedUrl;
+}
+
+export async function rereadProof(id: string): Promise<void> {
+  const { error } = await supabase.functions.invoke('practice-proof', { body: { action: 'read', id } });
+  if (error) throw error;
+}
+
+/** Admin: bestätigen oder ablehnen; die Datei wird danach gelöscht */
+export async function decideProof(id: string, approve: boolean, reason: string): Promise<void> {
+  const { error } = await supabase.functions.invoke('practice-proof', { body: { action: 'decide', id, approve, reason: reason.trim() } });
   if (error) throw error;
 }

@@ -706,7 +706,8 @@ export async function setVetPractice(petId: string, vetName: string, vetPhone: s
 export async function countPracticesByRadius(params: ReturnType<typeof toRpcParams>): Promise<RadiusCount[]> {
   const { p_lat, p_lon, p_species, p_services, p_titles, p_q } = params;
   const langs = 'p_languages' in params && params.p_languages ? { p_languages: params.p_languages } : {};
-  return check(await supabase.rpc('count_practices_by_radius', { p_lat, p_lon, p_species, p_services, p_titles, p_q, ...langs }));
+  const feats = 'p_features' in params && params.p_features ? { p_features: params.p_features } : {};
+  return check(await supabase.rpc('count_practices_by_radius', { p_lat, p_lon, p_species, p_services, p_titles, p_q, ...langs, ...feats }));
 }
 
 // ---------- Medikation ----------

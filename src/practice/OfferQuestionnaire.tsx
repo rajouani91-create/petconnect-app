@@ -2,9 +2,11 @@ import type { MessageKey } from '../i18n';
 import { localeOf } from '../i18n';
 import { useI18n } from '../i18n/I18nProvider';
 import { Switch } from '../components/Switch';
-import { SERVICE_NEEDS_SPECIES, SERVICE_TEXT as SERVICE_LABEL, SPECIES_TEXT, TITLE_TEXT, languageName, type PracticeService } from '../lib/practiceCatalog';
 import {
-  PRACTICE_SERVICES, PRACTICE_SPECIES, PRACTICE_TITLES, TEAM_LANGUAGES, serviceAsked, setIn, toggleSpecies, type PracticeOffer,
+  FEATURE_GROUPS, FEATURE_QUESTION, FEATURE_TEXT, SERVICE_NEEDS_SPECIES, SERVICE_TEXT as SERVICE_LABEL, SPECIES_TEXT, TITLE_TEXT, languageName, type PracticeService,
+} from '../lib/practiceCatalog';
+import {
+  PRACTICE_FEATURES, PRACTICE_SERVICES, PRACTICE_SPECIES, PRACTICE_TITLES, TEAM_LANGUAGES, serviceAsked, setIn, toggleSpecies, type PracticeOffer,
 } from '../lib/practiceAccount';
 
 /** Eine Frage je Leistung (Ja/Nein), damit der Fragebogen wie ein Gespräch klingt. */
@@ -28,7 +30,8 @@ export function OfferQuestionnaire({ value, onChange }: { value: PracticeOffer; 
   const chip = (on: boolean, label: string, toggle: () => void, key: string) => (
     <button key={key} type="button" className="chip" aria-pressed={on} onClick={toggle}>{label}</button>
   );
-  const q = (n: number) => t('oqStep', { n, of: 4 });
+  const total = 4 + FEATURE_GROUPS.length;
+  const q = (n: number) => t('oqStep', { n, of: total });
 
   return (
     <div className="stack-lg offer-q">
@@ -69,12 +72,26 @@ export function OfferQuestionnaire({ value, onChange }: { value: PracticeOffer; 
           {TEAM_LANGUAGES.map((l) => chip(value.languages.includes(l), languageName(l, locale), () => onChange({ ...value, languages: setIn(TEAM_LANGUAGES, value.languages, l, !value.languages.includes(l)) }), l))}
         </div>
       </fieldset>
+
+      {FEATURE_GROUPS.map((g, i) => (
+        <fieldset key={g.key} className="fieldset stack">
+          <legend><span className="muted small oq-num">{q(5 + i)}</span> {t(g.key)}</legend>
+          <ul className="oq-list">
+            {g.items.map((f) => (
+              <li key={f}>
+                <Switch checked={value.features.includes(f)} label={t(FEATURE_QUESTION[f])}
+                  onChange={(on) => onChange({ ...value, features: setIn(PRACTICE_FEATURES, value.features, f, on) })} />
+              </li>
+            ))}
+          </ul>
+        </fieldset>
+      ))}
     </div>
   );
 }
 
 /** Kurzfassung der Antworten für die Profilansicht */
-export function OfferSummary({ value, verified }: { value: PracticeOffer; verified: boolean }) {
+export function OfferSummary({ value }: { value: PracticeOffer }) {
   const { t, lang } = useI18n();
   const locale = localeOf(lang);
   const dash = '–';
@@ -87,14 +104,11 @@ export function OfferSummary({ value, verified }: { value: PracticeOffer; verifi
         <span className="chips-wrap">{value.services.map((v) => <span key={v} className="pill pill-ok">{t(SERVICE_LABEL[v])}</span>)}</span>
       )}</dd>
       <dt>{t('oqTitlesShort')}</dt>
-      <dd>{value.titles.length === 0 ? dash : (
-        <>
-          {value.titles.map((s) => t(TITLE_TEXT[s])).join(', ')}{' '}
-          <span className={`pill ${verified ? 'pill-ok' : ''}`}>{t(verified ? 'psVerified' : 'psSelfReported')}</span>
-        </>
-      )}</dd>
+      <dd>{value.titles.map((s) => t(TITLE_TEXT[s])).join(', ') || dash}</dd>
       <dt>{t('oqLangsShort')}</dt>
       <dd>{value.languages.map((l) => languageName(l, locale)).join(', ') || dash}</dd>
+      <dt>{t('oqFeaturesShort')}</dt>
+      <dd>{value.features.map((f) => t(FEATURE_TEXT[f])).join(', ') || dash}</dd>
     </dl>
   );
 }

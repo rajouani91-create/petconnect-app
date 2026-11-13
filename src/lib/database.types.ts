@@ -905,6 +905,12 @@ export type Database = {
           },
         ]
       }
+      practice_title_proofs: {
+        Row: { id: string; practice_id: string; title: string; person_name: string; path: string; mime: string; size: number; uploaded_by: string | null; created_at: string; read_status: string; reading: Json | null; read_at: string | null; decision: string | null; decision_reason: string | null; decided_by: string | null; decided_at: string | null; file_deleted_at: string | null }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       practice_staff_invites: {
         Row: { id: string; practice_id: string; email: string; name: string; role: string; invited_by: string | null; created_at: string; expires_at: string; accepted_at: string | null; accepted_by: string | null; revoked_at: string | null }
         Insert: never
@@ -1123,6 +1129,18 @@ export type Database = {
         Args: { p_status?: string | null }
         Returns: { id: string; name: string; postcode: string | null; city: string | null; country: string; phone: string | null; email: string | null; status: string; package: string; directory_id: string | null; members: number; lead_email: string | null; created_at: string; approved_at: string | null; titles: string[]; titles_verified: boolean }[]
       }
+      practice_add_proof: {
+        Args: { p_id: string; p_title: string; p_person: string; p_path: string; p_mime: string; p_size: number }
+        Returns: string
+      }
+      practice_remove_proof: {
+        Args: { p_id: string }
+        Returns: string
+      }
+      staff_practice_proofs: {
+        Args: { p_open?: boolean }
+        Returns: { id: string; practice_id: string; practice_name: string; title: string; person_name: string; path: string; mime: string; created_at: string; read_status: string; reading: Json | null; decision: string | null; decision_reason: string | null; decided_at: string | null; file_deleted_at: string | null }[]
+      }
       staff_set_titles_verified: {
         Args: { p_id: string; verified: boolean; reason: string }
         Returns: undefined
@@ -1187,6 +1205,7 @@ export type Database = {
           p_lat: number
           p_lon: number
           p_languages?: string[]
+          p_features?: string[]
           p_q?: string | null
           p_services?: string[]
           p_species?: string | null
@@ -1232,9 +1251,11 @@ export type Database = {
           p_species?: string | null
           p_titles?: string[]
           p_languages?: string[]
+          p_features?: string[]
         }
         Returns: {
           languages?: string[]
+          features?: string[]
           city: string | null
           country: string | null
           distance_km: number

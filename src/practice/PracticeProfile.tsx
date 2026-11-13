@@ -9,6 +9,7 @@ import {
 } from '../lib/practiceAccount';
 import { PracticeFormFields } from './PracticeFormFields';
 import { OfferQuestionnaire, OfferSummary } from './OfferQuestionnaire';
+import { TitleProofs } from './TitleProofs';
 import { usePractice } from './PracticeProvider';
 
 /** „Mein Profil“ der Praxis wie im Prototyp: Karte Konto und Karte Praxisprofil (Bearbeiten nur Praxisleitung). */
@@ -144,7 +145,8 @@ export function PracticeProfile() {
           ) : (
             <>
               {offerIsEmpty(p.offer) && <p className="notice notice-info">{t('oqEmpty')}</p>}
-              <OfferSummary value={p.offer} verified={p.titles_verified} />
+              <OfferSummary value={p.offer} />
+              <TitleProofs practiceId={p.id} titles={p.offer.titles} verified={p.verified_titles} isLead={isLead} onChanged={() => void refresh()} />
             </>
           )}
         </section>

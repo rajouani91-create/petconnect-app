@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   EMPTY_FORM, EMPTY_OFFER, formErrors, formFromDirectory, formFromPractice, formToPayload, offerIsEmpty, parseMe, practiceErrorKey, serviceAsked,
-  setIn, splitStreet, splitZipCity, toggleSpecies, PRACTICE_TITLES,
+  setIn, splitStreet, splitZipCity, toggleSpecies, PRACTICE_TITLES, proofFileError, proofPath, proofState,
 } from './practiceAccount';
 import { DICTIONARIES } from '../i18n';
 
@@ -35,9 +35,9 @@ describe('Formular', () => {
   it('Payload trennt Adresse und speichert Folgefragen nur mit passender Tierart', () => {
     const p = formToPayload(
       { ...EMPTY_FORM, name: ' Praxis ', streetLine: 'Mainstraße 12', zipCity: '65428 Rüsselsheim' },
-      { species: ['dog'], services: ['surgery', 'hibernation'], titles: ['surgery'], languages: ['tr', 'de'] },
+      { species: ['dog'], services: ['surgery', 'hibernation'], titles: ['surgery'], languages: ['tr', 'de'], features: ['parking', 'card'] },
     );
-    expect(p).toMatchObject({ name: 'Praxis', street: 'Mainstraße', housenumber: '12', postcode: '65428', city: 'Rüsselsheim', species: ['dog'], services: ['surgery'], languages: ['de', 'tr'] });
+    expect(p).toMatchObject({ name: 'Praxis', street: 'Mainstraße', housenumber: '12', postcode: '65428', city: 'Rüsselsheim', species: ['dog'], services: ['surgery'], languages: ['de', 'tr'], features: ['parking', 'card'] });
   });
 });
 
@@ -68,10 +68,11 @@ describe('practice_me', () => {
   it('Praxis mit Angebot; unbekannte Werte fallen weg', () => {
     const me = parseMe({
       kind: 'practice', role: 'vet',
-      practice: { id: 'p', name: 'Praxis', status: 'active', species: ['cat', 'dino', 'cat'], services: ['surgery'], titles: ['birds'], languages: ['de', 'xx'], titles_verified: true },
+      practice: { id: 'p', name: 'Praxis', status: 'active', species: ['cat', 'dino', 'cat'], services: ['surgery'], titles: ['birds'], languages: ['de', 'xx'], features: ['card', 'sauna'], verified_titles: ['birds', 'x'], titles_verified: true },
     });
     expect(me.role).toBe('vet');
-    expect(me.practice?.offer).toEqual({ species: ['cat'], services: ['surgery'], titles: ['birds'], languages: ['de'] });
+    expect(me.practice?.offer).toEqual({ species: ['cat'], services: ['surgery'], titles: ['birds'], languages: ['de'], features: ['card'] });
+    expect(me.practice?.verified_titles).toEqual(['birds']);
     expect(me.practice?.titles_verified).toBe(true);
     expect(formFromPractice(me.practice!).name).toBe('Praxis');
   });
@@ -82,9 +83,24 @@ describe('practice_me', () => {
   });
 });
 
+describe('Nachweise', () => {
+  it('Datei prüfen und Ablageort', () => {
+    expect(proofFileError({ type: 'application/pdf', size: 1000 })).toBeNull();
+    expect(proofFileError({ type: 'application/msword', size: 1000 })).toBe('file_type');
+    expect(proofFileError({ type: 'image/png', size: 11 * 1024 * 1024 })).toBe('file_too_big');
+    expect(proofPath('p1', 'n1', 'image/jpeg')).toBe('p1/n1.jpg');
+  });
+  it('Status', () => {
+    expect(proofState({ decision: null, read_status: 'pending' })).toBe('reading');
+    expect(proofState({ decision: null, read_status: 'skipped' })).toBe('review');
+    expect(proofState({ decision: 'approved', read_status: 'done' })).toBe('approved');
+    expect(proofState({ decision: 'rejected', read_status: 'done' })).toBe('rejected');
+  });
+});
+
 describe('Fehlermeldungen', () => {
   it('jeder Code hat einen Text in jeder Sprache', () => {
-    for (const c of ['directory_taken', 'already_member', 'invite_exists', 'account_exists', 'already_confirmed', 'last_lead', 'invite_not_found', 'invite_expired', 'forbidden', 'mail_failed', 'irgendwas', null]) {
+    for (const c of ['directory_taken', 'already_member', 'invite_exists', 'account_exists', 'already_confirmed', 'last_lead', 'invite_not_found', 'invite_expired', 'forbidden', 'mail_failed', 'practice_suspended', 'file_type', 'file_too_big', 'irgendwas', null]) {
       const k = practiceErrorKey(c);
       for (const d of Object.values(DICTIONARIES)) expect(d[k], `${c}`).toBeTruthy();
     }

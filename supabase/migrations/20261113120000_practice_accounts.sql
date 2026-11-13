@@ -34,9 +34,12 @@ create table public.practice_accounts (
   species text[] not null default '{}' check (species <@ array['dog', 'cat', 'rabbit', 'guinea', 'bird', 'reptile', 'horse']),
   services text[] not null default '{}' check (services <@ array['surgery', 'dentistry', 'imaging', 'ct_mri', 'blood_bank', 'hibernation', 'home_visits', 'emergency_24h', 'physio', 'equine_mobile']),
   titles text[] not null default '{}' check (titles <@ array['small_animals', 'surgery', 'reptiles', 'birds', 'horses']),
+  -- Ausstattung, Zahlung, Abläufe (Barrierefrei, Parken, Karte, Raten, Direktabrechnung Versicherung, offene Sprechstunde, abends, samstags, Katzen-Wartebereich)
+  features text[] not null default '{}' check (features <@ array['wheelchair', 'parking', 'card', 'installments', 'insurance_direct', 'walk_in', 'evening', 'saturday', 'cat_waiting']),
   -- Sprachen im Team (ISO 639-1)
   languages text[] not null default '{}' check (cardinality(languages) <= 20 and array_to_string(languages, ',') ~ '^([a-z]{2}(,[a-z]{2})*)?$'),
-  -- Fachtitel vom Betreiber geprüft; jede Änderung der Titel setzt das zurück
+  -- Vom Betreiber geprüfte Fachtitel (per Urkunde oder von Hand). titles_verified = alle angegebenen Titel sind geprüft.
+  verified_titles text[] not null default '{}',
   titles_verified boolean not null default false,
   package text not null default 'basis' check (package in ('basis', 'standard', 'premium')),
   status text not null default 'pending' check (status in ('pending', 'active', 'suspended')),
@@ -88,6 +91,7 @@ create index practice_audit_practice_idx on public.practice_audit (practice_id, 
 
 -- Sprachen im Team auch im öffentlichen Angebot (Filter der Praxissuche)
 alter table public.practice_profiles add column if not exists languages text[] not null default '{}';
+alter table public.practice_profiles add column if not exists features text[] not null default '{}';
 
 alter table public.account_kinds enable row level security;
 alter table public.practice_accounts enable row level security;
@@ -238,7 +242,8 @@ begin
         'id', r.id, 'directory_id', r.directory_id, 'name', r.name, 'street', r.street, 'housenumber', r.housenumber,
         'postcode', r.postcode, 'city', r.city, 'country', r.country, 'phone', r.phone, 'email', r.email,
         'website', r.website, 'hours_text', r.hours_text, 'species', to_jsonb(r.species), 'services', to_jsonb(r.services),
-        'titles', to_jsonb(r.titles), 'languages', to_jsonb(r.languages), 'titles_verified', r.titles_verified, 'package', r.package,
+        'titles', to_jsonb(r.titles), 'languages', to_jsonb(r.languages), 'features', to_jsonb(r.features),
+        'verified_titles', to_jsonb(r.verified_titles), 'titles_verified', r.titles_verified, 'package', r.package,
         'status', r.status, 'created_at', r.created_at, 'approved_at', r.approved_at));
   end if;
   -- Offene Einladung an die eigene Adresse (für die Seite „Einladung annehmen“)
@@ -303,7 +308,7 @@ begin
   if char_length(coalesce(btrim(p->>'name'), '')) < 2 or char_length(btrim(p->>'name')) > 120 then
     raise exception 'name_invalid' using errcode = '22023';
   end if;
-  foreach f in array array['species', 'services', 'titles', 'languages'] loop
+  foreach f in array array['species', 'services', 'titles', 'languages', 'features'] loop
     if p ? f and jsonb_typeof(p->f) <> 'array' then
       raise exception 'offer_invalid' using errcode = '22023';
     end if;
@@ -312,6 +317,7 @@ begin
     or exists (select 1 from jsonb_array_elements_text(coalesce(p->'services', '[]')) x where x not in ('surgery', 'dentistry', 'imaging', 'ct_mri', 'blood_bank', 'hibernation', 'home_visits', 'emergency_24h', 'physio', 'equine_mobile'))
     or exists (select 1 from jsonb_array_elements_text(coalesce(p->'titles', '[]')) x where x not in ('small_animals', 'surgery', 'reptiles', 'birds', 'horses'))
     or exists (select 1 from jsonb_array_elements_text(coalesce(p->'languages', '[]')) x where x !~ '^[a-z]{2}$')
+    or exists (select 1 from jsonb_array_elements_text(coalesce(p->'features', '[]')) x where not x = any(array['wheelchair', 'parking', 'card', 'installments', 'insurance_direct', 'walk_in', 'evening', 'saturday', 'cat_waiting']))
     or jsonb_array_length(coalesce(p->'languages', '[]')) > 20 then
     raise exception 'offer_invalid' using errcode = '22023';
   end if;
@@ -349,7 +355,7 @@ begin
   end if;
 
   begin
-  insert into public.practice_accounts (directory_id, name, street, housenumber, postcode, city, country, phone, email, website, hours_text, species, services, titles, languages, created_by)
+  insert into public.practice_accounts (directory_id, name, street, housenumber, postcode, city, country, phone, email, website, hours_text, species, services, titles, languages, features, created_by)
   values (
     p_directory_id,
     btrim(p->>'name'),
@@ -366,6 +372,7 @@ begin
     private.text_set(p->'services'),
     private.text_set(p->'titles'),
     private.text_set(p->'languages'),
+    private.text_set(p->'features'),
     uid
   )
   returning id into new_id;
@@ -395,6 +402,9 @@ begin
   if pid is null or private.my_practice_role() <> 'lead' then
     raise exception 'forbidden' using errcode = '42501';
   end if;
+  if exists (select 1 from public.practice_accounts s where s.id = pid and s.status = 'suspended') then
+    raise exception 'practice_suspended' using errcode = '42501';
+  end if;
   perform private.check_practice_fields(p);
   update public.practice_accounts set
     name = btrim(p->>'name'),
@@ -410,8 +420,11 @@ begin
     services = private.text_set(p->'services'),
     titles = private.text_set(p->'titles'),
     languages = private.text_set(p->'languages'),
-    -- geänderte Fachtitel müssen neu geprüft werden
-    titles_verified = titles_verified and titles = private.text_set(p->'titles'),
+    features = private.text_set(p->'features'),
+    -- Prüfung bleibt für Titel erhalten, die weiter angegeben sind
+    verified_titles = array(select x from unnest(verified_titles) x where x = any(private.text_set(p->'titles')) order by x),
+    titles_verified = cardinality(private.text_set(p->'titles')) > 0
+      and private.text_set(p->'titles') <@ array(select x from unnest(verified_titles) x where x = any(private.text_set(p->'titles'))),
     updated_at = now()
   where id = pid
   returning * into a;
@@ -429,11 +442,11 @@ language sql
 security definer
 set search_path = ''
 as $$
-  insert into public.practice_profiles (practice_id, species, services, titles, focus, titles_verified, languages, updated_at)
-  values (d, a.species, a.services, a.titles, '{}', a.titles_verified, a.languages, now())
+  insert into public.practice_profiles (practice_id, species, services, titles, focus, titles_verified, languages, features, updated_at)
+  values (d, a.species, a.services, a.titles, '{}', a.titles_verified, a.languages, a.features, now())
   on conflict (practice_id) do update set
     species = excluded.species, services = excluded.services, titles = excluded.titles,
-    titles_verified = excluded.titles_verified, languages = excluded.languages, updated_at = now();
+    titles_verified = excluded.titles_verified, languages = excluded.languages, features = excluded.features, updated_at = now();
 $$;
 revoke all on function private.sync_offer(public.practice_accounts, uuid) from public, anon, authenticated;
 
@@ -607,6 +620,9 @@ declare
 begin
   if pid is null or private.my_practice_role() <> 'lead' then
     raise exception 'forbidden' using errcode = '42501';
+  end if;
+  if exists (select 1 from public.practice_accounts s where s.id = pid and s.status = 'suspended') then
+    raise exception 'practice_suspended' using errcode = '42501';
   end if;
   if p_role not in ('lead', 'vet', 'team') then
     raise exception 'invalid_role' using errcode = '22023';
@@ -837,7 +853,10 @@ begin
   if char_length(clean_reason) < 1 or char_length(clean_reason) > 200 then
     raise exception 'reason_required' using errcode = '22023';
   end if;
-  update public.practice_accounts set titles_verified = coalesce(verified, false) and cardinality(titles) > 0, updated_at = now()
+  update public.practice_accounts set
+    verified_titles = case when coalesce(verified, false) then titles else '{}' end,
+    titles_verified = coalesce(verified, false) and cardinality(titles) > 0,
+    updated_at = now()
   where id = p_id
   returning * into a;
   if not found then
@@ -890,15 +909,15 @@ grant execute on function public.staff_set_practice_status(uuid, text, text) to 
 grant execute on function public.staff_set_titles_verified(uuid, boolean, text) to authenticated;
 
 -- ---------------------------------------------------------------------------
--- Praxissuche (Halter): neuer Filter „Sprachen im Team“ und Sprachen in der Antwort.
--- Gleiche Logik wie bisher; neuer Parameter p_languages (Standard leer = kein Filter).
+-- Praxissuche (Halter): neue Filter „Sprachen im Team“ und „Ausstattung, Zahlung, Abläufe“, beides auch in der Antwort.
+-- Gleiche Logik wie bisher; neue Parameter p_languages, p_features (Standard leer = kein Filter).
 -- ---------------------------------------------------------------------------
 
 drop function if exists public.count_practices_by_radius(double precision, double precision, text, text[], text[], text);
 drop function if exists public.search_practices(double precision, double precision, integer, text, text[], text[], text, integer);
 
-create function public.search_practices(p_lat double precision, p_lon double precision, p_radius_km integer default 10, p_species text default null::text, p_services text[] default '{}'::text[], p_titles text[] default '{}'::text[], p_q text default null::text, p_limit integer default 100, p_languages text[] default '{}'::text[])
- returns table(id uuid, name text, street text, housenumber text, postcode text, city text, lat double precision, lon double precision, distance_km double precision, phone text, website text, opening_hours text, registered boolean, has_profile boolean, species text[], services text[], titles text[], focus text[], titles_verified boolean, matches boolean, is_favorite boolean, country text, languages text[])
+create function public.search_practices(p_lat double precision, p_lon double precision, p_radius_km integer default 10, p_species text default null::text, p_services text[] default '{}'::text[], p_titles text[] default '{}'::text[], p_q text default null::text, p_limit integer default 100, p_languages text[] default '{}'::text[], p_features text[] default '{}'::text[])
+ returns table(id uuid, name text, street text, housenumber text, postcode text, city text, lat double precision, lon double precision, distance_km double precision, phone text, website text, opening_hours text, registered boolean, has_profile boolean, species text[], services text[], titles text[], focus text[], titles_verified boolean, matches boolean, is_favorite boolean, country text, languages text[], features text[])
  language sql
  stable
  set search_path to ''
@@ -908,7 +927,7 @@ as $function$
            p_lat as la, p_lon as lo,
            private.norm_query(p_q) as q
   ), c as (
-    select p.*, pp.practice_id is not null as hp, pp.species sp, pp.services sv, pp.titles ti, pp.focus fo, coalesce(pp.titles_verified,false) tv, pp.languages lg,
+    select p.*, pp.practice_id is not null as hp, pp.species sp, pp.services sv, pp.titles ti, pp.focus fo, coalesce(pp.titles_verified,false) tv, pp.languages lg, pp.features fe,
            private.km(b.la, b.lo, p.lat, p.lon) as d, b.r
     from public.practices p
     cross join box b
@@ -927,30 +946,33 @@ as $function$
            and coalesce(p_services,'{}') <@ coalesce(c.sv,'{}')
            and coalesce(p_titles,'{}') <@ coalesce(c.ti,'{}')
            -- Sprachen: mindestens eine der gewählten Sprachen wird gesprochen
-           and (coalesce(cardinality(p_languages), 0) = 0 or coalesce(c.lg,'{}') && p_languages)) as matches,
+           and (coalesce(cardinality(p_languages), 0) = 0 or coalesce(c.lg,'{}') && p_languages)
+           -- Ausstattung, Zahlung, Abläufe: alle gewählten müssen zutreffen
+           and coalesce(p_features,'{}') <@ coalesce(c.fe,'{}')) as matches,
          exists (select 1 from public.practice_favorites f where f.practice_id = c.id and f.user_id = (select auth.uid())),
          c.country::text,
-         coalesce(c.lg,'{}')
+         coalesce(c.lg,'{}'),
+         coalesce(c.fe,'{}')
   from c
   where c.d <= c.r
   order by c.d
   limit greatest(1, least(coalesce(p_limit,100), 300));
 $function$;
 
-create function public.count_practices_by_radius(p_lat double precision, p_lon double precision, p_species text default null::text, p_services text[] default '{}'::text[], p_titles text[] default '{}'::text[], p_q text default null::text, p_languages text[] default '{}'::text[])
+create function public.count_practices_by_radius(p_lat double precision, p_lon double precision, p_species text default null::text, p_services text[] default '{}'::text[], p_titles text[] default '{}'::text[], p_q text default null::text, p_languages text[] default '{}'::text[], p_features text[] default '{}'::text[])
  returns table(radius_km integer, total integer, with_profile integer, matches integer)
  language sql
  stable
  set search_path to ''
 as $function$
   with r(k) as (values (5),(10),(25),(50)),
-  s as (select * from public.search_practices(p_lat, p_lon, 50, p_species, p_services, p_titles, p_q, 300, p_languages))
+  s as (select * from public.search_practices(p_lat, p_lon, 50, p_species, p_services, p_titles, p_q, 300, p_languages, p_features))
   select r.k, count(s.id)::int, count(s.id) filter (where s.has_profile)::int, count(s.id) filter (where s.matches)::int
   from r left join s on s.distance_km <= r.k
   group by r.k order by r.k;
 $function$;
 
-revoke all on function public.search_practices(double precision, double precision, integer, text, text[], text[], text, integer, text[]) from public, anon;
-revoke all on function public.count_practices_by_radius(double precision, double precision, text, text[], text[], text, text[]) from public, anon;
-grant execute on function public.search_practices(double precision, double precision, integer, text, text[], text[], text, integer, text[]) to authenticated;
-grant execute on function public.count_practices_by_radius(double precision, double precision, text, text[], text[], text, text[]) to authenticated;
+revoke all on function public.search_practices(double precision, double precision, integer, text, text[], text[], text, integer, text[], text[]) from public, anon;
+revoke all on function public.count_practices_by_radius(double precision, double precision, text, text[], text[], text, text[], text[]) from public, anon;
+grant execute on function public.search_practices(double precision, double precision, integer, text, text[], text[], text, integer, text[], text[]) to authenticated;
+grant execute on function public.count_practices_by_radius(double precision, double precision, text, text[], text[], text, text[], text[]) to authenticated;

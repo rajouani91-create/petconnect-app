@@ -12,6 +12,27 @@ export type PracticeService = (typeof PRACTICE_SERVICES)[number];
 export const PRACTICE_TITLES = ['small_animals', 'surgery', 'reptiles', 'birds', 'horses'] as const;
 export type PracticeTitle = (typeof PRACTICE_TITLES)[number];
 
+/** Ausstattung, Zahlung und Abläufe (Fragebogen der Praxis, Filter der Praxissuche) */
+export const PRACTICE_FEATURES = ['wheelchair', 'parking', 'card', 'installments', 'insurance_direct', 'walk_in', 'evening', 'saturday', 'cat_waiting'] as const;
+export type PracticeFeature = (typeof PRACTICE_FEATURES)[number];
+export const isPracticeFeature = (v: unknown): v is PracticeFeature => typeof v === 'string' && (PRACTICE_FEATURES as readonly string[]).includes(v);
+/** Gruppen im Fragebogen: Zugang, Zahlung, Abläufe */
+export const FEATURE_GROUPS: { key: MessageKey; items: readonly PracticeFeature[] }[] = [
+  { key: 'oqAccess', items: ['wheelchair', 'parking'] },
+  { key: 'oqPay', items: ['card', 'installments', 'insurance_direct'] },
+  { key: 'oqFlow', items: ['walk_in', 'evening', 'saturday', 'cat_waiting'] },
+];
+/** Kurzbezeichnung (Filter, Profil) */
+export const FEATURE_TEXT: Record<PracticeFeature, MessageKey> = {
+  wheelchair: 'ftWheelchair', parking: 'ftParking', card: 'ftCard', installments: 'ftInstallments', insurance_direct: 'ftInsurance',
+  walk_in: 'ftWalkIn', evening: 'ftEvening', saturday: 'ftSaturday', cat_waiting: 'ftCatWaiting',
+};
+/** Frage im Fragebogen (Ja/Nein) */
+export const FEATURE_QUESTION: Record<PracticeFeature, MessageKey> = {
+  wheelchair: 'oqWheelchair', parking: 'oqParking', card: 'oqCard', installments: 'oqInstallments', insurance_direct: 'oqInsurance',
+  walk_in: 'oqWalkIn', evening: 'oqEvening', saturday: 'oqSaturday', cat_waiting: 'oqCatWaiting',
+};
+
 /** Sprachen im Team (ISO 639-1): die 11 App-Sprachen und weitere häufige Sprachen in Deutschland. Namen liefert Intl.DisplayNames. */
 export const TEAM_LANGUAGES = ['de', 'en', 'fr', 'es', 'it', 'nl', 'pl', 'pt', 'ru', 'uk', 'tr', 'ar', 'fa', 'sv', 'da', 'no'] as const;
 export type TeamLanguage = (typeof TEAM_LANGUAGES)[number];

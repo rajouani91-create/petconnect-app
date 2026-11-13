@@ -2,7 +2,7 @@ import { useI18n } from '../../i18n/I18nProvider';
 import { localeOf } from '../../i18n';
 import { telHref } from '../../lib/care';
 import { openingText, type OpeningInfo } from '../../lib/openingHours';
-import { SERVICE_TEXT, SPECIES_TEXT, TITLE_TEXT, isPracticeService, isPracticeSpecies, isPracticeTitle, languageName } from '../../lib/practiceCatalog';
+import { FEATURE_TEXT, SERVICE_TEXT, SPECIES_TEXT, TITLE_TEXT, isPracticeFeature, isPracticeService, isPracticeSpecies, isPracticeTitle, languageName } from '../../lib/practiceCatalog';
 import { formatAddress, formatKm, isAppleDevice, osmNoteLink, routeLinks, safeWebsite } from '../../lib/practices';
 import { IconPhone } from '../Icons';
 
@@ -25,6 +25,7 @@ export interface PracticeView {
   titles?: string[];
   focus?: string[];
   languages?: string[];
+  features?: string[];
   titles_verified?: boolean;
 }
 
@@ -101,6 +102,7 @@ export function PracticeCard({
           {offers && <p className="small">{t('psOffers', { x: offers })}</p>}
           {p.focus && p.focus.length > 0 && <p className="small">{t('psFocus', { a: p.focus.join(', ') })}</p>}
           {p.languages && p.languages.length > 0 && <p className="small">{t('psLangs', { x: p.languages.map((l) => languageName(l, locale)).join(', ') })}</p>}
+          {p.features && p.features.some(isPracticeFeature) && <p className="small">{t('psFeats', { x: p.features.filter(isPracticeFeature).map((f) => t(FEATURE_TEXT[f])).join(', ') })}</p>}
           {titles.length > 0 && (
             <ul className="title-list">
               {titles.map((k) => (

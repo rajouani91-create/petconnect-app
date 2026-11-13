@@ -7,6 +7,7 @@ import { Announcements } from './Announcements';
 import { Dashboard } from './Dashboard';
 import { Team } from './Team';
 import { PracticeAccounts } from './PracticeAccounts';
+import { PracticeProofs } from './PracticeProofs';
 import { useI18n } from '../../i18n/I18nProvider';
 import {
   MAX_REASON,
@@ -197,6 +198,7 @@ export function Admin() {
         </section>
       )}
       <PracticeAccounts canChange={role === 'admin'} />
+      {role === 'admin' && <PracticeProofs />}
       {user && <Tickets staffId={user.id} />}
       {user && role === 'admin' && <Announcements adminId={user.id} />}
       {user && role === 'admin' && <Team selfId={user.id} />}
