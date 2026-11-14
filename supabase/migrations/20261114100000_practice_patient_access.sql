@@ -317,7 +317,7 @@ begin
 end;
 $$;
 
--- Anfragen der eigenen Praxis (ohne Hinweis, ob es ein Konto gibt)
+-- Anfragen der eigenen Praxis (ohne Hinweis, ob es ein Konto gibt). Nur freigeschaltete Praxis.
 create or replace function public.practice_requests()
 returns table(id uuid, email text, note text, status text, pets_granted integer, created_at timestamptz, expires_at timestamptz, answered_at timestamptz)
 language plpgsql
@@ -326,11 +326,8 @@ security definer
 set search_path = ''
 as $$
 declare
-  pid uuid := private.my_practice_id();
+  pid uuid := private.active_practice_id();
 begin
-  if pid is null then
-    raise exception 'forbidden' using errcode = '42501';
-  end if;
   return query
     select r.id, r.email, r.note, r.status, r.pets_granted, r.created_at, r.expires_at, r.answered_at
     from public.practice_access_requests r
