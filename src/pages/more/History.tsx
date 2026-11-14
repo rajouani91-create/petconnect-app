@@ -20,6 +20,7 @@ import { Field } from '../../components/Field';
 import { Loading } from '../../components/Loading';
 import { PetSubpage, BackToRecord, Val } from '../../components/more/shared';
 import { StatusLine, useStatus } from '../../components/record/shared';
+import { usePracticeEntries } from '../../components/record/PracticeFindings';
 
 const ORIGIN: [string, MessageKey][] = [
   ['breeder', 'hsOrigBreeder'],
@@ -73,6 +74,7 @@ function HistoryView({ pet, editable }: { pet: PetRow; editable: boolean }) {
   const [busy, setBusy] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const now = useNow();
+  const practiceNotes = usePracticeEntries(pet.id).history_notes;
   const todayIso = zonedNow(now).date;
 
   useEffect(() => {
@@ -204,6 +206,18 @@ function HistoryView({ pet, editable }: { pet: PetRow; editable: boolean }) {
           </dl>
         )}
       </section>
+
+      {practiceNotes.length > 0 && (
+        <section className="card stack" aria-labelledby={`${uid}-pn`}>
+          <h2 id={`${uid}-pn`}>{t('rcHistNote')}</h2>
+          {practiceNotes.map((n, i) => (
+            <div key={i}>
+              <p className="pre-line">{n.text}</p>
+              <p className="small practice-note">{t('rcFromPractice', { p: n.practice_name })} · <span className="muted">{formatIsoDate(n.at.slice(0, 10), lang)}</span></p>
+            </div>
+          ))}
+        </section>
+      )}
 
       <section className="card stack" aria-labelledby={`${uid}-tl`}>
         <h2 id={`${uid}-tl`}>{t('hsTimeline')}</h2>

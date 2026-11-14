@@ -793,7 +793,7 @@ export async function removePushEndpoint(endpoint: string): Promise<void> {
 export async function getNotificationPrefs(): Promise<NotificationPrefs | null> {
   type Row = Database['public']['Tables']['notification_prefs']['Row'];
   const row = checkMaybe<Row>(await supabase.from('notification_prefs').select('*').maybeSingle());
-  return row ? { medication: row.medication, routine: row.routine, reminders: row.reminders, appointments: row.appointments, reminder_time: row.reminder_time.slice(0, 5) } : null;
+  return row ? { medication: row.medication, routine: row.routine, reminders: row.reminders, appointments: row.appointments, practice: row.practice ?? true, reminder_time: row.reminder_time.slice(0, 5) } : null;
 }
 
 /** Erstes Speichern legt die Zeile an, danach nur noch ändern */

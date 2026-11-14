@@ -172,7 +172,7 @@ export function MedicationCard({ pet, editable }: { pet: PetRow; editable: boole
           </span>
           {src && <span className={`small${practice ? ' practice-note' : ' muted'}`}>{src}</span>}
           <span className="med-dose">{doseText(m, t, locale, false)}</span>
-          {m.note && <span className="small">{m.note}</span>}
+          {m.note && !m.dosage_text && <span className="small">{m.note}</span>}
           {m.reason && <span className="muted small">{m.reason}</span>}
           {m.prescribed_by && <span className="muted small">{t('omBySrc', { p: m.prescribed_by })}</span>}
           <span className="muted small">{period}</span>

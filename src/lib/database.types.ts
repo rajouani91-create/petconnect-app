@@ -151,6 +151,7 @@ export type Database = {
         Row: {
           appointments: boolean
           medication: boolean
+          practice: boolean
           reminder_time: string
           reminders: boolean
           routine: boolean
@@ -160,6 +161,7 @@ export type Database = {
         Insert: {
           appointments?: boolean
           medication?: boolean
+          practice?: boolean
           reminder_time?: string
           reminders?: boolean
           routine?: boolean
@@ -169,6 +171,7 @@ export type Database = {
         Update: {
           appointments?: boolean
           medication?: boolean
+          practice?: boolean
           reminder_time?: string
           reminders?: boolean
           routine?: boolean
@@ -331,6 +334,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          dosage_text: string | null
           ends_on: string | null
           frequency: string
           id: string
@@ -1120,6 +1124,50 @@ export type Database = {
       practice_request_access: {
         Args: { p_email: string; p_note: string }
         Returns: undefined
+      }
+      practice_record: {
+        Args: { p_pet: string }
+        Returns: Json
+      }
+      practice_entry_log: {
+        Args: { p_pet: string; p_entry?: string }
+        Returns: { action: string; reason: string | null; note: string | null; before: Json | null; after: Json | null; actor_name: string; created_at: string }[]
+      }
+      practice_add_entry: {
+        Args: { p_pet: string; p_kind: string; p_data: Json }
+        Returns: string
+      }
+      practice_confirm_vaccination: {
+        Args: { p_pet: string; p_id: string }
+        Returns: undefined
+      }
+      practice_correct_entry: {
+        Args: { p_entry: string; p_data: Json; p_reason: string; p_note?: string }
+        Returns: undefined
+      }
+      practice_end_medication: {
+        Args: { p_entry: string }
+        Returns: undefined
+      }
+      practice_void_entry: {
+        Args: { p_entry: string; p_reason: string; p_note?: string }
+        Returns: undefined
+      }
+      practice_restore_entry: {
+        Args: { p_entry: string }
+        Returns: undefined
+      }
+      practice_update_master: {
+        Args: { p_pet: string; p_data: Json; p_reason: string; p_note?: string }
+        Returns: undefined
+      }
+      practice_set_history_note: {
+        Args: { p_pet: string; p_text: string }
+        Returns: undefined
+      }
+      pet_practice_entries: {
+        Args: { p_pet: string }
+        Returns: Json
       }
       practice_requests: {
         Args: Record<PropertyKey, never>

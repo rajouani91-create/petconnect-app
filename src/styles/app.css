@@ -901,3 +901,28 @@ ul.choose-list { list-style: none; margin: 0; padding: 0; }
 .patient-name { font-weight: 600; }
 .practice-request { border-inline-start: 4px solid var(--brand); }
 .nav-practice ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* ---------- Praxissicht (Etappe P3): Patientenakte ---------- */
+.record-cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-5); align-items: start; }
+@media (min-width: 1000px) {
+  .record-cols { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+  .record-side { position: sticky; top: var(--s-4); max-height: calc(100vh - var(--s-5)); overflow-y: auto; padding-inline-end: 2px; }
+}
+.record-status:empty { display: none; }
+.pre-line { white-space: pre-line; overflow-wrap: anywhere; }
+.link-btn { background: none; border: 0; padding: 0; font: inherit; color: var(--brand); text-decoration: underline; cursor: pointer; min-height: 24px; }
+.link-btn:hover { text-decoration: none; }
+.owner-note { color: var(--warn-ink); font-weight: 600; }
+.kv-pair { display: contents; }
+.record-log { margin: 0; padding-inline-start: 1.2em; display: flex; flex-direction: column; gap: var(--s-3); }
+.record-diff { margin: var(--s-1) 0 0; padding-inline-start: 1.2em; }
+.record-diff s { color: var(--muted); }
+.record-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.record-timeline li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-2); padding-block: var(--s-2); border-top: 1px solid var(--line); }
+.record-timeline li:first-child { border-top: 0; }
+.record-timeline .tl-text { flex: 1 1 10rem; min-width: 0; overflow-wrap: anywhere; }
+.tl-vaccination { background: var(--ok-soft); color: var(--ok-ink); }
+.tl-finding { background: var(--brand-soft); color: var(--brand); }
+.tl-medication { background: var(--accent-soft); color: var(--accent-ink); }
+.tl-weight { background: var(--surface-2); color: var(--fg); }
+.record-row.is-closed s { color: var(--muted); }

@@ -74,6 +74,7 @@ export function PracticeRequests() {
               </div>
             </fieldset>
             <p className="muted small">{t('prqWhat')}</p>
+            <p className="muted small">{t('paCanWrite')}</p>
             <div className="row-actions">
               <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void answer(r, true)}>{t('prqAllow')}</button>
               <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void answer(r, false)}>{t('prqDecline')}</button>

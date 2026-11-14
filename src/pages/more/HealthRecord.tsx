@@ -12,6 +12,7 @@ import type { PetRow } from '../../lib/supabase';
 import { LogoMark } from '../../components/Icons';
 import { Loading } from '../../components/Loading';
 import { BackToRecord, PetSubpage, Val, speciesName } from '../../components/more/shared';
+import { PracticeFindings } from '../../components/record/PracticeFindings';
 
 /** Gesundheitsakte als druckbares Dokument (A4, „Als PDF speichern / drucken“). Ohne Dokumente und Rechnungen. */
 export function HealthRecord() {
@@ -144,6 +145,8 @@ function HealthRecordView({ pet }: { pet: PetRow }) {
               <dt>{t('medNotes')}</dt><dd><Val v={pet.medications} pre /></dd>
             </dl>
           </section>
+
+          <PracticeFindings petId={pet.id} heading="h3" />
 
           <section className="vault-section" aria-labelledby={`${uid}-wt`}>
             <h3 id={`${uid}-wt`}>{t('recWeight')}</h3>

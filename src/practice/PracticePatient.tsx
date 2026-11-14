@@ -1,71 +1,107 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
-import { formatIsoDate } from '../i18n';
-import { speciesName, Phone } from '../components/more/shared';
+import type { MessageKey } from '../i18n';
+import { speciesName } from '../components/more/shared';
 import { IconBack } from '../components/Icons';
-import { accessErrorCode, practicePatient, type PatientDetail } from '../lib/practiceAccess';
+import { zonedNow } from '../lib/time';
+import { useNow } from '../lib/useNow';
+import { correctEntry, practiceRecord, recordErrorKey, voidEntry, type PatientRecord } from '../lib/practiceRecord';
+import { EditDialog, LogDialog, VoidDialog, type EditTarget, type LogTarget, type RecordCtx, type VoidTarget } from './record/shared';
+import { MasterCard } from './record/MasterCard';
+import { VaccinationsCard } from './record/VaccinationsCard';
+import { FindingsCard } from './record/FindingsCard';
+import { MedicationsCard } from './record/MedicationsCard';
+import { HistoryCard } from './record/HistoryCard';
+import { TimelineCard, VoidedCard } from './record/MiscCards';
+import { EntryForms } from './record/EntryForms';
 
-/** Stammdaten eines Patienten (Etappe P2, nur lesen). Die volle Akte folgt in Etappe P3. */
+/** Patientenakte (Etappe P3): links die Anzeige, rechts die Eingabe. Einträge erscheinen sofort bei der Halter:in. */
 export function PracticePatient() {
   const { petId } = useParams();
-  const { t, lang } = useI18n();
-  const [p, setP] = useState<PatientDetail | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const { t } = useI18n();
+  const today = zonedNow(useNow()).date;
+  const [rec, setRec] = useState<PatientRecord | null>(null);
+  const [loadErr, setLoadErr] = useState<MessageKey | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [edit, setEdit] = useState<EditTarget | null>(null);
+  const [voiding, setVoiding] = useState<VoidTarget | null>(null);
+  const [log, setLog] = useState<LogTarget | null>(null);
   const flash = (useLocation().state as { flash?: unknown } | null)?.flash;
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!petId) return;
-    practicePatient(petId)
-      .then(setP)
-      .catch((e: unknown) => setErr(accessErrorCode(e) ?? 'db_error'));
+    try {
+      setRec(await practiceRecord(petId));
+      setLoadErr(null);
+    } catch (e) {
+      setLoadErr(recordErrorKey(e));
+    }
   }, [petId]);
 
-  const dash = <span className="muted">{t('notSet')}</span>;
-  const val = (v: string | null | undefined) => (v && v.trim() ? v : dash);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const run = useCallback(async (fn: () => Promise<unknown>, okText: string) => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      await fn();
+      await load();
+      setMsg({ ok: true, text: okText });
+      return true;
+    } catch (e) {
+      setMsg({ ok: false, text: t(recordErrorKey(e)) });
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }, [load, t]);
+
+  const back = <Link to="/praxis/patienten" className="back-link"><IconBack size={20} />{t('ptTitle')}</Link>;
+  if (loadErr && !rec) return <div className="page stack-lg">{back}<p className="notice notice-warn" role="alert">{t(loadErr)}</p></div>;
+  if (!rec || !petId) return <div className="page stack-lg">{back}<p className="muted">{t('loading')}</p></div>;
+
+  const p = rec.pet;
+  const ctx: RecordCtx = { rec, petId, today, busy, run, openEdit: setEdit, openVoid: setVoiding, openLog: setLog };
 
   return (
-    <div className="page stack-lg">
-      <Link to="/praxis/patienten" className="back-link"><IconBack size={20} />{t('ptTitle')}</Link>
+    <div className="page page-wide stack-lg">
+      {back}
       {typeof flash === 'string' && <p className="notice notice-ok" role="status">{flash}</p>}
-      {err ? (
-        <p className="notice notice-warn" role="alert">{t(err === 'patient_not_found' ? 'ptNotFound' : 'errGeneric')}</p>
-      ) : !p ? <p className="muted">{t('loading')}</p> : (
-        <>
-          <div className="page-head">
-            <h1>{p.name}{p.deceased && <span className="muted"> · {t('ptDeceased')}</span>}</h1>
-            <p className="muted">{[p.species ? speciesName({ species: p.species, species_other: p.species_other }, t) : '', p.breed].filter(Boolean).join(' · ')}</p>
-          </div>
-          {p.allergies?.trim() && <p className="notice notice-warn"><strong>{t('allergies')}:</strong> {p.allergies.trim()}</p>}
-          <div className="practice-cards">
-            <section className="card stack" aria-labelledby="pt-master">
-              <h2 id="pt-master">{t('masterH')}</h2>
-              <dl className="kv">
-                <dt>{t('sex')}</dt>
-                <dd>{p.sex === 'female' ? t('sexF') : p.sex === 'male' ? t('sexM') : dash}</dd>
-                <dt>{t('birth')}</dt>
-                <dd>{p.birth_date ? formatIsoDate(p.birth_date, lang) : dash}</dd>
-                <dt>{t('chip')}</dt>
-                <dd className="mono">{val(p.chip_no)}</dd>
-                <dt>{t('ptWeight')}</dt>
-                <dd>{p.weight ? t('ptWeightVal', { kg: new Intl.NumberFormat(lang).format(p.weight.kg), d: formatIsoDate(p.weight.measured_on, lang) }) : dash}</dd>
-              </dl>
-            </section>
-            <section className="card stack" aria-labelledby="pt-owner">
-              <h2 id="pt-owner">{t('ptOwner')}</h2>
-              <dl className="kv">
-                <dt>{t('pp_name')}</dt>
-                <dd>{val(p.owner_name)}</dd>
-                <dt>{t('pf_phone')}</dt>
-                <dd><Phone v={p.owner_phone} /></dd>
-                <dt>{t('ptAccess')}</dt>
-                <dd>{t(p.source === 'code' ? 'ptViaCode' : 'ptViaRequest', { d: formatIsoDate(p.granted_at.slice(0, 10), lang) })}</dd>
-              </dl>
-            </section>
-          </div>
-          <p className="muted small">{t('ptMoreSoon')}</p>
-        </>
+      <div className="page-head">
+        <h1>{p.name}{p.deceased && <span className="muted"> · {t('ptDeceased')}</span>}</h1>
+        <p className="muted">{[p.species ? speciesName({ species: p.species, species_other: p.species_other }, t) : '', p.breed, p.owner_name].filter(Boolean).join(' · ')}</p>
+      </div>
+      {p.allergies?.trim() && <p className="notice notice-warn"><strong>{t('allergies')}:</strong> {p.allergies.trim()}</p>}
+      <div className="record-status" role="status" aria-live="polite">
+        {msg && <p className={`notice ${msg.ok ? 'notice-ok' : 'notice-crit'}`}>{msg.text}</p>}
+      </div>
+      <div className="record-cols">
+        <div className="stack-lg">
+          <MasterCard ctx={ctx} />
+          <VaccinationsCard ctx={ctx} />
+          <FindingsCard ctx={ctx} />
+          <MedicationsCard ctx={ctx} />
+          <HistoryCard key={rec.history_note?.at ?? 'none'} ctx={ctx} />
+          <TimelineCard ctx={ctx} />
+          <VoidedCard ctx={ctx} />
+        </div>
+        <div className="stack-lg record-side">
+          <EntryForms ctx={ctx} />
+        </div>
+      </div>
+      {edit && (
+        <EditDialog target={edit} today={today} busy={busy} onClose={() => setEdit(null)}
+          onSave={(data, reason, note) => run(() => correctEntry(edit.entryId, data, reason, note), t('rcCorrected'))} />
       )}
+      {voiding && (
+        <VoidDialog target={voiding} busy={busy} onClose={() => setVoiding(null)}
+          onVoid={(reason, note) => run(() => voidEntry(voiding.entryId, reason, note), t(voiding.confirmed ? 'rcUnconfirmed' : 'rcVoided'))} />
+      )}
+      {log && <LogDialog petId={petId} target={log} onClose={() => setLog(null)} />}
     </div>
   );
 }

@@ -108,6 +108,7 @@ function PetPracticesView({ pet, isOwner }: { pet: PetRow; isOwner: boolean }) {
               </ul>
             )}
             <p className="muted small">{t('paWhatSee')}</p>
+            <p className="muted small">{t('paCanWrite')}</p>
           </section>
         </>
       )}

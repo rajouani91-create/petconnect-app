@@ -16,6 +16,7 @@ import { PetPhotoControls } from '../components/PetPhotoControls';
 import { PetSharedWith } from '../components/PetSharedWith';
 import { PetRecord } from '../components/record/PetRecord';
 import { MedicationCard } from '../components/record/MedicationCard';
+import { PracticeFindings } from '../components/record/PracticeFindings';
 import { HealthTimeline } from '../components/record/HealthTimeline';
 import { MoreAboutPet } from '../components/more/MoreAboutPet';
 import { IconAssistant, IconBack, IconCalendar, IconEmergency, IconList, IconPlus, KindIcon } from '../components/Icons';
@@ -209,6 +210,7 @@ export function Pet() {
         <div role="tabpanel" id={`${uid}-panel-health`} aria-labelledby={`${uid}-tab-health`} className="stack-lg">
           <HealthTimeline key={`timeline-${pet.id}`} pet={pet} />
           <PetRecord key={`record-${pet.id}`} pet={pet} />
+          <PracticeFindings petId={pet.id} />
           <MedicationCard key={`med-${pet.id}`} pet={pet} editable={editable} />
         </div>
       )}
