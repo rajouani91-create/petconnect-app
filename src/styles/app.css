@@ -890,3 +890,14 @@ ul.choose-list { list-style: none; margin: 0; padding: 0; }
 .team-row .row-actions { flex-wrap: nowrap; align-items: center; }
 .proofs { border-top: 1px solid var(--line); padding-top: var(--s-4); }
 .proofs h3, .proof-form h4 { margin: 0; }
+
+/* ---------- Etappe P2: Praxis-Code, Patientenliste ---------- */
+.practice-code { font-size: 1.75rem; font-weight: 700; letter-spacing: 0.08em; margin: 0; padding: var(--s-3) var(--s-4); background: var(--surface-2); border-radius: var(--r); display: inline-block; }
+.patients-head { justify-content: space-between; flex-wrap: wrap; }
+.patient-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-3); }
+.patient-row { flex-direction: row; flex-wrap: wrap; align-items: center; gap: var(--s-3); padding: var(--s-3) var(--s-4); }
+.patient-ava { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.patient-text { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.patient-name { font-weight: 600; }
+.practice-request { border-inline-start: 4px solid var(--brand); }
+.nav-practice ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }

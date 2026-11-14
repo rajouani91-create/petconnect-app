@@ -36,6 +36,10 @@ import DeleteAccount from './pages/DeleteAccount';
 import { UpdateBanner } from './components/UpdateBanner';
 import { Admin } from './pages/admin/Admin';
 import { Agents } from './pages/admin/Agents';
+import { PetPractices } from './pages/more/PetPractices';
+import { PracticePatients } from './practice/PracticePatients';
+import { PracticePatient } from './practice/PracticePatient';
+import { PracticeAccess } from './practice/PracticeAccess';
 import { OwnerOnly, PracticeOnly, PracticeProvider } from './practice/PracticeProvider';
 import { PracticeShell } from './practice/PracticeShell';
 import { PracticeProfile } from './practice/PracticeProfile';
@@ -65,6 +69,9 @@ export function App() {
             <Route path="/praxis" element={<RequireAuth><PracticeOnly><PracticeShell /></PracticeOnly></RequireAuth>}>
               <Route index element={<PracticeProfile />} />
               <Route path="/praxis/team" element={<PracticeTeam />} />
+              <Route path="/praxis/patienten" element={<PracticePatients />} />
+              <Route path="/praxis/patienten/zugriff" element={<PracticeAccess />} />
+              <Route path="/praxis/patienten/:petId" element={<PracticePatient />} />
             </Route>
             <Route
               element={
@@ -89,6 +96,7 @@ export function App() {
               <Route path="tier/:petId/betreuung" element={<Sitting />} />
               <Route path="tier/:petId/gesundheitsakte" element={<HealthRecord />} />
               <Route path="tier/:petId/vorgeschichte" element={<History />} />
+              <Route path="tier/:petId/praxen" element={<PetPractices />} />
               <Route path="praxen" element={<Practices />} />
               <Route path="erinnerungen" element={<Reminders />} />
               <Route path="alltag" element={<Routine />} />
