@@ -21,6 +21,7 @@ import { UpcomingCard } from '../components/schedule/UpcomingCard';
 import { NextDoseCard, stateText, useDoseActions, useTodayDoses } from '../components/schedule/TodayMeds';
 import { IconCheck, KindIcon } from '../components/Icons';
 import { Loading } from '../components/Loading';
+import { PracticeRequests } from '../components/PracticeRequests';
 
 export function Today() {
   const { t, lang } = useI18n();
@@ -189,6 +190,8 @@ export function Today() {
       </header>
 
       {flash && <p className="notice notice-ok" role="status">{flash}</p>}
+
+      <PracticeRequests />
 
       {confirm && (
         <section className="card stack" aria-label={t('pcLabel')}>

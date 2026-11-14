@@ -8,7 +8,7 @@ import { handleHook, type HookPayload } from './handler.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const HOOK_SECRET = (Deno.env.get('SEND_EMAIL_HOOK_SECRET') ?? '').replace('v1,whsec_', '');
-const BREVO_KEY = Deno.env.get('BREVO_API_KEY') ?? '';
+const BREVO_KEY = (Deno.env.get('BREVO_API_KEY') ?? '').trim();
 const FROM = Deno.env.get('MAIL_FROM') ?? 'hello@petconnect24.com';
 const FROM_NAME = Deno.env.get('MAIL_FROM_NAME') ?? 'PetConnect24';
 
@@ -26,7 +26,9 @@ Deno.serve(async (req) => {
         body: JSON.stringify({ sender: { name: FROM_NAME, email: FROM }, to: [{ email: to }], subject: mail.subject, htmlContent: mail.html, textContent: mail.text }),
       });
       if (!r.ok) {
-        console.error('brevo', r.status);
+        // Diagnose ohne Geheimnisse: Status, Brevo-Fehlertext (gekürzt), Länge und Typ-Anfang des Schlüssels
+        const detail = (await r.text().catch(() => '')).slice(0, 300);
+        console.error('brevo', r.status, detail, 'keylen=' + BREVO_KEY.length, 'keystart=' + BREVO_KEY.slice(0, 7), 'from=' + FROM);
         throw new Error('brevo');
       }
     },

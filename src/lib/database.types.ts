@@ -1093,6 +1093,46 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      pet_practice_code: {
+        Args: { p_pet: string; p_renew?: boolean }
+        Returns: { code: string; expires_at: string }[]
+      }
+      owner_practice_access: {
+        Args: Record<PropertyKey, never>
+        Returns: { pet_id: string; pet_name: string; practice_id: string; practice_name: string; city: string | null; source: string; created_at: string }[]
+      }
+      owner_revoke_practice: {
+        Args: { p_pet: string; p_practice: string }
+        Returns: undefined
+      }
+      owner_access_requests: {
+        Args: Record<PropertyKey, never>
+        Returns: { id: string; practice_name: string; city: string | null; note: string | null; created_at: string }[]
+      }
+      owner_answer_request: {
+        Args: { p_id: string; p_accept: boolean; p_pets: string[] }
+        Returns: number
+      }
+      practice_redeem_code: {
+        Args: { p_code: string }
+        Returns: string | null
+      }
+      practice_request_access: {
+        Args: { p_email: string; p_note: string }
+        Returns: undefined
+      }
+      practice_requests: {
+        Args: Record<PropertyKey, never>
+        Returns: { id: string; email: string; note: string | null; status: string; pets_granted: number; created_at: string; expires_at: string; answered_at: string | null }[]
+      }
+      practice_patients: {
+        Args: Record<PropertyKey, never>
+        Returns: { pet_id: string; name: string; species: string | null; species_other: string | null; breed: string | null; sex: string | null; birth_date: string | null; deceased: boolean | null; owner_name: string | null; next_vacc_name: string | null; next_vacc_due: string | null; source: string; granted_at: string }[]
+      }
+      practice_patient: {
+        Args: { p_pet: string }
+        Returns: Json
+      }
       practice_me: {
         Args: Record<PropertyKey, never>
         Returns: Json

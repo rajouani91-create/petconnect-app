@@ -19,7 +19,7 @@ export const LEGAL: LegalInfo = {
   address: 'Hessenring 104\n65428 Rüsselsheim am Main\nDeutschland',
   email: 'info@petconnect24.com',
   phone: null,
-  updated: 'Oktober 2026',
+  updated: 'November 2026',
 };
 
 /** Fest stehende technische Fakten */
