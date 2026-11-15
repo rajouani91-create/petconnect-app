@@ -109,7 +109,8 @@ export function Appointments() {
   }
 
   const item = (r: AppointmentRow) => {
-    const canChange = editable.has(r.pet_id);
+    const fromPractice = !!r.practice_appointment_id;
+    const canChange = editable.has(r.pet_id) && !fromPractice;
     const st = isApptStatus(r.status) ? r.status : 'planned';
     const isPast = st === 'planned' && localDate(new Date(r.starts_at)) < today;
     return (
@@ -132,6 +133,7 @@ export function Appointments() {
             {[isApptKind(r.kind) ? t(APPT_KIND_LABEL[r.kind]) : r.kind, petName(r.pet_id), r.location].filter(Boolean).join(' · ')}
           </span>
           {r.note && <span className="small appt-note">{shorten(r.note)}</span>}
+          {fromPractice && <span className="small practice-note">{t('apFromPractice')}</span>}
         </div>
         <div className="row-actions">
           <button type="button" className="btn btn-ghost" aria-label={t('calExportL', { x: r.title })} onClick={() => exportIcs(r)}>

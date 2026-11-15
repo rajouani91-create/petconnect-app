@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useId, useState, type FormEvent } from 'react';
+import { Link } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
+import { IconBack } from '../components/Icons';
 import { formatIsoDate, localeOf, type MessageKey } from '../i18n';
 import { Field } from '../components/Field';
 import { Switch } from '../components/Switch';
@@ -53,8 +55,9 @@ export function PracticeSchedule() {
 
   return (
     <div className="page stack-lg">
+      <Link to="/praxis/termine" className="back-link"><IconBack size={20} />{t('scTitle')}</Link>
       <div className="page-head">
-        <h1>{t('scTitle')}</h1>
+        <h1>{t('bkSettings')}</h1>
         <p className="muted">{t('scIntro')}</p>
       </div>
       {pending ? (
