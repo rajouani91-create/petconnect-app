@@ -59,6 +59,8 @@ export interface MedLike {
   times: readonly string[];
   intake_hint: string;
   note: string | null;
+  /** Dosierung als Freitext (Einträge der Praxis); ersetzt die Zeile aus Menge und Häufigkeit */
+  dosage_text?: string | null;
 }
 
 /** Menge im Sprachformat, z. B. „0,5“ (de) / „0.5“ (en), höchstens 2 Nachkommastellen */
@@ -92,6 +94,8 @@ export function amountText(m: Pick<MedLike, 'amount' | 'unit'>, t: T, locale: st
  * Nur Anzeige der Angaben – keine Umrechnung, keine Bewertung.
  */
 export function doseText(m: MedLike, t: T, locale: string, withNote = true): string {
+  const free = m.dosage_text?.trim();
+  if (free) return free;
   const parts = [amountText(m, t, locale)];
   if (m.frequency === 'as_needed') parts.push(t('omPrn'));
   else {

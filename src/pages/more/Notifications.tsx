@@ -239,6 +239,7 @@ export function Notifications() {
             <Switch label={t('pnRoutine')} checked={prefs.routine} onChange={(on) => void savePrefs({ ...prefs, routine: on })} />
             <Switch label={t('pnRem')} checked={prefs.reminders} onChange={(on) => void savePrefs({ ...prefs, reminders: on })} />
             <Switch label={t('pnAppt')} checked={prefs.appointments} onChange={(on) => void savePrefs({ ...prefs, appointments: on })} />
+            <Switch label={t('pnPractice')} checked={prefs.practice} onChange={(on) => void savePrefs({ ...prefs, practice: on })} />
             <Field id={`${uid}-time`} label={t('pnRemTime')} hint={t('pnRemTimeHint')}>
               {(a) => (
                 <input
