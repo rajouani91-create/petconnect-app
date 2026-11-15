@@ -46,6 +46,7 @@ export function Pets() {
         <IconPlus size={20} />
         {t('addAnother')}
       </Link>
+      <p className="muted small"><Link to="/praxiseinladung" className="link">{t('piHaveCode')}</Link></p>
     </div>
   );
 }

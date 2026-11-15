@@ -1177,6 +1177,34 @@ export type Database = {
         Args: { p_pet: string }
         Returns: Json
       }
+      practice_create_patient_invite: {
+        Args: { p_owner: Json; p_pet: Json }
+        Returns: { invite_id: string; code: string; email: string; owner_name: string; pet_name: string; practice_name: string; expires_at: string }[]
+      }
+      practice_resend_patient_invite: {
+        Args: { p_id: string }
+        Returns: { invite_id: string; code: string; email: string; owner_name: string; pet_name: string; practice_name: string; expires_at: string }[]
+      }
+      practice_revoke_patient_invite: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      practice_patient_invites: {
+        Args: Record<PropertyKey, never>
+        Returns: { id: string; owner_name: string; email: string; pet_name: string; species: string; species_other: string | null; status: string; code: string | null; created_at: string; expires_at: string; answered_at: string | null; pet_id: string | null; by_name: string }[]
+      }
+      owner_patient_invites: {
+        Args: Record<PropertyKey, never>
+        Returns: { id: string; practice_name: string; city: string | null; pet: Json; owner_name: string; created_at: string; expires_at: string }[]
+      }
+      owner_patient_invite_by_code: {
+        Args: { p_code: string }
+        Returns: { id: string; practice_name: string; city: string | null; pet: Json; owner_name: string; created_at: string; expires_at: string }[]
+      }
+      owner_answer_patient_invite: {
+        Args: { p_id: string; p_accept: boolean; p_consent?: boolean; p_code?: string }
+        Returns: string | null
+      }
       practice_requests: {
         Args: Record<PropertyKey, never>
         Returns: { id: string; email: string; note: string | null; status: string; pets_granted: number; created_at: string; expires_at: string; answered_at: string | null }[]

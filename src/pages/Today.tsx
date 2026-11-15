@@ -22,6 +22,7 @@ import { NextDoseCard, stateText, useDoseActions, useTodayDoses } from '../compo
 import { IconCheck, KindIcon } from '../components/Icons';
 import { Loading } from '../components/Loading';
 import { PracticeRequests } from '../components/PracticeRequests';
+import { PatientInvites } from '../components/PatientInvites';
 
 export function Today() {
   const { t, lang } = useI18n();
@@ -191,6 +192,7 @@ export function Today() {
 
       {flash && <p className="notice notice-ok" role="status">{flash}</p>}
 
+      <PatientInvites />
       <PracticeRequests />
 
       {confirm && (

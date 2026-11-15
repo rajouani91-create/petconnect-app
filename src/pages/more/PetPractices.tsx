@@ -99,7 +99,7 @@ function PetPracticesView({ pet, isOwner }: { pet: PetRow; isOwner: boolean }) {
                     <div className="member-text">
                       <span className="member-name">{r.practice_name}</span>
                       <span className="muted small">
-                        {[r.city, t('paSince', { d: formatIsoDate(r.created_at.slice(0, 10), lang) }), t(r.source === 'code' ? 'paViaCode' : 'paViaRequest')].filter(Boolean).join(' · ')}
+                        {[r.city, t('paSince', { d: formatIsoDate(r.created_at.slice(0, 10), lang) }), t(r.source === 'code' ? 'paViaCode' : r.source === 'invite' ? 'paViaInvite' : 'paViaRequest')].filter(Boolean).join(' · ')}
                       </span>
                     </div>
                     <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => setConfirm(r)}>{t('paRevoke')}</button>
