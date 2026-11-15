@@ -1205,6 +1205,34 @@ export type Database = {
         Args: { p_id: string; p_accept: boolean; p_consent?: boolean; p_code?: string }
         Returns: string | null
       }
+      practice_schedule: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      practice_save_hours: {
+        Args: { p_hours: Json }
+        Returns: undefined
+      }
+      practice_save_appointment_type: {
+        Args: { p_id: string; p_name: string; p_minutes: number; p_online: boolean }
+        Returns: string
+      }
+      practice_remove_appointment_type: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      practice_add_absence: {
+        Args: { p_from: string; p_to: string; p_reason: string }
+        Returns: string
+      }
+      practice_remove_absence: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      practice_set_booking_window: {
+        Args: { p_weeks: number }
+        Returns: undefined
+      }
       practice_requests: {
         Args: Record<PropertyKey, never>
         Returns: { id: string; email: string; note: string | null; status: string; pets_granted: number; created_at: string; expires_at: string; answered_at: string | null }[]
