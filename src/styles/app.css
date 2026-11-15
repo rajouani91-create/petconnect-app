@@ -926,3 +926,13 @@ ul.choose-list { list-style: none; margin: 0; padding: 0; }
 .tl-medication { background: var(--accent-soft); color: var(--accent-ink); }
 .tl-weight { background: var(--surface-2); color: var(--fg); }
 .record-row.is-closed s { color: var(--muted); }
+
+/* ---------- Digitaler Impfnachweis (Etappe P3b) ---------- */
+.cert-warn { margin: 0; padding: var(--s-3) var(--s-4); border: 3px solid var(--crit); border-radius: var(--r); background: var(--crit-soft); font-weight: 700; }
+.cert-own { border-color: var(--crit); }
+.cert-issued { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-2); }
+.cert-issued li { display: flex; flex-direction: column; gap: 2px; }
+@media print {
+  .cert-warn { border-color: #000; background: #fff; }
+  .vault.cert-own { border: 3px solid #000; padding: 6mm; }
+}

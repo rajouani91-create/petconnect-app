@@ -173,7 +173,7 @@ export const yesterday = (today: string) => addDays(today, -1);
 const ERROR_KEYS: Record<string, MessageKey> = {
   patient_not_found: 'ptNotFound', forbidden: 'pe_forbidden', practice_pending: 'pe_forbidden', practice_suspended: 'pe_forbidden',
   no_change: 'rcErrNoChange', entry_gone: 'rcErrGone', entry_voided: 'rcErrGone', entry_not_found: 'rcErrGone', already_confirmed: 'rcErrConfirmed',
-  already_ended: 'rcErrEnded', reason_required: 'rcErrReason', note_required: 'rcErrNote', date_invalid: 'errDate', valid_until_invalid: 'rcErrValidUntil',
+  already_ended: 'rcErrEnded', no_vaccinations: 'cfErrNone', reason_required: 'rcErrReason', note_required: 'rcErrNote', date_invalid: 'errDate', valid_until_invalid: 'rcErrValidUntil',
   ends_before_start: 'rcErrEnds', kg_invalid: 'wkErrRange', name_invalid: 'rcErrName', title_invalid: 'rcErrTitle', dosage_invalid: 'rcErrDosage',
 };
 const CODES = Object.keys(ERROR_KEYS);
@@ -304,4 +304,32 @@ export function entryForm(kind: EntryKind, d: Record<string, string | number | n
     out[k] = x === null || x === undefined ? '' : k === 'kg' ? kgText(Number(x)) : String(x);
   }
   return out;
+}
+
+// ---------- Digitaler Impfnachweis (Etappe P3b) ----------
+
+export interface CertVaccination { id: string; name: string; given_on: string | null; valid_until: string | null; practice_name?: string | null; by_name?: string | null }
+export interface CertIssue { practice_name: string; city: string | null; by_name: string; at: string; mine: boolean }
+export interface VaccinationCertificateData {
+  pet: { name: string; species: string | null; species_other: string | null; breed: string | null; sex: string | null; birth_date: string | null; chip_no: string | null };
+  owner_name: string | null;
+  /** je Praxis die letzte Ausstellung, neueste zuerst */
+  issued: CertIssue[];
+  /** von einer Praxis eingetragen oder bestätigt */
+  confirmed: CertVaccination[];
+  /** eigene Einträge der Halter:in (nicht bestätigt) */
+  own: CertVaccination[];
+}
+
+export async function vaccinationCertificate(petId: string): Promise<VaccinationCertificateData> {
+  const { data, error } = await supabase.rpc('pet_vaccination_certificate', { p_pet: petId });
+  if (error) throw error;
+  const d = (data ?? {}) as Partial<VaccinationCertificateData>;
+  if (!d.pet) throw new Error('patient_not_found');
+  return { pet: d.pet, owner_name: d.owner_name ?? null, issued: d.issued ?? [], confirmed: d.confirmed ?? [], own: d.own ?? [] };
+}
+
+export async function issueCertificate(petId: string): Promise<void> {
+  const { error } = await supabase.rpc('practice_issue_certificate', { p_pet: petId });
+  if (error) throw error;
 }

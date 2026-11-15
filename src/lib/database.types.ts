@@ -1165,6 +1165,14 @@ export type Database = {
         Args: { p_pet: string; p_text: string }
         Returns: undefined
       }
+      practice_issue_certificate: {
+        Args: { p_pet: string }
+        Returns: string
+      }
+      pet_vaccination_certificate: {
+        Args: { p_pet: string }
+        Returns: Json
+      }
       pet_practice_entries: {
         Args: { p_pet: string }
         Returns: Json

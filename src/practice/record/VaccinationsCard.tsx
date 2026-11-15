@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { Link } from 'react-router';
 import { useI18n } from '../../i18n/I18nProvider';
 import { formatIsoDate } from '../../i18n';
 import { VACC_STATUS_LABEL, vaccStatus } from '../../lib/record';
@@ -19,7 +20,10 @@ export function VaccinationsCard({ ctx }: { ctx: RecordCtx }) {
 
   return (
     <section className="card stack" aria-labelledby={`${uid}-h`}>
-      <h2 id={`${uid}-h`}>{t('rcVaccH')}</h2>
+      <div className="card-head">
+        <h2 id={`${uid}-h`}>{t('rcVaccH')}</h2>
+        <Link to="impfnachweis" className="btn btn-secondary">{t('cfLink')}</Link>
+      </div>
       <div className="chips-wrap" role="group" aria-label={t('rcFilterL')}>
         {FILTERS.map(([k, label]) => (
           <button key={k} type="button" className="chip" aria-pressed={filter === k} onClick={() => setFilter(k)}>{t(label)}</button>

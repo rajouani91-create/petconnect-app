@@ -24,6 +24,7 @@ import { Insurance } from './pages/more/Insurance';
 import { Sitting } from './pages/more/Sitting';
 import { HealthRecord } from './pages/more/HealthRecord';
 import { History } from './pages/more/History';
+import { VaccCertificate } from './pages/more/VaccCertificate';
 import { SitterPublic } from './pages/SitterPublic';
 import { Practices } from './pages/Practices';
 import { Notifications } from './pages/more/Notifications';
@@ -39,6 +40,7 @@ import { Agents } from './pages/admin/Agents';
 import { PetPractices } from './pages/more/PetPractices';
 import { PracticePatients } from './practice/PracticePatients';
 import { PracticePatient } from './practice/PracticePatient';
+import { PracticeCertificate } from './practice/PracticeCertificate';
 import { PracticeAccess } from './practice/PracticeAccess';
 import { OwnerOnly, PracticeOnly, PracticeProvider } from './practice/PracticeProvider';
 import { PracticeShell } from './practice/PracticeShell';
@@ -72,6 +74,7 @@ export function App() {
               <Route path="/praxis/patienten" element={<PracticePatients />} />
               <Route path="/praxis/patienten/zugriff" element={<PracticeAccess />} />
               <Route path="/praxis/patienten/:petId" element={<PracticePatient />} />
+              <Route path="/praxis/patienten/:petId/impfnachweis" element={<PracticeCertificate />} />
             </Route>
             <Route
               element={
@@ -96,6 +99,7 @@ export function App() {
               <Route path="tier/:petId/betreuung" element={<Sitting />} />
               <Route path="tier/:petId/gesundheitsakte" element={<HealthRecord />} />
               <Route path="tier/:petId/vorgeschichte" element={<History />} />
+              <Route path="tier/:petId/impfnachweis" element={<VaccCertificate />} />
               <Route path="tier/:petId/praxen" element={<PetPractices />} />
               <Route path="praxen" element={<Practices />} />
               <Route path="erinnerungen" element={<Reminders />} />
