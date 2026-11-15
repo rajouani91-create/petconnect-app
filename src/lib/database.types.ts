@@ -23,6 +23,7 @@ export type Database = {
           location: string | null
           note: string | null
           owner_id: string
+          practice_appointment_id: string | null
           pet_id: string
           starts_at: string
           status: string
@@ -1231,6 +1232,34 @@ export type Database = {
       }
       practice_set_booking_window: {
         Args: { p_weeks: number }
+        Returns: undefined
+      }
+      practice_appointments: {
+        Args: Record<PropertyKey, never>
+        Returns: { id: string; pet_id: string | null; has_access: boolean; pet_label: string; owner_label: string; phone: string | null; type_id: string | null; type_name: string; starts_at: string; minutes: number; status: string; source: string; new_client: boolean; note: string | null; cancel_reason: string | null; cancel_note: string | null; overridden: boolean; created_by_name: string; created_at: string }[]
+      }
+      practice_appointment_check: {
+        Args: { p_starts_at: string; p_minutes: number; p_exclude?: string }
+        Returns: Json
+      }
+      practice_free_slots: {
+        Args: { p_minutes: number; p_from: string; p_days?: number; p_limit?: number; p_exclude?: string }
+        Returns: string[]
+      }
+      practice_book_appointment: {
+        Args: { p: Json; p_force?: boolean }
+        Returns: string
+      }
+      practice_move_appointment: {
+        Args: { p_id: string; p_starts_at: string; p_force?: boolean }
+        Returns: undefined
+      }
+      practice_cancel_appointment: {
+        Args: { p_id: string; p_reason: string; p_note?: string }
+        Returns: undefined
+      }
+      practice_mark_appointment: {
+        Args: { p_id: string; p_attended: boolean }
         Returns: undefined
       }
       practice_requests: {
