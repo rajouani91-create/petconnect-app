@@ -41,6 +41,8 @@ import { PetPractices } from './pages/more/PetPractices';
 import { PracticePatients } from './practice/PracticePatients';
 import { PracticePatient } from './practice/PracticePatient';
 import { PracticeCertificate } from './practice/PracticeCertificate';
+import { PracticeIntake } from './practice/PracticeIntake';
+import { PatientInvite } from './pages/PatientInvite';
 import { PracticeAccess } from './practice/PracticeAccess';
 import { OwnerOnly, PracticeOnly, PracticeProvider } from './practice/PracticeProvider';
 import { PracticeShell } from './practice/PracticeShell';
@@ -73,6 +75,7 @@ export function App() {
               <Route path="/praxis/team" element={<PracticeTeam />} />
               <Route path="/praxis/patienten" element={<PracticePatients />} />
               <Route path="/praxis/patienten/zugriff" element={<PracticeAccess />} />
+              <Route path="/praxis/patienten/aufnehmen" element={<PracticeIntake />} />
               <Route path="/praxis/patienten/:petId" element={<PracticePatient />} />
               <Route path="/praxis/patienten/:petId/impfnachweis" element={<PracticeCertificate />} />
             </Route>
@@ -102,6 +105,7 @@ export function App() {
               <Route path="tier/:petId/impfnachweis" element={<VaccCertificate />} />
               <Route path="tier/:petId/praxen" element={<PetPractices />} />
               <Route path="praxen" element={<Practices />} />
+              <Route path="praxiseinladung" element={<PatientInvite />} />
               <Route path="erinnerungen" element={<Reminders />} />
               <Route path="alltag" element={<Routine />} />
               <Route path="mehr" element={<More />} />

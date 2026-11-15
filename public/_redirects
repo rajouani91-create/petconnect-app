@@ -17,6 +17,7 @@
 /tier                 /app/tier                   302
 /tier/*               /app/tier/:splat            302
 /praxen               /app/praxen                 302
+/praxiseinladung      /app/praxiseinladung        302
 /erinnerungen         /app/erinnerungen           302
 /alltag               /app/alltag                 302
 /mehr                 /app/mehr                   302

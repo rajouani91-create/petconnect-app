@@ -32,6 +32,8 @@ export const FACTS = {
   ai: 'Groq, Inc. (USA)',
   // RECHTLICH PRÜFEN: Anschrift von Google Ireland Limited und Link zu den Datenschutzhinweisen von Google ergänzen?
   google: 'Google Ireland Limited (Irland); Konzernmutter Google LLC (USA)',
+  // RECHTLICH PRÜFEN: Anschrift von Brevo (Sendinblue SAS), Auftragsverarbeitungsvertrag; eigener Abschnitt „E-Mail-Versand“ für alle System-Mails?
+  mail: 'den E-Mail-Dienst Brevo (Sendinblue SAS, Frankreich)',
   push: 'Push-Dienst des jeweiligen Browsers; bei Android: Google Firebase Cloud Messaging',
   maps: '© OpenStreetMap-Mitwirkende, Datenbanklizenz ODbL',
   places: 'GeoNames (geonames.org), Lizenz CC BY 4.0: Postleitzahlen und Orte in Österreich, der Schweiz, Frankreich und den Niederlanden',

@@ -7,6 +7,7 @@ import { zonedNow } from '../lib/time';
 import { useNow } from '../lib/useNow';
 import { accessErrorCode, dueState, filterPatients, practicePatients, type DueState, type PatientRow } from '../lib/practiceAccess';
 import { usePractice } from './PracticeProvider';
+import { PatientInviteList } from './PatientInviteList';
 
 const DUE_TONE: Record<DueState, string> = { overdue: 'pill-crit', soon: 'pill-warn', ok: '' };
 const DUE_TEXT: Record<DueState, MessageKey> = { overdue: 'ptOverdue', soon: 'ptSoon', ok: 'ptDueOn' };
@@ -35,7 +36,12 @@ export function PracticePatients() {
     <div className="page stack-lg">
       <div className="page-head page-head-row patients-head">
         <h1>{t('ptTitle')}</h1>
-        {!pending && <Link to="/praxis/patienten/zugriff" className="btn btn-secondary">{t('ptCodeOrRequest')}</Link>}
+        {!pending && (
+          <div className="row-actions">
+            <Link to="/praxis/patienten/aufnehmen" className="btn btn-primary">{t('piTitle')}</Link>
+            <Link to="/praxis/patienten/zugriff" className="btn btn-secondary">{t('ptCodeOrRequest')}</Link>
+          </div>
+        )}
       </div>
       {pending ? (
         <div className="notice notice-warn" role="status">
@@ -78,6 +84,7 @@ export function PracticePatients() {
               })}
             </ul>
           )}
+          <PatientInviteList />
         </>
       )}
     </div>
