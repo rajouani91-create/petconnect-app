@@ -1,7 +1,7 @@
 import { NavLink, Navigate, Outlet } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuth } from '../auth/AuthProvider';
-import { IconPaw, IconPeople, IconUser, LogoMark } from '../components/Icons';
+import { IconCalendar, IconPaw, IconPeople, IconUser, LogoMark } from '../components/Icons';
 import { usePractice } from './PracticeProvider';
 
 /** Rahmen der Praxissicht (Seitenleiste wie im Prototyp). Ohne Praxis geht es zur Einrichtung bzw. zur Einladung. */
@@ -31,6 +31,7 @@ export function PracticeShell() {
   // Reihenfolge wie im Prototyp: Patienten vor Profil
   const items = [
     { to: '/praxis/patienten', key: 'ptTitle', Icon: IconPaw, end: false },
+    { to: '/praxis/termine', key: 'nav_termine', Icon: IconCalendar, end: false },
     { to: '/praxis/team', key: 'pp_navTeam', Icon: IconPeople, end: false },
     { to: '/praxis', key: 'pp_navProfile', Icon: IconUser, end: true },
   ] as const;

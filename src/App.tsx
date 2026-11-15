@@ -42,6 +42,7 @@ import { PracticePatients } from './practice/PracticePatients';
 import { PracticePatient } from './practice/PracticePatient';
 import { PracticeCertificate } from './practice/PracticeCertificate';
 import { PracticeIntake } from './practice/PracticeIntake';
+import { PracticeSchedule } from './practice/PracticeSchedule';
 import { PatientInvite } from './pages/PatientInvite';
 import { PracticeAccess } from './practice/PracticeAccess';
 import { OwnerOnly, PracticeOnly, PracticeProvider } from './practice/PracticeProvider';
@@ -73,6 +74,7 @@ export function App() {
             <Route path="/praxis" element={<RequireAuth><PracticeOnly><PracticeShell /></PracticeOnly></RequireAuth>}>
               <Route index element={<PracticeProfile />} />
               <Route path="/praxis/team" element={<PracticeTeam />} />
+              <Route path="/praxis/termine" element={<PracticeSchedule />} />
               <Route path="/praxis/patienten" element={<PracticePatients />} />
               <Route path="/praxis/patienten/zugriff" element={<PracticeAccess />} />
               <Route path="/praxis/patienten/aufnehmen" element={<PracticeIntake />} />
