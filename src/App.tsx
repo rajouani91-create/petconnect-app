@@ -50,6 +50,8 @@ import { PracticeAccess } from './practice/PracticeAccess';
 import { OwnerOnly, PracticeOnly, PracticeProvider } from './practice/PracticeProvider';
 import { PracticeShell } from './practice/PracticeShell';
 import { PracticeProfile } from './practice/PracticeProfile';
+import { PracticeHome } from './practice/PracticeToday';
+import { PracticeCalendar } from './practice/PracticeCalendar';
 import { PracticeTeam } from './practice/PracticeTeam';
 import { PracticeSetup } from './practice/PracticeSetup';
 import { PracticeInvite } from './practice/PracticeInvite';
@@ -74,7 +76,9 @@ export function App() {
             <Route path="/praxis/einladung" element={<PracticeInvite />} />
             <Route path="/praxis/einrichten" element={<RequireAuth><PracticeSetup /></RequireAuth>} />
             <Route path="/praxis" element={<RequireAuth><PracticeOnly><PracticeShell /></PracticeOnly></RequireAuth>}>
-              <Route index element={<PracticeProfile />} />
+              <Route index element={<PracticeHome />} />
+              <Route path="/praxis/profil" element={<PracticeProfile />} />
+              <Route path="/praxis/kalender" element={<PracticeCalendar />} />
               <Route path="/praxis/team" element={<PracticeTeam />} />
               <Route path="/praxis/termine" element={<PracticeAppointments />} />
               <Route path="/praxis/termine/einstellungen" element={<PracticeSchedule />} />
