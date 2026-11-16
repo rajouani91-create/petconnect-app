@@ -297,3 +297,9 @@ export const IconSend = (p: IconProps) => (
     <path d="m4 12 16-8-6 16-3-7Z" />
   </Svg>
 );
+
+export const IconChat = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 5h16v11H9l-5 4V5ZM8 9.5h8M8 12.5h5" />
+  </Svg>
+);

@@ -1,5 +1,5 @@
 import { useEffect, useId, useState, type FormEvent } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { formatDate, formatIsoDate, type MessageKey } from '../i18n';
 import { Field } from '../components/Field';
@@ -17,6 +17,9 @@ export function BookAppointment() {
   const { t } = useI18n();
   const [practice, setPractice] = useState<BookingPractice | null>(null);
   const [done, setDone] = useState<{ practice: string; slot: string } | null>(null);
+  const [, setParams] = useSearchParams();
+  // Zurück zur Auswahl: Vorauswahl aus dem Link nicht erneut anwenden
+  const reset = () => { setPractice(null); setParams({}, { replace: true }); };
 
   return (
     <div className="page stack-lg">
@@ -26,9 +29,9 @@ export function BookAppointment() {
         {!practice && !done && <p className="muted">{t('obIntro')}</p>}
       </header>
       {done ? (
-        <Done practice={done.practice} slot={done.slot} onAgain={() => { setDone(null); setPractice(null); }} />
+        <Done practice={done.practice} slot={done.slot} onAgain={() => { setDone(null); reset(); }} />
       ) : practice ? (
-        <BookForm practice={practice} onBack={() => setPractice(null)} onDone={(slot) => setDone({ practice: practice.name, slot })} />
+        <BookForm practice={practice} onBack={reset} onDone={(slot) => setDone({ practice: practice.name, slot })} />
       ) : (
         <PracticePicker onPick={setPractice} />
       )}
@@ -63,9 +66,21 @@ function PracticePicker({ onPick }: { onPick: (p: BookingPractice) => void }) {
   const [found, setFound] = useState<{ q: string; list: BookingPractice[] } | null>(null);
   const [err, setErr] = useState(false);
 
+  // ?praxis=<id> (z. B. aus der Impferinnerung der Praxis): diese Praxis gleich auswählen, wenn sie zu meinen gehört
+  const [params] = useSearchParams();
+  const want = params.get('praxis');
   useEffect(() => {
-    bookingPractices('').then(setMine).catch((e: unknown) => { console.error(e); setErr(true); setMine([]); });
-  }, []);
+    let alive = true;
+    bookingPractices('')
+      .then((list) => {
+        if (!alive) return;
+        setMine(list);
+        const hit = want ? list.find((p) => p.id === want) : undefined;
+        if (hit) onPick(hit);
+      })
+      .catch((e: unknown) => { console.error(e); if (alive) { setErr(true); setMine([]); } });
+    return () => { alive = false; };
+  }, [want, onPick]);
   const q = query.trim();
   useEffect(() => {
     if (q.length < 2) return;

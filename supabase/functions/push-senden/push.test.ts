@@ -80,13 +80,35 @@ describe('buildMessage', () => {
     expect(ow.title).toBe('Bello: Terminanfrage abgelehnt');
     expect(ow.body).toContain('Praxis Ostpark kann den Termin');
     for (const [lang, T] of Object.entries(TEXTS)) {
-      for (const ev of ['requested', 'confirmed', 'declined', 'cancelled', 'moved', 'owner_cancelled', 'slot_free', 'remind48', 'remind2', 'cancelled_alt', 'alt_taken']) {
+      for (const ev of ['requested', 'confirmed', 'declined', 'cancelled', 'moved', 'owner_cancelled', 'slot_free', 'remind48', 'remind2', 'cancelled_alt', 'alt_taken', 'offer_taken']) {
         expect(T.bk[ev], `${lang} ${ev}`).toHaveLength(2);
-        const m = buildMessage(job({ kind: 'booking', title: 'P', language: lang, info: { event: ev, target: ev === 'requested' || ev === 'owner_cancelled' || ev === 'alt_taken' ? 'practice' : 'owner', starts_at: at } }));
+        const m = buildMessage(job({ kind: 'booking', title: 'P', language: lang, info: { event: ev, target: ev === 'requested' || ev === 'owner_cancelled' || ev === 'alt_taken' || ev === 'offer_taken' ? 'practice' : 'owner', starts_at: at } }));
         expect(m.title + m.body, `${lang} ${ev}`).not.toMatch(/\{(p|pet|d)\}/);
       }
     }
     expect(buildMessage(job({ kind: 'booking', title: 'P', info: { event: 'neu' } }))).toMatchObject({ title: 'Bello', body: 'P' });
+  });
+  it('Impferinnerung: Tier, Impfung, Fälligkeit, Praxis', () => {
+    const m = buildMessage(job({ kind: 'recall', title: 'Praxis Ostpark', url: '/termine/buchen?praxis=1', info: { vaccine: 'Tollwut', due_on: '2026-12-03' } }));
+    expect(m.title).toBe('Bello: Impfung fällig');
+    expect(m.body).toBe('Praxis Ostpark erinnert an die Impfung „Tollwut“ (fällig am 3. Dezember 2026). Jetzt Termin buchen.');
+    for (const lang of Object.keys(TEXTS)) {
+      const x = buildMessage(job({ kind: 'recall', title: 'P', language: lang, info: { vaccine: 'V', due_on: '2026-12-03' } }));
+      expect(x.title + x.body, lang).not.toMatch(/\{(p|v|d)\}/);
+    }
+  });
+  it('Anfragen: Praxis ohne Nachrichtentext, Notfall hervorgehoben, Antwort an Halter:in', () => {
+    const n = buildMessage(job({ kind: 'inquiry', title: 'Ole', url: '/praxis/anfragen', info: { event: 'new', urgency: 'soon' } }));
+    expect(n).toMatchObject({ title: 'Neue Anfrage', body: 'Ole · Bello. In PetConnect ansehen.' });
+    expect(buildMessage(job({ kind: 'inquiry', title: 'Ole', info: { event: 'new', urgency: 'emergency' } })).title).toBe('Notfall-Anfrage');
+    expect(buildMessage(job({ kind: 'inquiry', title: 'Praxis Ostpark', info: { event: 'answered' } }))).toMatchObject({ title: 'Bello: Antwort der Praxis', body: 'Praxis Ostpark hat auf Ihre Anfrage geantwortet.' });
+    for (const [lang, T] of Object.entries(TEXTS)) {
+      for (const ev of ['new', 'new_emergency', 'answered', 'offered']) expect(T.iq[ev], `${lang} ${ev}`).toHaveLength(2);
+      for (const info of [{ event: 'new', urgency: 'emergency' }, { event: 'new', urgency: 'normal' }, { event: 'answered' }, { event: 'offered' }]) {
+        const x = buildMessage(job({ kind: 'inquiry', title: 'P', language: lang, info }));
+        expect(x.title + x.body, lang).not.toMatch(/\{(p|o|pet)\}/);
+      }
+    }
   });
   it('unbekannte Art: neutrale Meldung', () => {
     expect(buildMessage(job({ kind: 'neu' as Job['kind'], title: 'Etwas' }))).toMatchObject({ title: 'Bello', body: 'Etwas' });

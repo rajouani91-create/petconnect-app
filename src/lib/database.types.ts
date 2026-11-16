@@ -1286,6 +1286,58 @@ export type Database = {
         Args: { p_id: string }
         Returns: undefined
       }
+      practice_recalls: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      practice_send_recall: {
+        Args: { p_vaccination: string }
+        Returns: undefined
+      }
+      practice_send_all_recalls: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      practice_set_recall_auto: {
+        Args: { p_on: boolean }
+        Returns: undefined
+      }
+      practice_inquiries: {
+        Args: Record<PropertyKey, never>
+        Returns: { id: string; pet_id: string; has_access: boolean; pet_label: string; owner_label: string; topic: string; urgency: string; message: string; status: string; reply: string | null; replied_at: string | null; replied_by_name: string | null; offered_slots: string[] | null; offered_type_name: string | null; booked_appointment_id: string | null; created_at: string }[]
+      }
+      practice_reply_inquiry: {
+        Args: { p_id: string; p_text: string }
+        Returns: undefined
+      }
+      practice_offer_inquiry: {
+        Args: { p_id: string; p_type_id: string; p_slots: string[] }
+        Returns: undefined
+      }
+      practice_close_inquiry: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      owner_inquiry_targets: {
+        Args: Record<PropertyKey, never>
+        Returns: { pet_id: string; pet_name: string; practice_id: string; practice_name: string; practice_phone: string | null }[]
+      }
+      owner_send_inquiry: {
+        Args: { p: Json }
+        Returns: string
+      }
+      owner_inquiries: {
+        Args: Record<PropertyKey, never>
+        Returns: { id: string; pet_id: string; pet_name: string; practice_name: string; practice_phone: string | null; topic: string; urgency: string; message: string; status: string; reply: string | null; replied_at: string | null; offered_slots: string[] | null; offered_type_name: string | null; can_edit: boolean; created_at: string }[]
+      }
+      owner_take_inquiry_slot: {
+        Args: { p_id: string; p_slot: string }
+        Returns: string
+      }
+      owner_close_inquiry: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
       waitlist_take: {
         Args: { p_id: string }
         Returns: string | null

@@ -7,6 +7,7 @@ import { zonedNow } from '../lib/time';
 import { practiceSchedule, type PracticeSchedule as Schedule } from '../lib/practiceSchedule';
 import { STATUS_LABEL, STATUS_TONE, endOf, practiceAppointments, timeOf, type PracticeAppointment } from '../lib/practiceAppointments';
 import { capacity, dayStatus, noShowRate, onDay, weekDays } from '../lib/practiceCalendar';
+import { practiceInquiries, type PracticeInquiry } from '../lib/inquiries';
 import { PracticeProfile } from './PracticeProfile';
 import { usePractice } from './PracticeProvider';
 
@@ -24,11 +25,12 @@ function PracticeToday() {
   const today = zonedNow(now).date;
   const [rows, setRows] = useState<PracticeAppointment[] | null>(null);
   const [sched, setSched] = useState<Schedule | null>(null);
+  const [asks, setAsks] = useState<PracticeInquiry[]>([]);
   const [err, setErr] = useState(false);
 
   useEffect(() => {
-    Promise.all([practiceAppointments(), practiceSchedule()])
-      .then(([a, s]) => { setRows(a); setSched(s); })
+    Promise.all([practiceAppointments(), practiceSchedule(), practiceInquiries().catch(() => [] as PracticeInquiry[])])
+      .then(([a, s, q]) => { setRows(a); setSched(s); setAsks(q.filter((x) => x.status === 'open')); })
       .catch(() => setErr(true));
   }, []);
 
@@ -57,6 +59,12 @@ function PracticeToday() {
         <div className="notice notice-warn tp-new">
           <span>{t('tpNew', { n: fresh.length })}</span>
           <Link to="/praxis/termine?filter=new" className="btn btn-primary">{t('tpView')}</Link>
+        </div>
+      )}
+      {asks.length > 0 && (
+        <div className={`notice ${asks.some((x) => x.urgency === 'emergency') ? 'notice-crit' : 'notice-info'} tp-new`}>
+          <span>{asks.some((x) => x.urgency === 'emergency') ? t('tpAsksEmergency', { n: asks.length }) : t('tpAsks', { n: asks.length })}</span>
+          <Link to="/praxis/anfragen" className="btn btn-secondary">{t('tpView')}</Link>
         </div>
       )}
       <div className="tp-kpis">

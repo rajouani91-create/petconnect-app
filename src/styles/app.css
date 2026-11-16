@@ -1018,3 +1018,26 @@ ul.choose-list { list-style: none; margin: 0; padding: 0; }
 .tp-bar-fill { display: block; height: 100%; background: var(--brand); border-radius: 5px; }
 .tp-bar.is-high .tp-bar-fill { background: #c98a12; }
 .tp-bar-val { text-align: end; }
+
+/* ---------- Praxissicht (Etappe P6): Erinnerungen und Anfragen ---------- */
+/* Acht Menüpunkte: auf dem Handy waagerecht wischbar statt gequetscht */
+.nav-practice ul { display: flex; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; }
+.nav-practice ul::-webkit-scrollbar { display: none; }
+.nav-practice li { flex: 0 0 auto; min-width: 76px; scroll-snap-align: start; position: relative; }
+@media (min-width: 900px) {
+  .nav-practice ul { flex-direction: column; overflow: visible; }
+  .nav-practice li { min-width: 0; }
+}
+.rc-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s-3); }
+.rc-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-2); align-items: center; }
+@media (min-width: 760px) { .rc-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 9.5rem 12rem; gap: var(--s-4); } .rc-row .pill { justify-self: start; } .rc-row > :last-child { justify-self: end; } }
+.rc-row .btn { white-space: nowrap; }
+.rc-sent { color: var(--ok, #2f7a4a); font-weight: 600; white-space: nowrap; }
+.iq-item { border: 1px solid var(--line); border-inline-start: 4px solid var(--line); border-radius: var(--r); padding: var(--s-3) var(--s-4); background: var(--surface); }
+.iq-item.is-emergency { border-inline-start-color: var(--crit, #b3261e); }
+.iq-item.is-soon { border-inline-start-color: var(--warn, #b7791f); }
+.iq-item.is-done { opacity: 0.75; }
+.iq-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-2); align-items: baseline; }
+.iq-msg { white-space: pre-wrap; overflow-wrap: anywhere; margin: var(--s-2) 0; }
+.iq-reply { border-inline-start: 3px solid var(--brand); padding-inline-start: var(--s-3); white-space: pre-wrap; overflow-wrap: anywhere; }
+.iq-slots { display: flex; flex-wrap: wrap; gap: var(--s-2); }
