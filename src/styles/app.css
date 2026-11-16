@@ -951,3 +951,8 @@ ul.choose-list { list-style: none; margin: 0; padding: 0; }
 .appt-time { flex: 0 0 5.5rem; font-weight: 700; display: flex; flex-direction: column; }
 .slot-picker .chips-wrap { max-height: 11rem; overflow-y: auto; }
 .slot-picker .chip { min-width: 4.5rem; justify-content: center; }
+
+/* ---------- Online-Buchung (Etappe P5c) ---------- */
+.day-nav { display: flex; align-items: center; gap: 0.5rem; }
+.day-nav input[type="date"] { flex: 1 1 auto; min-width: 0; }
+.day-nav .btn { min-width: 3rem; font-size: 1.25rem; }

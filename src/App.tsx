@@ -16,6 +16,7 @@ import { Pet } from './pages/Pet';
 import { PetNew } from './pages/PetNew';
 import { More } from './pages/More';
 import { Appointments } from './pages/Appointments';
+import { BookAppointment } from './pages/BookAppointment';
 import { Emergency } from './pages/Emergency';
 import { Invite } from './pages/Invite';
 import { Reminders } from './pages/Reminders';
@@ -77,6 +78,7 @@ export function App() {
               <Route path="/praxis/team" element={<PracticeTeam />} />
               <Route path="/praxis/termine" element={<PracticeAppointments />} />
               <Route path="/praxis/termine/einstellungen" element={<PracticeSchedule />} />
+              <Route path="/praxis/benachrichtigungen" element={<Notifications practice />} />
               <Route path="/praxis/patienten" element={<PracticePatients />} />
               <Route path="/praxis/patienten/zugriff" element={<PracticeAccess />} />
               <Route path="/praxis/patienten/aufnehmen" element={<PracticeIntake />} />
@@ -98,6 +100,7 @@ export function App() {
             >
               <Route index element={<Today />} />
               <Route path="termine" element={<Appointments />} />
+              <Route path="termine/buchen" element={<BookAppointment />} />
               <Route path="tiere" element={<Pets />} />
               <Route path="tier" element={<Pet />} />
               <Route path="tier/neu" element={<PetNew />} />

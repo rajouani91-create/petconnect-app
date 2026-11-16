@@ -13,6 +13,7 @@
 /betreuung/*          /app/betreuung/:splat       302
 /einladung/*          /app/einladung/:splat       302
 /termine              /app/termine                302
+/termine/*            /app/termine/:splat         302
 /tiere                /app/tiere                  302
 /tier                 /app/tier                   302
 /tier/*               /app/tier/:splat            302

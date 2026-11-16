@@ -9,7 +9,7 @@ import { zonedNow } from '../lib/time';
 import { useNow } from '../lib/useNow';
 import {
   MINUTES, TYPE_NAME_MAX, WEEKS_AHEAD, absenceError, addAbsence, dayError, dayText, practiceSchedule, removeAbsence, removeAppointmentType, saveAppointmentType,
-  saveHours, scheduleErrorKey, setBookingWindow, weekdayName, type AppointmentType, type DayHours, type PracticeSchedule as Schedule,
+  saveHours, scheduleErrorKey, setBookingWindow, setOnlineBooking, weekdayName, type AppointmentType, type DayHours, type PracticeSchedule as Schedule,
 } from '../lib/practiceSchedule';
 import { usePractice } from './PracticeProvider';
 
@@ -305,6 +305,9 @@ function WindowCard({ data, busy, run }: CardProps) {
   return (
     <section className="card stack" aria-labelledby={`${uid}-h`}>
       <h2 id={`${uid}-h`}>{t('scWindow')}</h2>
+      <Switch label={t('obOnlineSwitch')} checked={!!data.online_enabled} disabled={!data.can_edit || busy}
+        onChange={(on) => void run(() => setOnlineBooking(on), t(on ? 'obOnlineOn' : 'obOnlineOff'))} />
+      <p className="small muted">{t('obOnlineHint')}</p>
       <Field id={`${uid}-w`} label={t('scWindowLabel')} hint={t('scWindowHint')}>
         {(a) => (
           <select {...a} value={data.weeks_ahead} disabled={!data.can_edit || busy} onChange={(e) => void run(() => setBookingWindow(Number(e.target.value)), t('scWindowSaved'))}>

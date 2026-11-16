@@ -2,9 +2,9 @@
 import { TEXTS } from './texts.ts';
 
 export type Job = {
-  kind: 'medication' | 'reminder' | 'appointment' | 'routine' | 'practice';
+  kind: 'medication' | 'reminder' | 'appointment' | 'routine' | 'practice' | 'booking';
   ref_id: string; slot: string; pet: string; title: string; url: string; language: string;
-  info: { rkind?: string; label?: string | null; amount?: number; unit?: string; hint?: string; time?: string; overdue?: boolean; location?: string | null };
+  info: { rkind?: string; label?: string | null; amount?: number; unit?: string; hint?: string; time?: string; overdue?: boolean; location?: string | null; event?: string; target?: string; starts_at?: string };
   subs: { id: string; endpoint: string; p256dh: string; auth: string }[];
 };
 
@@ -35,6 +35,17 @@ export function buildMessage(j: Job): { title: string; body: string; url: string
   if (j.kind === 'practice') {
     /* Praxis hat die Tierakte ergänzt: bewusst ohne Inhalt des Eintrags (Sperrbildschirm). j.title = Name der Praxis */
     return { title: `${j.pet}: ${T.prac}`, body: T.pracBody.replace('{p}', j.title), url: j.url, tag };
+  }
+  if (j.kind === 'booking') {
+    /* Online-Buchung: j.title = Name der Praxis, j.pet = Tiername; Zeit in Berliner Ortszeit in der Sprache der Person */
+    const t = T.bk[j.info.event ?? ''];
+    if (t) {
+      const d = j.info.starts_at
+        ? new Intl.DateTimeFormat(LOCALE[lang], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' }).format(new Date(j.info.starts_at))
+        : '';
+      const fill = (x: string) => x.replace('{pet}', j.pet).replace('{p}', j.title).replace('{d}', d);
+      return { title: j.info.target === 'practice' ? fill(t[0]) : `${j.pet}: ${fill(t[0])}`, body: fill(t[1]), url: j.url, tag };
+    }
   }
   if (j.kind !== 'appointment') {
     /* unbekannte Art (neuere Datenbank als Funktion): neutrale Meldung statt eines falschen Textes */

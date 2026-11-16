@@ -12,6 +12,8 @@ import {
   type AppointmentRow,
 } from '../lib/api';
 import { appointmentIcs, downloadIcs, icsFilename } from '../lib/ics';
+import { OWNER_STATUS_LABEL, OWNER_STATUS_TONE, bookingOwnerErrorKey, cancelBooking, ownerPracticeBookings, type OwnerBooking } from '../lib/booking';
+import { CANCEL_LABEL, CANCEL_REASONS, type CancelReason } from '../lib/practiceAppointments';
 import { recordErrorKey } from '../lib/record';
 import {
   APPT_KINDS,
@@ -53,13 +55,21 @@ export function Appointments() {
   const [filter, setFilter] = useState(ALL_PETS);
   const [mode, setMode] = useState<Mode>(null);
   const [toDelete, setToDelete] = useState<AppointmentRow | null>(null);
+  const [bookings, setBookings] = useState<Map<string, OwnerBooking>>(new Map());
+  const [toCancel, setToCancel] = useState<AppointmentRow | null>(null);
   const [status, setStatus] = useStatus();
   const { register, focusLater } = useFocusAfter();
 
   const petKey = pets.map((p) => p.id).join(',');
   const load = useCallback(async () => {
     try {
-      setRows(await listAppointments(petKey ? petKey.split(',') : []));
+      const [list, b] = await Promise.all([
+        listAppointments(petKey ? petKey.split(',') : []),
+        // Stand der Praxistermine (angefragt, bestätigt, abgesagt); fehlt er, bleibt die Liste trotzdem nutzbar
+        ownerPracticeBookings().catch((e: unknown) => { console.error(e); return [] as OwnerBooking[]; }),
+      ]);
+      setRows(list);
+      setBookings(new Map(b.map((x) => [x.appointment_id, x])));
       setLoadError(false);
     } catch (e) {
       console.error(e);
@@ -102,6 +112,19 @@ export function Appointments() {
     focusLater('add');
   }
 
+  async function cancelAtPractice(row: AppointmentRow) {
+    setToCancel(null);
+    try {
+      await cancelBooking(row.id);
+      await load();
+      setStatus(t('obCancelled', { x: row.title }));
+    } catch (e) {
+      console.error(e);
+      setStatus(t(bookingOwnerErrorKey(e)), false);
+    }
+    focusLater('add');
+  }
+
   function exportIcs(row: AppointmentRow) {
     const ics = appointmentIcs({ id: row.id, title: row.title, petName: petName(row.pet_id), startsAt: row.starts_at, endsAt: row.ends_at, location: row.location, status: row.status });
     downloadIcs(ics, icsFilename(`${row.title}-${petName(row.pet_id)}`));
@@ -111,6 +134,8 @@ export function Appointments() {
   const item = (r: AppointmentRow) => {
     const fromPractice = !!r.practice_appointment_id;
     const canChange = editable.has(r.pet_id) && !fromPractice;
+    const bk = fromPractice ? bookings.get(r.id) : undefined;
+    const reason = bk?.cancel_reason && (CANCEL_REASONS as readonly string[]).includes(bk.cancel_reason) ? (bk.cancel_reason as CancelReason) : null;
     const st = isApptStatus(r.status) ? r.status : 'planned';
     const isPast = st === 'planned' && localDate(new Date(r.starts_at)) < today;
     return (
@@ -126,20 +151,31 @@ export function Appointments() {
           </span>
           <span className="record-title">
             {r.title}
-            {st !== 'planned' && <span className={`pill appt-${st}`}>{t(APPT_STATUS_LABEL[st])}</span>}
+            {bk ? <span className={`pill ${OWNER_STATUS_TONE[bk.status]}`}>{t(OWNER_STATUS_LABEL[bk.status])}</span>
+              : st !== 'planned' && <span className={`pill appt-${st}`}>{t(APPT_STATUS_LABEL[st])}</span>}
             {isPast && <span className="pill">{t('apPast')}</span>}
           </span>
           <span className="muted small">
             {[isApptKind(r.kind) ? t(APPT_KIND_LABEL[r.kind]) : r.kind, petName(r.pet_id), r.location].filter(Boolean).join(' · ')}
           </span>
           {r.note && <span className="small appt-note">{shorten(r.note)}</span>}
-          {fromPractice && <span className="small practice-note">{t('apFromPractice')}</span>}
+          {bk?.status === 'cancelled_practice' && reason && <span className="small">{t('rcReason')}: {t(CANCEL_LABEL[reason])}</span>}
+          {fromPractice && bk?.status === 'new' && <span className="small practice-note">{t('obRequestedNote')}</span>}
+          {fromPractice && (!bk || bk.status !== 'new') && <span className="small practice-note">{t('apFromPractice')}</span>}
+          {bk && !bk.can_cancel && (bk.status === 'new' || bk.status === 'confirmed') && editable.has(r.pet_id) && !isPast && (
+            <span className="small muted">{bk.practice_phone ? t('obLatePhone', { p: bk.practice_phone }) : t('obLate')}</span>
+          )}
         </div>
         <div className="row-actions">
           <button type="button" className="btn btn-ghost" aria-label={t('calExportL', { x: r.title })} onClick={() => exportIcs(r)}>
             <IconCalendar size={18} />
             {t('calExport')}
           </button>
+          {bk?.can_cancel && editable.has(r.pet_id) && (
+            <button type="button" className="btn btn-ghost" aria-label={t('apCancelL', { x: r.title })} onClick={() => setToCancel(r)}>
+              {t('apCancel')}
+            </button>
+          )}
           {canChange && (
             <>
               {st === 'planned' ? (
@@ -185,10 +221,16 @@ export function Appointments() {
       {rows && (
         <>
           {anyEditable && mode === null && (
-            <button type="button" ref={register('add')} className="btn btn-primary btn-start" onClick={() => { setMode({ kind: 'add' }); setStatus(''); }}>
-              <IconPlus size={20} />
-              {t('apAdd')}
-            </button>
+            <div className="row-actions">
+              <Link to="/termine/buchen" className="btn btn-primary">
+                <IconCalendar size={20} />
+                {t('obBookCta')}
+              </Link>
+              <button type="button" ref={register('add')} className="btn btn-secondary" onClick={() => { setMode({ kind: 'add' }); setStatus(''); }}>
+                <IconPlus size={20} />
+                {t('apAdd')}
+              </button>
+            </div>
           )}
           {anyEditable && mode && (
             <section className="card">
@@ -238,6 +280,9 @@ export function Appointments() {
       )}
       <StatusLine status={status} />
 
+      <ConfirmDelete open={toCancel !== null} title={t('obCancelTitle')} confirmLabel={t('obCancelBtn')} onCancel={() => setToCancel(null)} onConfirm={() => toCancel && void cancelAtPractice(toCancel)}>
+        {toCancel && <p>{t('obCancelAsk', { x: toCancel.title, d: formatDateTime(toCancel.starts_at, locale), p: toCancel.location ?? '' })}</p>}
+      </ConfirmDelete>
       <ConfirmDelete open={toDelete !== null} title={t('apDelTitle')} onCancel={() => setToDelete(null)} onConfirm={() => toDelete && void remove(toDelete)}>
         {toDelete && <p>{t('apDelAsk', { x: toDelete.title, d: formatDateTime(toDelete.starts_at, locale) })}</p>}
       </ConfirmDelete>

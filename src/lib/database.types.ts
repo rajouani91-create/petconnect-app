@@ -1234,6 +1234,38 @@ export type Database = {
         Args: { p_weeks: number }
         Returns: undefined
       }
+      practice_set_online_booking: {
+        Args: { p_on: boolean }
+        Returns: undefined
+      }
+      practice_confirm_appointment: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      booking_practices: {
+        Args: { p_query?: string }
+        Returns: { id: string; name: string; street: string | null; housenumber: string | null; postcode: string | null; city: string | null; phone: string | null; linked: boolean }[]
+      }
+      booking_options: {
+        Args: { p_practice: string }
+        Returns: Json
+      }
+      booking_free_slots: {
+        Args: { p_practice: string; p_type: string; p_from: string; p_days?: number }
+        Returns: string[]
+      }
+      owner_book_appointment: {
+        Args: { p: Json }
+        Returns: string
+      }
+      owner_practice_bookings: {
+        Args: Record<PropertyKey, never>
+        Returns: { appointment_id: string; status: string; source: string; practice_name: string; practice_phone: string | null; cancel_reason: string | null; cancel_note: string | null; can_cancel: boolean }[]
+      }
+      owner_cancel_booking: {
+        Args: { p_appointment: string }
+        Returns: undefined
+      }
       practice_appointments: {
         Args: Record<PropertyKey, never>
         Returns: { id: string; pet_id: string | null; has_access: boolean; pet_label: string; owner_label: string; phone: string | null; type_id: string | null; type_name: string; starts_at: string; minutes: number; status: string; source: string; new_client: boolean; note: string | null; cancel_reason: string | null; cancel_note: string | null; overridden: boolean; created_by_name: string; created_at: string }[]

@@ -71,6 +71,23 @@ describe('buildMessage', () => {
     expect(buildMessage(job({ kind: 'routine', info: { rkind: 'walk', time: '07:00' } })).title).toBe('Bello: Gassirunde');
     expect(buildMessage(job({ language: 'xx' })).body).toBe('Heute fällig');
   });
+  it('Online-Buchung: Texte für Praxis und Halter:in, Zeit in Berliner Ortszeit', () => {
+    const at = '2026-11-23T08:00:00Z';
+    const pr = buildMessage(job({ kind: 'booking', title: 'Praxis Ostpark', url: '/praxis/termine', info: { event: 'requested', target: 'practice', starts_at: at } }));
+    expect(pr.title).toBe('Neue Online-Buchung');
+    expect(pr.body).toMatch(/^Bello · Mo\.?, 23\. Nov\.?,? 09:00/);
+    const ow = buildMessage(job({ kind: 'booking', title: 'Praxis Ostpark', url: '/termine', info: { event: 'declined', target: 'owner', starts_at: at } }));
+    expect(ow.title).toBe('Bello: Terminanfrage abgelehnt');
+    expect(ow.body).toContain('Praxis Ostpark kann den Termin');
+    for (const [lang, T] of Object.entries(TEXTS)) {
+      for (const ev of ['requested', 'confirmed', 'declined', 'cancelled', 'moved', 'owner_cancelled']) {
+        expect(T.bk[ev], `${lang} ${ev}`).toHaveLength(2);
+        const m = buildMessage(job({ kind: 'booking', title: 'P', language: lang, info: { event: ev, target: ev === 'requested' || ev === 'owner_cancelled' ? 'practice' : 'owner', starts_at: at } }));
+        expect(m.title + m.body, `${lang} ${ev}`).not.toMatch(/\{(p|pet|d)\}/);
+      }
+    }
+    expect(buildMessage(job({ kind: 'booking', title: 'P', info: { event: 'neu' } }))).toMatchObject({ title: 'Bello', body: 'P' });
+  });
   it('unbekannte Art: neutrale Meldung', () => {
     expect(buildMessage(job({ kind: 'neu' as Job['kind'], title: 'Etwas' }))).toMatchObject({ title: 'Bello', body: 'Etwas' });
   });

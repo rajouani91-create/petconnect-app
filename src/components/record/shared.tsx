@@ -27,12 +27,15 @@ export function ConfirmDelete({
   children,
   onCancel,
   onConfirm,
+  confirmLabel,
 }: {
   open: boolean;
   title: string;
   children: ReactNode;
   onCancel: () => void;
   onConfirm: () => void;
+  /** Beschriftung des Bestätigungsknopfs (Standard: „Löschen“) */
+  confirmLabel?: string;
 }) {
   const { t } = useI18n();
   return (
@@ -43,7 +46,7 @@ export function ConfirmDelete({
       actions={
         <>
           <button type="button" className="btn btn-ghost" onClick={onCancel}>{t('cancelBtn')}</button>
-          <button type="button" className="btn btn-danger" onClick={onConfirm}>{t('gpDelYes')}</button>
+          <button type="button" className="btn btn-danger" onClick={onConfirm}>{confirmLabel ?? t('gpDelYes')}</button>
         </>
       }
     >

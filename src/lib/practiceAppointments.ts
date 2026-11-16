@@ -178,3 +178,8 @@ export async function markAppointment(id: string, attended: boolean): Promise<vo
   const { error } = await supabase.rpc('practice_mark_appointment', { p_id: id, p_attended: attended });
   if (error) throw error;
 }
+
+export async function confirmAppointment(id: string): Promise<void> {
+  const { error } = await supabase.rpc('practice_confirm_appointment', { p_id: id });
+  if (error) throw error;
+}
