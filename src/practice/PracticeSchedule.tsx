@@ -55,7 +55,7 @@ export function PracticeSchedule() {
 
   return (
     <div className="page stack-lg">
-      <Link to="/praxis/termine" className="back-link"><IconBack size={20} />{t('scTitle')}</Link>
+      <Link to="/praxis/termine" className="back-link"><IconBack size={20} />{t('nav_bookings')}</Link>
       <div className="page-head">
         <h1>{t('bkSettings')}</h1>
         <p className="muted">{t('scIntro')}</p>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useState, type FormEvent } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { formatDate, formatIsoDate, type MessageKey } from '../i18n';
 import { Dialog } from '../components/Dialog';
@@ -26,7 +26,8 @@ export function PracticeAppointments() {
   const [rows, setRows] = useState<PracticeAppointment[] | null>(null);
   const [types, setTypes] = useState<AppointmentType[]>([]);
   const [loadErr, setLoadErr] = useState(false);
-  const [filter, setFilter] = useState<Filter>('confirmed');
+  const [params] = useSearchParams();
+  const [filter, setFilter] = useState<Filter>(() => (FILTERS as string[]).includes(params.get('filter') ?? '') ? (params.get('filter') as Filter) : 'confirmed');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [booking, setBooking] = useState(false);
@@ -69,7 +70,7 @@ export function PracticeAppointments() {
   return (
     <div className="page stack-lg">
       <div className="page-head page-head-row patients-head">
-        <h1>{t('scTitle')}</h1>
+        <h1>{t('nav_bookings')}</h1>
         {!pending && (
           <div className="row-actions">
             <button type="button" className="btn btn-primary" disabled={!rows || types.length === 0} onClick={() => setBooking(true)}>{t('bkBook')}</button>
@@ -180,7 +181,7 @@ function Row({ a, now, busy, run, onMove, onCancel }: {
 }
 
 /** Freie Zeiten eines Tages als Knöpfe */
-function SlotPicker({ minutes, day, exclude, value, onPick }: { minutes: number | null; day: string; exclude?: string; value: string; onPick: (hhmm: string) => void }) {
+export function SlotPicker({ minutes, day, exclude, value, onPick }: { minutes: number | null; day: string; exclude?: string; value: string; onPick: (hhmm: string) => void }) {
   const { t } = useI18n();
   const [slots, setSlots] = useState<{ key: string; list: string[] } | null>(null);
   const key = `${minutes}|${day}|${exclude ?? ''}`;
@@ -210,7 +211,7 @@ function SlotPicker({ minutes, day, exclude, value, onPick }: { minutes: number 
 }
 
 /** Warnung vor dem Speichern: Praxis geschlossen, Pause, Abwesenheit oder Überschneidung */
-function WarningBox({ w, busy, onForce, onBack }: { w: Warnings; busy: boolean; onForce: () => void; onBack: () => void }) {
+export function WarningBox({ w, busy, onForce, onBack }: { w: Warnings; busy: boolean; onForce: () => void; onBack: () => void }) {
   const { t } = useI18n();
   return (
     <div className="notice notice-warn stack" role="alert">
@@ -420,7 +421,7 @@ function MoveDialog({ a, onClose, onDone }: { a: PracticeAppointment; onClose: (
   );
 }
 
-function CancelDialog({ a, busy, onClose, onCancel }: { a: PracticeAppointment; busy: boolean; onClose: () => void; onCancel: (reason: CancelReason, note: string) => Promise<boolean> }) {
+export function CancelDialog({ a, busy, onClose, onCancel }: { a: PracticeAppointment; busy: boolean; onClose: () => void; onCancel: (reason: CancelReason, note: string) => Promise<boolean> }) {
   const { t, lang } = useI18n();
   const uid = useId();
   const [reason, setReason] = useState<CancelReason | ''>('');
