@@ -303,3 +303,9 @@ export const IconChat = (p: IconProps) => (
     <path d="M4 5h16v11H9l-5 4V5ZM8 9.5h8M8 12.5h5" />
   </Svg>
 );
+
+export const IconReceipt = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21V3ZM9 8h6M9 11.5h6M9 15h4" />
+  </Svg>
+);

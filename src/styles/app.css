@@ -282,7 +282,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .hint { font-size: 0.85rem; color: var(--muted); }
 .error { display: flex; align-items: flex-start; gap: 6px; font-size: 0.9rem; color: var(--crit); font-weight: 600; }
 .error svg { flex: none; margin-top: 2px; }
-input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="time"], input[type="tel"], input[type="url"], .practice-search, select, textarea {
+input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="time"], input[type="tel"], input[type="url"], input[type="number"], input[type="search"], .practice-search, select, textarea {
   width: 100%; min-height: var(--tap); padding: 10px 12px;
   background: var(--surface); color: var(--fg);
   border: 1px solid var(--control); border-radius: var(--r);
@@ -1041,3 +1041,45 @@ ul.choose-list { list-style: none; margin: 0; padding: 0; }
 .iq-msg { white-space: pre-wrap; overflow-wrap: anywhere; margin: var(--s-2) 0; }
 .iq-reply { border-inline-start: 3px solid var(--brand); padding-inline-start: var(--s-3); white-space: pre-wrap; overflow-wrap: anywhere; }
 .iq-slots { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+/* ---------- Praxissicht (Etappe P7a): Abrechnung ---------- */
+.bl-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-2); align-items: center; }
+@media (min-width: 760px) { .bl-row { grid-template-columns: minmax(0, 1fr) 8rem 8rem auto; gap: var(--s-4); } .bl-row .pill { justify-self: start; } }
+.bl-amount { font-weight: 700; text-align: end; white-space: nowrap; }
+@media (max-width: 759px) { .bl-amount { text-align: start; } }
+.tone-crit { color: var(--crit); }
+.btn.is-disabled { opacity: 0.55; }
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.vault-table .num, .inv-table .num { text-align: end; white-space: nowrap; }
+.bl-cat td, .bl-draft td { vertical-align: middle; }
+.bl-qty, .vault-table input.bl-qty { width: 6rem; min-height: 40px; padding: 6px 8px; }
+.bl-add { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center; }
+.bl-add select { flex: 1 1 18rem; max-width: 32rem; }
+.bl-pick { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; max-height: 28rem; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--r); }
+.bl-pick li + li { border-top: 1px solid var(--line); }
+.bl-pick-row { display: grid; grid-template-columns: auto 3.5rem minmax(0, 1fr) auto; gap: var(--s-3); align-items: center; padding: var(--s-2) var(--s-3); min-height: 48px; cursor: pointer; }
+.bl-pick-row.is-off { opacity: 0.55; cursor: not-allowed; }
+.bl-pick-row input { width: 20px; height: 20px; }
+.bl-later ul { margin: 0; padding-inline-start: 1.2rem; }
+.inv-doc { display: flex; flex-direction: column; gap: var(--s-4); }
+.inv-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-4); align-items: flex-start; }
+.inv-issuer, .inv-to { display: flex; flex-direction: column; gap: 2px; }
+.inv-title { text-align: end; }
+.inv-title h2 { margin: 0; font-size: 1.6rem; }
+.inv-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-4); }
+.inv-facts { display: grid; grid-template-columns: auto auto; gap: 2px var(--s-4); margin: 0; }
+.inv-facts dt { color: var(--muted); }
+.inv-facts dd { margin: 0; text-align: end; }
+.inv-sum { display: flex; flex-direction: column; gap: 2px; margin: 0; margin-inline-start: auto; min-width: min(100%, 22rem); }
+.inv-sum-row { display: flex; justify-content: space-between; gap: var(--s-4); }
+.inv-sum dd { margin: 0; white-space: nowrap; }
+.inv-total { border-top: 2px solid var(--fg); padding-top: var(--s-2); margin-top: var(--s-1); font-weight: 700; font-size: 1.1rem; }
+.inv-stamp { font-weight: 700; border: 2px solid var(--line); border-radius: var(--r); padding: var(--s-2) var(--s-3); align-self: flex-start; }
+.inv-paid { border-color: var(--ok, #2f7a4a); color: var(--ok, #2f7a4a); }
+.inv-cancel-ref { margin: 0; }
+.inv-note { margin: 0; white-space: pre-wrap; }
+@media print {
+  .inv-doc { gap: 6mm; font-size: 10.5pt; }
+  .inv-paid { color: #000; border-color: #000; }
+  .table-scroll { overflow: visible; }
+}
