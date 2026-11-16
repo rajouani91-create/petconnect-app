@@ -1286,6 +1286,70 @@ export type Database = {
         Args: { p_id: string }
         Returns: undefined
       }
+      practice_billing: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      practice_save_billing_settings: {
+        Args: { p: Json }
+        Returns: undefined
+      }
+      practice_catalog_publish: {
+        Args: { p: Json }
+        Returns: string
+      }
+      practice_invoices: {
+        Args: Record<PropertyKey, never>
+        Returns: Json[]
+      }
+      practice_invoice: {
+        Args: { p_id: string }
+        Returns: Json
+      }
+      practice_invoice_create: {
+        Args: { p: Json }
+        Returns: string
+      }
+      practice_invoice_save: {
+        Args: { p_id: string; p: Json }
+        Returns: undefined
+      }
+      practice_invoice_discard: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      practice_invoice_finalize: {
+        Args: { p_id: string }
+        Returns: string
+      }
+      practice_invoice_pay: {
+        Args: { p_id: string; p_date: string; p_method: string }
+        Returns: undefined
+      }
+      practice_invoice_unpay: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      practice_invoice_cancel: {
+        Args: { p_id: string; p_reason: string }
+        Returns: string
+      }
+      owner_invoices: {
+        Args: Record<PropertyKey, never>
+        Returns: Json[]
+      }
+      owner_invoice: {
+        Args: { p_id: string }
+        Returns: Json
+      }
+      my_billing_address: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      save_billing_address: {
+        Args: { p: Json }
+        Returns: undefined
+      }
       practice_recalls: {
         Args: Record<PropertyKey, never>
         Returns: Json

@@ -90,6 +90,13 @@ export function PracticePatient() {
           <VoidedCard ctx={ctx} />
         </div>
         <div className="stack-lg record-side">
+          {!p.deceased && (
+            <section className="card stack" aria-labelledby="bill-h">
+              <h2 id="bill-h">{t('blBillCardTitle')}</h2>
+              <p className="small muted">{t('blBillCardText')}</p>
+              <div className="row-actions"><Link to={`/praxis/abrechnung/neu?tier=${petId}`} className="btn btn-secondary">{t('blBillBtn')}</Link></div>
+            </section>
+          )}
           <EntryForms ctx={ctx} />
         </div>
       </div>

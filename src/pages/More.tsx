@@ -4,7 +4,7 @@ import { useI18n } from '../i18n/I18nProvider';
 import type { MessageKey } from '../i18n';
 import { useAuth } from '../auth/AuthProvider';
 import { staffRoleFor } from '../lib/staff';
-import { IconBell, IconChart, IconChat, IconChevron, IconEmergency, IconList, IconPeople, IconShield, IconSparkle, IconUser } from '../components/Icons';
+import { IconBell, IconChart, IconChat, IconReceipt, IconChevron, IconEmergency, IconList, IconPeople, IconShield, IconSparkle, IconUser } from '../components/Icons';
 
 function Row({ to, icon, label }: { to: string; icon: ReactNode; label: string }) {
   return (
@@ -58,6 +58,7 @@ export function More() {
         <Row to="/erinnerungen" icon={<IconBell size={20} />} label={t('nav_reminders')} />
         <Row to="/alltag" icon={<IconList size={20} />} label={t('nav_routine')} />
         <Row to="/mehr/anfragen" icon={<IconChat size={20} />} label={t('iqOwnerTitle')} />
+        <Row to="/mehr/rechnungen" icon={<IconReceipt size={20} />} label={t('blOwnTitle')} />
         <Row to="/notfall" icon={<IconEmergency size={20} />} label={t('moreEmergencyCard')} />
         <Row to="/mehr/monatsuebersicht" icon={<IconChart size={20} />} label={t('moTitle')} />
         <Row to="/mehr/assistent" icon={<IconSparkle size={20} />} label={t('aiMenu')} />

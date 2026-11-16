@@ -110,6 +110,19 @@ describe('buildMessage', () => {
       }
     }
   });
+  it('Rechnung: Nummer, Betrag und Fälligkeit, Storno ohne Minuszeichen', () => {
+    const m = buildMessage(job({ kind: 'invoice', title: 'Praxis Ostpark', url: '/mehr/rechnungen', info: { event: 'invoice', number: 'RE-2026-00001', gross: 176.51, currency: 'EUR', due_on: '2026-11-26' } }));
+    expect(m.title).toBe('Bello: Neue Rechnung');
+    expect(m.body).toMatch(/^Praxis Ostpark: Rechnung RE-2026-00001 über 176,51\s€, fällig am 26\. November 2026\.$/);
+    expect(buildMessage(job({ kind: 'invoice', title: 'P', info: { event: 'cancellation', number: 'X', gross: -10, currency: 'EUR' } })).body).toMatch(/^P: Stornorechnung X über 10,00\s€\.$/);
+    for (const [lang, T] of Object.entries(TEXTS)) {
+      for (const ev of ['invoice', 'cancellation']) {
+        expect(T.inv[ev], `${lang} ${ev}`).toHaveLength(2);
+        const x = buildMessage(job({ kind: 'invoice', title: 'P', language: lang, info: { event: ev, number: 'N', gross: 5, currency: 'EUR', due_on: '2026-11-26' } }));
+        expect(x.title + x.body, lang).not.toMatch(/\{(p|no|a|d)\}/);
+      }
+    }
+  });
   it('unbekannte Art: neutrale Meldung', () => {
     expect(buildMessage(job({ kind: 'neu' as Job['kind'], title: 'Etwas' }))).toMatchObject({ title: 'Bello', body: 'Etwas' });
   });

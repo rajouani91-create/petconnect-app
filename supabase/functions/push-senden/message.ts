@@ -2,9 +2,9 @@
 import { TEXTS } from './texts.ts';
 
 export type Job = {
-  kind: 'medication' | 'reminder' | 'appointment' | 'routine' | 'practice' | 'booking' | 'recall' | 'inquiry';
+  kind: 'medication' | 'reminder' | 'appointment' | 'routine' | 'practice' | 'booking' | 'recall' | 'inquiry' | 'invoice';
   ref_id: string; slot: string; pet: string; title: string; url: string; language: string;
-  info: { rkind?: string; label?: string | null; amount?: number; unit?: string; hint?: string; time?: string; overdue?: boolean; location?: string | null; event?: string; target?: string; starts_at?: string; vaccine?: string; due_on?: string; urgency?: string };
+  info: { rkind?: string; label?: string | null; amount?: number; unit?: string; hint?: string; time?: string; overdue?: boolean; location?: string | null; event?: string; target?: string; starts_at?: string; vaccine?: string; due_on?: string; urgency?: string; number?: string; gross?: number; currency?: string };
   subs: { id: string; endpoint: string; p256dh: string; auth: string }[];
 };
 
@@ -61,6 +61,18 @@ export function buildMessage(j: Job): { title: string; body: string; url: string
     if (t) {
       const fill = (x: string) => x.replace('{pet}', j.pet).replace('{o}', j.title).replace('{p}', j.title);
       return { title: ev.startsWith('new') ? fill(t[0]) : `${j.pet}: ${fill(t[0])}`, body: fill(t[1]), url: j.url, tag };
+    }
+  }
+  if (j.kind === 'invoice') {
+    /* Rechnung der Praxis: j.title = Rechnungssteller, Betrag in Landeswährung, Fälligkeit als Kalenderdatum */
+    const t = T.inv[j.info.event ?? ''];
+    if (t) {
+      const a = new Intl.NumberFormat(LOCALE[lang], { style: 'currency', currency: j.info.currency || 'EUR' }).format(Math.abs(Number(j.info.gross ?? 0)));
+      const d = j.info.due_on
+        ? new Intl.DateTimeFormat(LOCALE[lang], { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${j.info.due_on}T12:00:00Z`))
+        : '';
+      const fill = (x: string) => x.replace('{p}', j.title).replace('{no}', j.info.number ?? '').replace('{a}', a).replace('{d}', d);
+      return { title: `${j.pet}: ${fill(t[0])}`, body: fill(t[1]), url: j.url, tag };
     }
   }
   if (j.kind !== 'appointment') {
