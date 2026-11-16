@@ -12,7 +12,12 @@ import {
   type AppointmentRow,
 } from '../lib/api';
 import { appointmentIcs, downloadIcs, icsFilename } from '../lib/ics';
-import { OWNER_STATUS_LABEL, OWNER_STATUS_TONE, bookingOwnerErrorKey, cancelBooking, ownerPracticeBookings, type OwnerBooking } from '../lib/booking';
+import {
+  OWNER_STATUS_LABEL, OWNER_STATUS_TONE, bookingOwnerErrorKey, cancelBooking, leaveWaitlist, ownerPracticeBookings, ownerWaitlist, takeAlternative, takeWaitlistOffer,
+  type OwnerBooking, type OwnerWaitlistEntry,
+} from '../lib/booking';
+import { formatDate, formatIsoDate } from '../i18n';
+import { dayOf, timeOf } from '../lib/practiceAppointments';
 import { CANCEL_LABEL, CANCEL_REASONS, type CancelReason } from '../lib/practiceAppointments';
 import { recordErrorKey } from '../lib/record';
 import {
@@ -56,6 +61,8 @@ export function Appointments() {
   const [mode, setMode] = useState<Mode>(null);
   const [toDelete, setToDelete] = useState<AppointmentRow | null>(null);
   const [bookings, setBookings] = useState<Map<string, OwnerBooking>>(new Map());
+  const [waitlist, setWaitlist] = useState<OwnerWaitlistEntry[]>([]);
+  const [wlBusy, setWlBusy] = useState(false);
   const [toCancel, setToCancel] = useState<AppointmentRow | null>(null);
   const [status, setStatus] = useStatus();
   const { register, focusLater } = useFocusAfter();
@@ -68,6 +75,7 @@ export function Appointments() {
         // Stand der Praxistermine (angefragt, bestätigt, abgesagt); fehlt er, bleibt die Liste trotzdem nutzbar
         ownerPracticeBookings().catch((e: unknown) => { console.error(e); return [] as OwnerBooking[]; }),
       ]);
+      ownerWaitlist().then(setWaitlist).catch(() => setWaitlist([]));
       setRows(list);
       setBookings(new Map(b.map((x) => [x.appointment_id, x])));
       setLoadError(false);
@@ -125,6 +133,22 @@ export function Appointments() {
     focusLater('add');
   }
 
+  /** Warteliste und Ausweichtermine: Aktion ausführen, neu laden, Meldung */
+  async function wlRun(fn: () => Promise<unknown>, ok: string) {
+    setWlBusy(true);
+    try {
+      await fn();
+      await load();
+      setStatus(ok);
+    } catch (e) {
+      console.error(e);
+      setStatus(t(bookingOwnerErrorKey(e)), false);
+    } finally {
+      setWlBusy(false);
+    }
+  }
+  const slotText = (iso: string) => `${formatDate(new Date(iso), lang, { weekday: 'short', day: 'numeric', month: 'short' })}, ${timeOf(iso)}`;
+
   function exportIcs(row: AppointmentRow) {
     const ics = appointmentIcs({ id: row.id, title: row.title, petName: petName(row.pet_id), startsAt: row.starts_at, endsAt: row.ends_at, location: row.location, status: row.status });
     downloadIcs(ics, icsFilename(`${row.title}-${petName(row.pet_id)}`));
@@ -162,6 +186,9 @@ export function Appointments() {
           {bk?.status === 'cancelled_practice' && reason && <span className="small">{t('rcReason')}: {t(CANCEL_LABEL[reason])}</span>}
           {fromPractice && bk?.status === 'new' && <span className="small practice-note">{t('obRequestedNote')}</span>}
           {fromPractice && (!bk || bk.status !== 'new') && <span className="small practice-note">{t('apFromPractice')}</span>}
+          {bk && (bk.status === 'new' || bk.status === 'confirmed') && !isPast && (bk.reminders?.length ?? 0) > 0 && (
+            <span className="small muted">{t('wlRemindRow', { h: bk.reminders!.map((h) => `${h} h`).join(', ') })}</span>
+          )}
           {bk && !bk.can_cancel && (bk.status === 'new' || bk.status === 'confirmed') && editable.has(r.pet_id) && !isPast && (
             <span className="small muted">{bk.practice_phone ? t('obLatePhone', { p: bk.practice_phone }) : t('obLate')}</span>
           )}
@@ -263,6 +290,57 @@ export function Appointments() {
               />
             </section>
           )}
+
+          {(() => {
+            const alts = (rows ?? []).filter((r) => (bookings.get(r.id)?.alternatives?.length ?? 0) > 0 && editable.has(r.pet_id));
+            if (!alts.length && !waitlist.length) return null;
+            return (
+              <section className="card stack" aria-labelledby="ap-wl-h">
+                <h2 id="ap-wl-h">{t('wlOwnerTitle')}</h2>
+                <ul className="record-list">
+                  {alts.map((r) => {
+                    const bk = bookings.get(r.id)!;
+                    return (
+                      <li key={r.id} className="record-row">
+                        <div className="record-main">
+                          <span className="record-title">{t('wlAltFor', { x: r.title, n: petName(r.pet_id) })}</span>
+                          <span className="small">{t('wlAltText', { p: bk.practice_name, d: slotText(r.starts_at) })}</span>
+                          <div className="row-actions">
+                            {bk.alternatives!.map((iso) => (
+                              <button key={iso} type="button" className="btn btn-secondary" disabled={wlBusy} aria-label={t('wlAltTakeL', { d: slotText(iso) })}
+                                onClick={() => void wlRun(() => takeAlternative(r.id, iso), t('wlAltTaken', { d: slotText(iso) }))}>{slotText(iso)}</button>
+                            ))}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                  {waitlist.map((w) => (
+                    <li key={w.id} className="record-row">
+                      <div className="record-main">
+                        {w.status === 'offered' && w.offered_at ? (
+                          <span className="record-title">{t('wlFree', { d: formatIsoDate(dayOf(w.offered_at), lang), t: timeOf(w.offered_at), pet: w.pet_name })}</span>
+                        ) : (
+                          <span className="record-title">{w.pet_name} <span className="pill pill-warn">{t('wlWaiting')}</span></span>
+                        )}
+                        <span className="small">{w.practice_name} · {w.type_name} · {w.wish_day ? t('wlWish', { d: formatIsoDate(w.wish_day, lang) }) : t('wlWishAny')}</span>
+                      </div>
+                      <div className="row-actions">
+                        {w.can_take && (
+                          <button type="button" className="btn btn-primary" disabled={wlBusy}
+                            onClick={() => void wlRun(async () => { if (!(await takeWaitlistOffer(w.id))) throw new Error('offer_expired'); }, t('wlTaken'))}>{t('wlTake')}</button>
+                        )}
+                        {editable.has(w.pet_id) && (
+                          <button type="button" className="btn btn-ghost" disabled={wlBusy} aria-label={t('wlLeaveL', { n: w.pet_name })}
+                            onClick={() => void wlRun(() => leaveWaitlist(w.id), t('wlLeft'))}>{t(w.status === 'offered' ? 'wlDecline' : 'wlLeave')}</button>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })()}
 
           <section className="card stack" aria-labelledby="ap-next-h">
             <h2 id="ap-next-h">{t('apNext')}</h2>

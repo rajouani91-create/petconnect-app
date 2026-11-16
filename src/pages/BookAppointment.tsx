@@ -7,7 +7,7 @@ import { IconBack } from '../components/Icons';
 import { Loading } from '../components/Loading';
 import { useLocalToday } from '../components/schedule/shared';
 import {
-  NOTE_MAX, PHONE_MAX, addDays, bookAtPractice, bookingFormErrors, bookingFreeSlots, bookingOptions, bookingOwnerErrorKey, bookingPractices,
+  NOTE_MAX, PHONE_MAX, addDays, bookAtPractice, joinWaitlist, bookingFormErrors, bookingFreeSlots, bookingOptions, bookingOwnerErrorKey, bookingPractices,
   emptyBookingForm, practiceAddress, type BookingForm, type BookingOptions, type BookingPractice,
 } from '../lib/booking';
 import { dayOf, timeOf } from '../lib/practiceAppointments';
@@ -235,6 +235,7 @@ function BookForm({ practice, onBack, onDone }: { practice: BookingPractice; onB
             </div>
           )}
           {errors.slot && <p className="error" role="alert">{t(errors.slot)}</p>}
+          <WaitlistJoin practiceId={practice.id} petId={v.petId} typeId={v.typeId} day={v.day} />
           <p className="small muted">{t('obWindow', { d: formatIsoDate(opts.last_day, lang) })}</p>
         </fieldset>
 
@@ -277,5 +278,42 @@ function Done({ practice, slot, onAgain }: { practice: string; slot: string; onA
         <button type="button" className="btn btn-ghost" onClick={onAgain}>{t('obAgain')}</button>
       </div>
     </section>
+  );
+}
+
+/** Kein passender Termin: auf die Warteliste (für diesen Tag oder beliebigen Tag) */
+function WaitlistJoin({ practiceId, petId, typeId, day }: { practiceId: string; petId: string; typeId: string; day: string }) {
+  const { t, lang } = useI18n();
+  const uid = useId();
+  const [open, setOpen] = useState(false);
+  const [any, setAny] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; key: MessageKey } | null>(null);
+  if (!open) {
+    return <p className="small"><button type="button" className="link-btn" onClick={() => { setOpen(true); setMsg(null); }}>{t('wlJoinLink')}</button></p>;
+  }
+  async function join() {
+    if (!petId) { setMsg({ ok: false, key: 'obErrPet' }); return; }
+    setBusy(true);
+    try {
+      await joinWaitlist(practiceId, petId, typeId, any ? null : day);
+      setMsg({ ok: true, key: 'wlJoined' });
+    } catch (e) {
+      setMsg({ ok: false, key: bookingOwnerErrorKey(e) });
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <fieldset className="field stack wl-join">
+      <legend>{t('wlJoin')}</legend>
+      <label className="check-row"><input type="radio" name={`${uid}-w`} checked={!any} onChange={() => setAny(false)} /><span>{t('wlJoinDay', { d: formatIsoDate(day, lang) })}</span></label>
+      <label className="check-row"><input type="radio" name={`${uid}-w`} checked={any} onChange={() => setAny(true)} /><span>{t('wlWishAny')}</span></label>
+      <div className="row-actions">
+        <button type="button" className="btn btn-secondary" disabled={busy || msg?.ok} onClick={() => void join()}>{t('wlJoin')}</button>
+      </div>
+      <p className="small muted">{t('wlJoinHint')}</p>
+      {msg && <p className={`notice ${msg.ok ? 'notice-ok' : 'notice-crit'}`} role="status">{t(msg.key)}</p>}
+    </fieldset>
   );
 }

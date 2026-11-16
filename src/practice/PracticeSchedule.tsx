@@ -9,7 +9,7 @@ import { zonedNow } from '../lib/time';
 import { useNow } from '../lib/useNow';
 import {
   MINUTES, TYPE_NAME_MAX, WEEKS_AHEAD, absenceError, addAbsence, dayError, dayText, practiceSchedule, removeAbsence, removeAppointmentType, saveAppointmentType,
-  saveHours, scheduleErrorKey, setBookingWindow, setOnlineBooking, weekdayName, type AppointmentType, type DayHours, type PracticeSchedule as Schedule,
+  saveHours, scheduleErrorKey, setBookingWindow, setOnlineBooking, setReminders, weekdayName, type AppointmentType, type DayHours, type PracticeSchedule as Schedule,
 } from '../lib/practiceSchedule';
 import { usePractice } from './PracticeProvider';
 
@@ -75,6 +75,7 @@ export function PracticeSchedule() {
           <TypesCard data={data} busy={busy} run={run} />
           <AbsencesCard data={data} busy={busy} run={run} />
           <WindowCard data={data} busy={busy} run={run} />
+          <RemindersCard data={data} busy={busy} run={run} />
         </>
       )}
     </div>
@@ -315,6 +316,23 @@ function WindowCard({ data, busy, run }: CardProps) {
           </select>
         )}
       </Field>
+    </section>
+  );
+}
+
+/** Terminerinnerungen 48 und 2 Stunden vorher (Etappe P5e) */
+function RemindersCard({ data, busy, run }: CardProps) {
+  const { t } = useI18n();
+  const uid = useId();
+  const r48 = data.remind_48h ?? true;
+  const r2 = data.remind_2h ?? true;
+  return (
+    <section className="card stack" aria-labelledby={`${uid}-h`}>
+      <h2 id={`${uid}-h`}>{t('wlRemTitle')}</h2>
+      <p className="muted">{t('wlRemSub')}</p>
+      <Switch label={t('wlRem48')} checked={r48} disabled={!data.can_edit || busy} onChange={(on) => void run(() => setReminders(on, r2), t('wlRemSaved'))} />
+      <Switch label={t('wlRem2')} checked={r2} disabled={!data.can_edit || busy} onChange={(on) => void run(() => setReminders(r48, on), t('wlRemSaved'))} />
+      <p className="small muted note-line">{t('wlRemNote')}</p>
     </section>
   );
 }

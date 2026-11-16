@@ -17,6 +17,14 @@ export type BookingStatus = 'new' | 'confirmed' | 'cancelled_practice' | 'cancel
 export interface OwnerBooking {
   appointment_id: string; status: BookingStatus; source: 'phone' | 'online'; practice_name: string; practice_phone: string | null;
   cancel_reason: string | null; cancel_note: string | null; can_cancel: boolean;
+  /** Ausweichtermine nach Absage der Praxis (P5e) */
+  alternatives?: string[] | null;
+  /** Erinnerungen der Praxis in Stunden vorher, z. B. ['48', '2'] */
+  reminders?: string[];
+}
+export interface OwnerWaitlistEntry {
+  id: string; practice_id: string; practice_name: string; pet_id: string; pet_name: string; type_name: string;
+  wish_day: string | null; status: 'waiting' | 'offered'; offered_at: string | null; can_take: boolean;
 }
 
 export const NOTE_MAX = 300;
@@ -66,6 +74,7 @@ const ERROR_KEYS: Record<string, MessageKey> = {
   booking_unavailable: 'obErrUnavailable', slot_taken: 'obErrTaken', time_invalid: 'obErrTaken', type_not_found: 'obErrUnavailable',
   pet_not_found: 'obErrPet', too_many_open: 'obErrTooManyOpen', too_many_requests: 'piErrTooMany', too_late: 'obErrTooLate',
   appointment_closed: 'obErrClosed', appointment_not_found: 'scErrGone', text_too_long: 'obErrLong',
+  offer_expired: 'wlErrExpired', entry_not_found: 'scErrGone',
 };
 const CODES = Object.keys(ERROR_KEYS).sort((a, b) => b.length - a.length);
 export function bookingOwnerErrorKey(e: unknown): MessageKey {
@@ -108,5 +117,35 @@ export async function ownerPracticeBookings(): Promise<OwnerBooking[]> {
 
 export async function cancelBooking(appointmentId: string): Promise<void> {
   const { error } = await supabase.rpc('owner_cancel_booking', { p_appointment: appointmentId });
+  if (error) throw error;
+}
+
+// ---------- Warteliste und Ausweichtermine (Etappe P5e) ----------
+
+export async function joinWaitlist(practiceId: string, petId: string, typeId: string, wishDay: string | null): Promise<void> {
+  const { error } = await supabase.rpc('waitlist_join', { p: { practice_id: practiceId, pet_id: petId, type_id: typeId, wish_day: wishDay } as unknown as Json });
+  if (error) throw error;
+}
+
+export async function ownerWaitlist(): Promise<OwnerWaitlistEntry[]> {
+  const { data, error } = await supabase.rpc('owner_waitlist');
+  if (error) throw error;
+  return (data ?? []) as OwnerWaitlistEntry[];
+}
+
+export async function leaveWaitlist(id: string): Promise<void> {
+  const { error } = await supabase.rpc('waitlist_leave', { p_id: id });
+  if (error) throw error;
+}
+
+/** Angebotenen Platz übernehmen; false = Platz inzwischen vergeben (Eintrag wartet wieder) */
+export async function takeWaitlistOffer(id: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('waitlist_take', { p_id: id });
+  if (error) throw error;
+  return data !== null;
+}
+
+export async function takeAlternative(appointmentId: string, slot: string): Promise<void> {
+  const { error } = await supabase.rpc('owner_take_alternative', { p_appointment: appointmentId, p_slot: slot });
   if (error) throw error;
 }

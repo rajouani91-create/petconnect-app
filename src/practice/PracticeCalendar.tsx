@@ -324,10 +324,10 @@ export function PracticeCalendar() {
           onCancel={() => { setCancelling(editing); setEditing(null); }} />
       )}
       {cancelling && <CancelDialog a={cancelling} busy={busy} onClose={() => setCancelling(null)}
-        onCancel={async (reason, note) => {
+        onCancel={async (reason, note, alts) => {
           setBusy(true);
           try {
-            await cancelAppointment(cancelling.id, reason, note);
+            await cancelAppointment(cancelling.id, reason, note, alts);
             await load();
             setMsg({ ok: true, text: t(cancelling.status === 'new' ? 'obDeclined' : 'bkCancelled', { n: cancelling.pet_label }) });
             return true;
