@@ -12,6 +12,7 @@ import {
   STATUS_LABEL, STATUS_TONE, billingErrorKey, money, myBillingAddress, ownerInvoice, ownerInvoices, round2, saveBillingAddress, viewStatus,
   type BillingAddress, type Invoice, type OwnerInvoiceRow,
 } from '../../lib/billing';
+import { addClaim, listClaims, listInsurances, type ClaimRow, type InsuranceRow } from '../../lib/api';
 
 /** Mehr → Rechnungen: Rechnungen der Praxen mit Zahlungsstatus, „Noch zu zahlen“, Rechnungsanschrift */
 export function Invoices() {
@@ -148,9 +149,80 @@ export function InvoiceDetail() {
         <>
           <div className="row-actions no-print"><button type="button" className="btn btn-primary" onClick={() => window.print()}>{t('blPrint')}</button></div>
           <InvoiceDocument inv={inv} />
+          {inv.kind === 'invoice' && (inv.status === 'open' || inv.status === 'paid') && inv.pet_id && inv.number && <ClaimCard inv={inv} />}
           <p className="small muted no-print">{t('blOwnSync')}</p>
         </>
       )}
     </div>
+  );
+}
+
+/** Rechnung bei der Tierversicherung einreichen: legt eine Einreichung unter Tier → Versicherungen an (einmal je Rechnung) */
+function ClaimCard({ inv }: { inv: Invoice }) {
+  const { t, lang } = useI18n();
+  const uid = useId();
+  const [ins, setIns] = useState<InsuranceRow[] | null>(null);
+  const [claims, setClaims] = useState<ClaimRow[]>([]);
+  const [pick, setPick] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const petId = inv.pet_id!;
+  const number = inv.number!;
+  const load = useCallback(async () => {
+    try {
+      const [i, c] = await Promise.all([listInsurances(petId), listClaims(petId)]);
+      setIns(i);
+      setClaims(c);
+      setPick((p) => p || i[0]?.id || '');
+    } catch {
+      setIns([]);
+    }
+  }, [petId]);
+  useEffect(() => { void load(); }, [load]);
+  if (!ins) return null;
+  const done = claims.find((c) => c.title.includes(number));
+  const submit = async () => {
+    if (!pick) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      await addClaim(pick, petId, {
+        title: t('blClaimTitle', { n: number }).slice(0, 120), amount: Number(inv.gross), claim_date: inv.invoice_date ?? inv.treatment_date,
+        status: 'open', reimbursed_amount: null, document_id: null, note: t('blClaimNote', { p: inv.issuer.name, d: formatIsoDate(inv.treatment_date, lang) }).slice(0, 500),
+      });
+      await load();
+      setMsg({ ok: true, text: t('blClaimDone') });
+    } catch {
+      setMsg({ ok: false, text: t('blClaimErr') });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <section className="card stack no-print" aria-labelledby={`${uid}-h`}>
+      <h2 id={`${uid}-h`}>{t('blClaimTitleH')}</h2>
+      {done ? (
+        <p>{t('blClaimHave', { d: formatIsoDate(done.claim_date, lang) })} <Link to={`/tier/${petId}/versicherung`} className="link">{t('blClaimOpen')}</Link></p>
+      ) : ins.length === 0 ? (
+        <p className="muted">{t('blClaimNoIns')} <Link to={`/tier/${petId}/versicherung`} className="link">{t('blClaimAddIns')}</Link></p>
+      ) : (
+        <>
+          <p className="muted">{t('blClaimSub')}</p>
+          {ins.length > 1 && (
+            <Field id={`${uid}-i`} label={t('blClaimIns')}>
+              {(a) => (
+                <select {...a} value={pick} onChange={(e) => setPick(e.target.value)}>
+                  {ins.map((i) => <option key={i.id} value={i.id}>{i.insurer}{i.policy_no ? ` · ${i.policy_no}` : ''}</option>)}
+                </select>
+              )}
+            </Field>
+          )}
+          <div className="row-actions"><button type="button" className="btn btn-secondary" disabled={busy || !pick} onClick={() => void submit()}>{t('blClaimBtn')}</button></div>
+        </>
+      )}
+      <div role="status" aria-live="polite">
+        {msg && <p className={`notice ${msg.ok ? 'notice-ok' : 'notice-crit'}`}>{msg.text}{msg.ok && <> <Link to={`/tier/${petId}/versicherung`} className="link">{t('blClaimOpen')}</Link></>}</p>}
+      </div>
+    </section>
   );
 }

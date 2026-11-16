@@ -1310,6 +1310,18 @@ export type Database = {
         Args: { p: Json }
         Returns: string
       }
+      practice_bill_packages: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      practice_save_bill_package: {
+        Args: { p: Json }
+        Returns: string
+      }
+      practice_delete_bill_package: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
       practice_invoice_save: {
         Args: { p_id: string; p: Json }
         Returns: undefined

@@ -23,7 +23,7 @@ export interface InvoiceRow {
   id: string; kind: 'invoice' | 'cancellation'; status: InvoiceStatus; number: string | null; pet_id: string | null; pet_label: string;
   recipient_name: string | null; treatment_date: string; invoice_date: string | null; due_date: string | null; paid_on: string | null;
   pay_method: PayMethod | null; gross: number; currency: string; first_item: string | null; item_count: number;
-  cancels_number: string | null; cancelled_by_number: string | null; has_owner: boolean; created_at: string;
+  cancels_number: string | null; cancelled_by_number: string | null; has_owner: boolean; created_at: string; appointment_id?: string | null;
 }
 export interface InvoiceItem {
   id?: string; pos?: number; catalog_item_id: string | null; code: string | null; name: string; qty: number; factor: number;
@@ -191,6 +191,7 @@ const ERROR_KEYS: Record<string, MessageKey> = {
   recipient_required: 'blErrRecipient', tax_id_required: 'blErrTaxId', address_required: 'blErrAddress', date_invalid: 'blErrDate',
   catalog_missing: 'blErrNoCatalog', catalog_empty: 'blErrCatalogEmpty', catalog_row_invalid: 'blErrCatalogRow', iban_invalid: 'blErrIban',
   days_invalid: 'blErrDays', reason_required: 'blErrReason', address_invalid: 'blErrOwnerAddress', status_invalid: 'scErrGone',
+  invoice_exists: 'blErrInvoiceExists', appointment_not_found: 'blErrAppointment', name_invalid: 'blErrPkgName', too_many_requests: 'blErrPkgMany',
 };
 const CODES = Object.keys(ERROR_KEYS).sort((a, b) => b.length - a.length);
 export function billingErrorKey(e: unknown): MessageKey {
@@ -231,9 +232,16 @@ export async function createInvoice(petId: string, treatmentDate: string, itemId
   if (error) throw error;
   return data;
 }
+export type DraftLine = { catalog_item_id: string; qty: number; factor: number } | { free: true; name: string; qty: number; unit_price: number; tax_rate: number };
+/** Entwurf direkt bei der Behandlung: Positionen mit Menge und Faktor, optional zum Termin */
+export async function createTreatmentInvoice(p: { pet_id: string; treatment_date: string; items: DraftLine[]; appointment_id: string | null }): Promise<string> {
+  const { data, error } = await supabase.rpc('practice_invoice_create', { p: p as unknown as Json });
+  if (error) throw error;
+  return data;
+}
 export interface DraftPayload {
   treatment_date: string; recipient_name: string; recipient_address: string; note: string;
-  items: ({ catalog_item_id: string; qty: number; factor: number } | { free: true; name: string; qty: number; unit_price: number; tax_rate: number })[];
+  items: DraftLine[];
 }
 export async function saveInvoice(id: string, p: DraftPayload): Promise<void> {
   const { error } = await supabase.rpc('practice_invoice_save', { p_id: id, p: p as unknown as Json });
@@ -260,6 +268,73 @@ export async function cancelInvoice(id: string, reason: string): Promise<string>
   const { data, error } = await supabase.rpc('practice_invoice_cancel', { p_id: id, p_reason: reason.trim() });
   if (error) throw error;
   return data;
+}
+
+// ---------- Pakete und erbrachte Leistungen (Etappe P7b) ----------
+
+export interface BillPackage { id: string; name: string; items: { code: string; qty: number }[]; created_by_name: string | null }
+export async function billPackages(): Promise<BillPackage[]> {
+  const { data, error } = await supabase.rpc('practice_bill_packages');
+  if (error) throw error;
+  return (data ?? []) as unknown as BillPackage[];
+}
+export async function saveBillPackage(name: string, items: { code: string; qty: number }[]): Promise<string> {
+  const { data, error } = await supabase.rpc('practice_save_bill_package', { p: { name: name.trim(), items } as unknown as Json });
+  if (error) throw error;
+  return data;
+}
+export async function deleteBillPackage(id: string): Promise<void> {
+  const { error } = await supabase.rpc('practice_delete_bill_package', { p_id: id });
+  if (error) throw error;
+}
+
+/** Eine erbrachte Leistung im Behandlungsformular */
+export interface ServiceLine {
+  key: string; catalog_item_id: string | null; code: string | null; name: string; qty: number; factor: number;
+  unit_price: number; tax_rate: number; free: boolean; suggested?: boolean;
+}
+let lineSeq = 0;
+const nextKey = () => `l${++lineSeq}`;
+export function lineFromItem(i: CatalogItem, qty = 1, suggested = false): ServiceLine {
+  return { key: nextKey(), catalog_item_id: i.id, code: i.code, name: i.name, qty, factor: Number(i.factor), unit_price: Number(i.price), tax_rate: Number(i.tax_rate), free: false, suggested };
+}
+export function freeLine(name: string, qty: number, unit_price: number, tax_rate: number): ServiceLine {
+  return { key: nextKey(), catalog_item_id: null, code: null, name, qty, factor: 1, unit_price, tax_rate, free: true };
+}
+/** Leistung hinzufügen; schon vorhanden → Menge erhöhen */
+export function addLine(lines: readonly ServiceLine[], i: CatalogItem, qty = 1, suggested = false): ServiceLine[] {
+  const at = lines.findIndex((l) => l.catalog_item_id === i.id);
+  if (at < 0) return [...lines, lineFromItem(i, qty, suggested)];
+  return lines.map((l, k) => (k === at ? { ...l, qty: Math.min(l.qty + qty, 9999) } : l));
+}
+/** Paket einfügen: nur Nummern, die im aktiven Katalog am Tag gültig sind. skipped = fehlende Nummern */
+export function addPackage(lines: readonly ServiceLine[], pkg: BillPackage, items: readonly CatalogItem[], day: string): { lines: ServiceLine[]; skipped: number } {
+  let out = [...lines];
+  let skipped = 0;
+  for (const p of pkg.items) {
+    const it = items.find((i) => i.code.toUpperCase() === p.code.toUpperCase() && validOn(i, day));
+    if (it) out = addLine(out, it, Number(p.qty));
+    else skipped++;
+  }
+  return { lines: out, skipped };
+}
+/** Vorschläge nach einer Impfung: Impfleistung (Injektion) + passender Impfstoff aus dem Katalog */
+export function vaccineSuggestions(vaccine: string, items: readonly CatalogItem[], day: string): CatalogItem[] {
+  const valid = items.filter((i) => validOn(i, day));
+  const material = /impfstoff|vaccine|vaccin\b|vacuna|vaccino/i;
+  const act = valid.find((i) => /impfung|injektion|vaccination|vaccinal|vacunaci|vaccinazione/i.test(i.name) && !material.test(i.name));
+  const words = vaccine.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 2);
+  const mat = words.length ? valid.find((i) => material.test(i.name) && words.some((w) => i.name.toLowerCase().includes(w))) : undefined;
+  return [act, mat].filter((x): x is CatalogItem => !!x);
+}
+export function linePayload(l: ServiceLine): DraftLine {
+  return l.free ? { free: true, name: l.name, qty: l.qty, unit_price: l.unit_price, tax_rate: l.tax_rate } : { catalog_item_id: l.catalog_item_id!, qty: l.qty, factor: l.factor };
+}
+/** Häufigster Steuersatz im Katalog (Vorgabe für freie Positionen) */
+export function usualTaxRate(items: readonly CatalogItem[], fallback = 19): number {
+  const n = new Map<number, number>();
+  for (const i of items) n.set(Number(i.tax_rate), (n.get(Number(i.tax_rate)) ?? 0) + 1);
+  return [...n.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? fallback;
 }
 
 // ---------- Halter:in ----------

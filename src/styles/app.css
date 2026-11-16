@@ -1083,3 +1083,28 @@ ul.choose-list { list-style: none; margin: 0; padding: 0; }
   .inv-paid { color: #000; border-color: #000; }
   .table-scroll { overflow: visible; }
 }
+
+/* Etappe P7b: Behandlung mit erbrachten Leistungen */
+.stack-sm { display: flex; flex-direction: column; gap: var(--s-2); }
+.tr-services legend { font-weight: 700; padding: 0 var(--s-1); }
+.tr-search { position: relative; display: flex; flex-direction: column; gap: var(--s-1); }
+.tr-hits { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r); max-height: 18rem; overflow-y: auto; background: var(--card, var(--bg)); }
+.tr-hits li + li { border-top: 1px solid var(--line); }
+.tr-hit { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--s-2); align-items: center; width: 100%; min-height: 44px; padding: var(--s-2) var(--s-3); border: 0; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.tr-hit:hover, .tr-hit:focus-visible { background: var(--soft, rgba(0,0,0,.04)); }
+.tr-hit-price { white-space: nowrap; font-weight: 600; }
+.tr-hit-none { padding: var(--s-2) var(--s-3); }
+.tr-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r); }
+.tr-lines li + li { border-top: 1px solid var(--line); }
+.tr-line { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--s-2); align-items: center; padding: var(--s-2) var(--s-3); }
+.tr-line-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tr-line-main .pill { margin-inline-end: var(--s-1); }
+.tr-qty { display: inline-flex; align-items: center; gap: 2px; }
+.tr-qty-n { min-width: 2ch; text-align: center; font-weight: 700; }
+.tr-step { min-width: 40px; min-height: 40px; padding: 0 var(--s-2); }
+.tr-est { margin: 0; text-align: end; }
+.tr-sub { border-inline-start: 3px solid var(--line); padding-inline-start: var(--s-3); }
+.tr-free-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-2); }
+.bl-imp-errs { margin: 0; padding-inline-start: 1.2rem; max-height: 12rem; overflow-y: auto; }
+.file-btn { cursor: pointer; }
+.file-btn:focus-within { outline: 3px solid var(--focus, var(--brand)); outline-offset: 2px; }

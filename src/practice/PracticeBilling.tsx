@@ -13,6 +13,7 @@ import {
   type BillingData, type BillingSettings, type CatalogItem, type InvoiceFilter, type InvoiceRow, type PayMethod, type SampleKey,
 } from '../lib/billing';
 import { usePractice } from './PracticeProvider';
+import { ImportCard, PackagesCard } from './CatalogImport';
 
 type Tab = 'invoices' | 'catalog' | 'settings';
 const TABS: Tab[] = ['invoices', 'catalog', 'settings'];
@@ -272,6 +273,8 @@ function CatalogTab({ data, busy, run }: { data: BillingData; busy: boolean; run
           <p className="small muted note-line">{t('blSampleNote')}</p>
         </section>
       ) : <p className="small muted">{t('blLeadOnly')}</p>}
+      {data.can_edit && <ImportCard data={data} busy={busy} run={run} />}
+      {c && <PackagesCard data={data} busy={busy} run={run} />}
       {data.versions.length > 0 && (
         <section className="card stack" aria-labelledby="cat-ver">
           <h2 id="cat-ver">{t('blVersions')}</h2>
