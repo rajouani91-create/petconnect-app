@@ -32,6 +32,7 @@ import { Notifications } from './pages/more/Notifications';
 import { MonthlyReport } from './pages/more/MonthlyReport';
 import { Assistant } from './pages/more/Assistant';
 import { Family } from './pages/more/Family';
+import { Inquiries } from './pages/more/Inquiries';
 import { Account } from './pages/more/Account';
 import { Imprint, Privacy } from './pages/Legal';
 import DeleteAccount from './pages/DeleteAccount';
@@ -45,6 +46,8 @@ import { PracticeCertificate } from './practice/PracticeCertificate';
 import { PracticeIntake } from './practice/PracticeIntake';
 import { PracticeSchedule } from './practice/PracticeSchedule';
 import { PracticeAppointments } from './practice/PracticeAppointments';
+import { PracticeRecall } from './practice/PracticeRecall';
+import { PracticeInquiries } from './practice/PracticeInquiries';
 import { PatientInvite } from './pages/PatientInvite';
 import { PracticeAccess } from './practice/PracticeAccess';
 import { OwnerOnly, PracticeOnly, PracticeProvider } from './practice/PracticeProvider';
@@ -83,6 +86,8 @@ export function App() {
               <Route path="/praxis/termine" element={<PracticeAppointments />} />
               <Route path="/praxis/termine/einstellungen" element={<PracticeSchedule />} />
               <Route path="/praxis/benachrichtigungen" element={<Notifications practice />} />
+              <Route path="/praxis/erinnerungen" element={<PracticeRecall />} />
+              <Route path="/praxis/anfragen" element={<PracticeInquiries />} />
               <Route path="/praxis/patienten" element={<PracticePatients />} />
               <Route path="/praxis/patienten/zugriff" element={<PracticeAccess />} />
               <Route path="/praxis/patienten/aufnehmen" element={<PracticeIntake />} />
@@ -124,6 +129,7 @@ export function App() {
               <Route path="mehr/monatsuebersicht" element={<MonthlyReport />} />
               <Route path="mehr/assistent" element={<Assistant />} />
               <Route path="mehr/familie" element={<Family />} />
+              <Route path="mehr/anfragen" element={<Inquiries />} />
               <Route path="mehr/konto" element={<Account />} />
               <Route path="admin" element={<Admin />} />
               <Route path="admin/agenten" element={<Agents />} />

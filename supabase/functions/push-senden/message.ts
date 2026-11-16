@@ -2,9 +2,9 @@
 import { TEXTS } from './texts.ts';
 
 export type Job = {
-  kind: 'medication' | 'reminder' | 'appointment' | 'routine' | 'practice' | 'booking';
+  kind: 'medication' | 'reminder' | 'appointment' | 'routine' | 'practice' | 'booking' | 'recall' | 'inquiry';
   ref_id: string; slot: string; pet: string; title: string; url: string; language: string;
-  info: { rkind?: string; label?: string | null; amount?: number; unit?: string; hint?: string; time?: string; overdue?: boolean; location?: string | null; event?: string; target?: string; starts_at?: string };
+  info: { rkind?: string; label?: string | null; amount?: number; unit?: string; hint?: string; time?: string; overdue?: boolean; location?: string | null; event?: string; target?: string; starts_at?: string; vaccine?: string; due_on?: string; urgency?: string };
   subs: { id: string; endpoint: string; p256dh: string; auth: string }[];
 };
 
@@ -45,6 +45,22 @@ export function buildMessage(j: Job): { title: string; body: string; url: string
         : '';
       const fill = (x: string) => x.replace('{pet}', j.pet).replace('{p}', j.title).replace('{d}', d);
       return { title: j.info.target === 'practice' ? fill(t[0]) : `${j.pet}: ${fill(t[0])}`, body: fill(t[1]), url: j.url, tag };
+    }
+  }
+  if (j.kind === 'recall') {
+    /* Impferinnerung der Praxis: j.title = Name der Praxis; Fälligkeit als Kalenderdatum */
+    const d = j.info.due_on
+      ? new Intl.DateTimeFormat(LOCALE[lang], { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${j.info.due_on}T12:00:00Z`))
+      : '';
+    return { title: `${j.pet}: ${T.rc[0]}`, body: T.rc[1].replace('{p}', j.title).replace('{v}', j.info.vaccine ?? '').replace('{d}', d), url: j.url, tag };
+  }
+  if (j.kind === 'inquiry') {
+    /* Anfrage: neu → Praxis (j.title = Halter:in, ohne Inhalt der Nachricht); Antwort/Vorschlag → Halter:in (j.title = Praxis) */
+    const ev = j.info.event === 'new' && j.info.urgency === 'emergency' ? 'new_emergency' : j.info.event ?? '';
+    const t = T.iq[ev];
+    if (t) {
+      const fill = (x: string) => x.replace('{pet}', j.pet).replace('{o}', j.title).replace('{p}', j.title);
+      return { title: ev.startsWith('new') ? fill(t[0]) : `${j.pet}: ${fill(t[0])}`, body: fill(t[1]), url: j.url, tag };
     }
   }
   if (j.kind !== 'appointment') {

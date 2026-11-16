@@ -257,6 +257,7 @@ export function Appointments() {
                 <IconPlus size={20} />
                 {t('apAdd')}
               </button>
+              <Link to="/mehr/anfragen" className="btn btn-ghost">{t('iqAskPractice')}</Link>
             </div>
           )}
           {anyEditable && mode && (
