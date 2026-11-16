@@ -40,7 +40,7 @@ const STATUS_TEXT: Record<PushStatus, MessageKey> = {
 };
 
 /** Mehr → Benachrichtigungen: dieses Gerät an-/abmelden, was gemeldet wird, meine Geräte, Testnachricht. */
-export function Notifications() {
+export function Notifications({ practice = false }: { practice?: boolean }) {
   const { t, lang } = useI18n();
   const { user } = useAuth();
   const uid = useId();
@@ -191,7 +191,7 @@ export function Notifications() {
     <div className="page stack-lg">
       <header className="page-head">
         <h1>{t('pnTitle')}</h1>
-        <p className="muted">{t('pnSub')}</p>
+        <p className="muted">{t(practice ? 'pnPracticeSub' : 'pnSub')}</p>
       </header>
 
       <section className="card stack" aria-labelledby={`${uid}-dev`}>
@@ -229,7 +229,7 @@ export function Notifications() {
         <p className="muted small">{t('pnPrivacy')}</p>
       </section>
 
-      <section className="card stack" aria-labelledby={`${uid}-what`}>
+      {!practice && <section className="card stack" aria-labelledby={`${uid}-what`}>
         <h2 id={`${uid}-what`}>{t('pnWhat')}</h2>
         {!prefs ? (
           <Loading />
@@ -256,7 +256,7 @@ export function Notifications() {
             <p className="small muted" aria-live="polite">{prefsSaved}</p>
           </>
         )}
-      </section>
+      </section>}
 
       <section className="card stack" aria-labelledby={`${uid}-list`}>
         <h2 id={`${uid}-list`} ref={register('devices')} tabIndex={-1}>{t('pnDevices')}</h2>

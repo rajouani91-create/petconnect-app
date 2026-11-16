@@ -10,7 +10,7 @@ import { practicePatients, type PatientRow } from '../lib/practiceAccess';
 import { practiceSchedule, type AppointmentType } from '../lib/practiceSchedule';
 import {
   CANCEL_LABEL, CANCEL_REASONS, CLOSED_LABEL, FILTERS, FILTER_LABEL, STATUS_LABEL, STATUS_TONE, bookAppointment, bookErrors, bookingErrorKey, byDay,
-  cancelAppointment, checkSlot, counts, dayOf, emptyBook, endOf, filterAppointments, freeSlots, hasWarnings, isOpen, markAppointment, moveAppointment,
+  cancelAppointment, checkSlot, confirmAppointment, counts, dayOf, emptyBook, endOf, filterAppointments, freeSlots, hasWarnings, isOpen, markAppointment, moveAppointment,
   practiceAppointments, timeOf, toInstant, whenErrors, type BookForm, type CancelReason, type Filter, type PracticeAppointment, type Warnings,
 } from '../lib/practiceAppointments';
 import { usePractice } from './PracticeProvider';
@@ -87,6 +87,12 @@ export function PracticeAppointments() {
           <div className="record-status" role="status" aria-live="polite">
             {msg && <p className={`notice ${msg.ok ? 'notice-ok' : 'notice-crit'}`}>{msg.text}</p>}
           </div>
+          {c.new > 0 && filter !== 'new' && (
+            <p className="notice notice-info">
+              {t('obNewHint', { n: c.new })}{' '}
+              <button type="button" className="link-btn" onClick={() => setFilter('new')}>{t('bkShow')}</button>
+            </p>
+          )}
           {c.open > 0 && filter !== 'open' && (
             <p className="notice notice-warn">
               {t('bkOpenHint', { n: c.open })}{' '}
@@ -114,7 +120,7 @@ export function PracticeAppointments() {
       {booking && <BookDialog types={types} onClose={() => setBooking(false)} onDone={async (text) => { setBooking(false); await load(); setMsg({ ok: true, text }); }} />}
       {moving && <MoveDialog a={moving} onClose={() => setMoving(null)} onDone={async (text) => { setMoving(null); await load(); setMsg({ ok: true, text }); }} />}
       {cancelling && <CancelDialog a={cancelling} busy={busy} onClose={() => setCancelling(null)}
-        onCancel={(reason, note) => run(() => cancelAppointment(cancelling.id, reason, note), t('bkCancelled', { n: cancelling.pet_label }))} />}
+        onCancel={(reason, note) => run(() => cancelAppointment(cancelling.id, reason, note), t(cancelling.status === 'new' ? 'obDeclined' : 'bkCancelled', { n: cancelling.pet_label }))} />}
     </div>
   );
 }
@@ -140,14 +146,21 @@ function Row({ a, now, busy, run, onMove, onCancel }: {
         {a.note && <span className="small pre-line">{a.note}</span>}
         {closed && a.cancel_reason && <span className="small">{t('rcReason')}: {t(CANCEL_LABEL[a.cancel_reason])}{a.cancel_note ? ` – ${a.cancel_note}` : ''}</span>}
         {a.overridden && !closed && <span className="small owner-note">{t('bkOverridden')}</span>}
-        <span className="muted small">{t('bkBy', { n: a.created_by_name })}</span>
+        {a.source !== 'online' && <span className="muted small">{t('bkBy', { n: a.created_by_name })}</span>}
       </div>
       <div className="row-actions">
         {a.has_access && a.pet_id && <Link to={`/praxis/patienten/${a.pet_id}`} className="btn btn-ghost">{t('ptRecord')}</Link>}
+        {a.status === 'new' && (
+          <>
+            <button type="button" className="btn btn-primary" disabled={busy} aria-label={t('obConfirmL', { n: a.pet_label })}
+              onClick={() => void run(() => confirmAppointment(a.id), t('obConfirmed', { n: a.pet_label }))}>{t('obConfirm')}</button>
+            <button type="button" className="btn btn-ghost" disabled={busy} aria-label={t('obDeclineL', { n: a.pet_label })} onClick={() => onCancel(a)}>{t('obDecline')}</button>
+          </>
+        )}
         {future && (
           <>
             <button type="button" className="btn btn-ghost" disabled={busy} aria-label={t('bkMoveL', { n: a.pet_label })} onClick={() => onMove(a)}>{t('bkMove')}</button>
-            <button type="button" className="btn btn-ghost" disabled={busy} aria-label={t('bkCancelL', { n: a.pet_label })} onClick={() => onCancel(a)}>{t('apCancel')}</button>
+            {a.status !== 'new' && <button type="button" className="btn btn-ghost" disabled={busy} aria-label={t('bkCancelL', { n: a.pet_label })} onClick={() => onCancel(a)}>{t('apCancel')}</button>}
           </>
         )}
         {open && (
@@ -423,10 +436,10 @@ function CancelDialog({ a, busy, onClose, onCancel }: { a: PracticeAppointment; 
   }
 
   return (
-    <Dialog open title={t('bkCancelTitle')} onClose={onClose} actions={
+    <Dialog open title={t(a.status === 'new' ? 'obDeclineTitle' : 'bkCancelTitle')} onClose={onClose} actions={
       <>
         <button type="button" className="btn btn-ghost" onClick={onClose}>{t('back')}</button>
-        <button type="submit" form={`${uid}-f`} className="btn btn-danger" disabled={busy}>{t('bkCancelBtn')}</button>
+        <button type="submit" form={`${uid}-f`} className="btn btn-danger" disabled={busy}>{t(a.status === 'new' ? 'obDecline' : 'bkCancelBtn')}</button>
       </>
     }>
       <form id={`${uid}-f`} className="stack" onSubmit={(e) => void submit(e)} noValidate>
@@ -443,7 +456,7 @@ function CancelDialog({ a, busy, onClose, onCancel }: { a: PracticeAppointment; 
         <Field id={`${uid}-n`} label={t('bkCancelNote')} error={err === 'rcErrNote' ? { key: err } : undefined} required={reason === 'other'} optional={reason !== 'other'}>
           {(x) => <textarea {...x} rows={2} maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />}
         </Field>
-        <p className="muted small">{t(a.has_access ? 'bkCancelInfoApp' : 'bkCancelInfoPhone')}</p>
+        <p className="muted small">{t(a.has_access || a.source === 'online' ? 'bkCancelInfoApp' : 'bkCancelInfoPhone')}</p>
       </form>
     </Dialog>
   );

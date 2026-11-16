@@ -85,6 +85,7 @@ export function PracticeProfile() {
             </select>
           </div>
           <div className="row-actions">
+            <Link to="/praxis/benachrichtigungen" className="btn btn-secondary">{t('pnTitle')}</Link>
             <button type="button" className="btn btn-secondary" onClick={() => void signOut()}>{t('logout')}</button>
           </div>
           <p className="small">
