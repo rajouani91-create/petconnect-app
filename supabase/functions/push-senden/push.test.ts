@@ -80,9 +80,9 @@ describe('buildMessage', () => {
     expect(ow.title).toBe('Bello: Terminanfrage abgelehnt');
     expect(ow.body).toContain('Praxis Ostpark kann den Termin');
     for (const [lang, T] of Object.entries(TEXTS)) {
-      for (const ev of ['requested', 'confirmed', 'declined', 'cancelled', 'moved', 'owner_cancelled']) {
+      for (const ev of ['requested', 'confirmed', 'declined', 'cancelled', 'moved', 'owner_cancelled', 'slot_free', 'remind48', 'remind2', 'cancelled_alt', 'alt_taken']) {
         expect(T.bk[ev], `${lang} ${ev}`).toHaveLength(2);
-        const m = buildMessage(job({ kind: 'booking', title: 'P', language: lang, info: { event: ev, target: ev === 'requested' || ev === 'owner_cancelled' ? 'practice' : 'owner', starts_at: at } }));
+        const m = buildMessage(job({ kind: 'booking', title: 'P', language: lang, info: { event: ev, target: ev === 'requested' || ev === 'owner_cancelled' || ev === 'alt_taken' ? 'practice' : 'owner', starts_at: at } }));
         expect(m.title + m.body, `${lang} ${ev}`).not.toMatch(/\{(p|pet|d)\}/);
       }
     }

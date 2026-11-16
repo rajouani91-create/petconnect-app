@@ -169,8 +169,8 @@ export async function moveAppointment(id: string, startsAt: string, force: boole
   if (error) throw error;
 }
 
-export async function cancelAppointment(id: string, reason: CancelReason, note: string): Promise<void> {
-  const { error } = await supabase.rpc('practice_cancel_appointment', { p_id: id, p_reason: reason, p_note: note.trim() });
+export async function cancelAppointment(id: string, reason: CancelReason, note: string, alternatives = false): Promise<void> {
+  const { error } = await supabase.rpc('practice_cancel_appointment', { p_id: id, p_reason: reason, p_note: note.trim(), ...(alternatives ? { p_alternatives: true } : {}) });
   if (error) throw error;
 }
 
@@ -181,5 +181,20 @@ export async function markAppointment(id: string, attended: boolean): Promise<vo
 
 export async function confirmAppointment(id: string): Promise<void> {
   const { error } = await supabase.rpc('practice_confirm_appointment', { p_id: id });
+  if (error) throw error;
+}
+
+// ---------- Warteliste (Etappe P5e) ----------
+
+export interface WaitlistEntry { id: string; pet_label: string; owner_label: string; type_name: string; wish_day: string | null; status: 'waiting' | 'offered'; offered_at: string | null; created_at: string }
+
+export async function practiceWaitlist(): Promise<WaitlistEntry[]> {
+  const { data, error } = await supabase.rpc('practice_waitlist');
+  if (error) throw error;
+  return (data ?? []) as WaitlistEntry[];
+}
+
+export async function removeWaitlistEntry(id: string): Promise<void> {
+  const { error } = await supabase.rpc('practice_waitlist_remove', { p_id: id });
   if (error) throw error;
 }

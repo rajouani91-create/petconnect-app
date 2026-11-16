@@ -27,6 +27,7 @@ describe('Online-Buchung (Halter:in)', () => {
     expect(bookingOwnerErrorKey({ message: 'too_many_open' })).toBe('obErrTooManyOpen');
     expect(bookingOwnerErrorKey({ message: 'too_late' })).toBe('obErrTooLate');
     expect(bookingOwnerErrorKey({ message: 'booking_unavailable' })).toBe('obErrUnavailable');
+    expect(bookingOwnerErrorKey({ message: 'offer_expired' })).toBe('wlErrExpired');
     expect(bookingOwnerErrorKey(new Error('x'))).toBe('pe_generic');
   });
 });

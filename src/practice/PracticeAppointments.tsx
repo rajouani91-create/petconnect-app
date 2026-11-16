@@ -11,7 +11,7 @@ import { practiceSchedule, type AppointmentType } from '../lib/practiceSchedule'
 import {
   CANCEL_LABEL, CANCEL_REASONS, CLOSED_LABEL, FILTERS, FILTER_LABEL, STATUS_LABEL, STATUS_TONE, bookAppointment, bookErrors, bookingErrorKey, byDay,
   cancelAppointment, checkSlot, confirmAppointment, counts, dayOf, emptyBook, endOf, filterAppointments, freeSlots, hasWarnings, isOpen, markAppointment, moveAppointment,
-  practiceAppointments, timeOf, toInstant, whenErrors, type BookForm, type CancelReason, type Filter, type PracticeAppointment, type Warnings,
+  practiceAppointments, practiceWaitlist, removeWaitlistEntry, timeOf, toInstant, type WaitlistEntry, whenErrors, type BookForm, type CancelReason, type Filter, type PracticeAppointment, type Warnings,
 } from '../lib/practiceAppointments';
 import { usePractice } from './PracticeProvider';
 
@@ -25,6 +25,8 @@ export function PracticeAppointments() {
   const now = useNow();
   const [rows, setRows] = useState<PracticeAppointment[] | null>(null);
   const [types, setTypes] = useState<AppointmentType[]>([]);
+  const [remind, setRemind] = useState<string | null>(null);
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
   const [loadErr, setLoadErr] = useState(false);
   const [params] = useSearchParams();
   const [filter, setFilter] = useState<Filter>(() => (FILTERS as string[]).includes(params.get('filter') ?? '') ? (params.get('filter') as Filter) : 'confirmed');
@@ -36,9 +38,12 @@ export function PracticeAppointments() {
 
   const load = useCallback(async () => {
     try {
-      const [a, s] = await Promise.all([practiceAppointments(), practiceSchedule()]);
+      const [a, s, w] = await Promise.all([practiceAppointments(), practiceSchedule(), practiceWaitlist().catch(() => [] as WaitlistEntry[])]);
       setRows(a);
       setTypes(s.types);
+      setWaitlist(w);
+      const hrs = [s.remind_48h ? '48 h' : null, s.remind_2h ? '2 h' : null].filter(Boolean);
+      setRemind(s.remind_48h !== undefined && hrs.length ? hrs.join(', ') : null);
       setLoadErr(false);
     } catch {
       setLoadErr(true);
@@ -111,23 +116,45 @@ export function PracticeAppointments() {
             <section key={day} className="stack" aria-labelledby={`bk-${day}`}>
               <h2 id={`bk-${day}`} className="h-sub">{formatDate(new Date(`${day}T12:00:00Z`), lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</h2>
               <ul className="record-list card">
-                {items.map((a) => <Row key={a.id} a={a} now={now} busy={busy} run={run} onMove={setMoving} onCancel={setCancelling} />)}
+                {items.map((a) => <Row key={a.id} a={a} now={now} busy={busy} run={run} onMove={setMoving} onCancel={setCancelling} remind={remind} />)}
               </ul>
             </section>
           ))}
           <p className="muted small">{t('bkOwnerNote')}</p>
+          <section className="card stack" aria-labelledby="wl-h">
+            <h2 id="wl-h">{t('wlTitle')}</h2>
+            {waitlist.length === 0 ? <p className="muted">{t('wlNone')}</p> : (
+              <ul className="record-list">
+                {waitlist.map((w) => (
+                  <li key={w.id} className="record-row">
+                    <div className="record-main">
+                      <span className="record-title">{w.pet_label} <span className="muted">· {w.owner_label}</span>
+                        <span className={`pill ${w.status === 'offered' ? 'pill-ok' : 'pill-warn'}`}>{t(w.status === 'offered' ? 'wlOffered' : 'wlWaiting')}</span></span>
+                      <span className="small">{w.type_name} · {w.wish_day ? t('wlWish', { d: formatIsoDate(w.wish_day, lang) }) : t('wlWishAny')}</span>
+                      {w.status === 'offered' && w.offered_at && <span className="small muted">{t('wlOfferedAt', { d: formatIsoDate(dayOf(w.offered_at), lang), t: timeOf(w.offered_at) })}</span>}
+                    </div>
+                    <div className="row-actions">
+                      <button type="button" className="btn btn-ghost" disabled={busy} aria-label={t('wlRemoveL', { n: w.pet_label })}
+                        onClick={() => void run(() => removeWaitlistEntry(w.id), t('wlRemoved', { n: w.pet_label }))}>{t('wlRemove')}</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="muted small note-line">{t('wlRule')}</p>
+          </section>
         </>
       )}
       {booking && <BookDialog types={types} onClose={() => setBooking(false)} onDone={async (text) => { setBooking(false); await load(); setMsg({ ok: true, text }); }} />}
       {moving && <MoveDialog a={moving} onClose={() => setMoving(null)} onDone={async (text) => { setMoving(null); await load(); setMsg({ ok: true, text }); }} />}
       {cancelling && <CancelDialog a={cancelling} busy={busy} onClose={() => setCancelling(null)}
-        onCancel={(reason, note) => run(() => cancelAppointment(cancelling.id, reason, note), t(cancelling.status === 'new' ? 'obDeclined' : 'bkCancelled', { n: cancelling.pet_label }))} />}
+        onCancel={(reason, note, alts) => run(() => cancelAppointment(cancelling.id, reason, note, alts), t(cancelling.status === 'new' ? 'obDeclined' : 'bkCancelled', { n: cancelling.pet_label }))} />}
     </div>
   );
 }
 
-function Row({ a, now, busy, run, onMove, onCancel }: {
-  a: PracticeAppointment; now: Date; busy: boolean; run: Run; onMove: (a: PracticeAppointment) => void; onCancel: (a: PracticeAppointment) => void;
+function Row({ a, now, busy, run, onMove, onCancel, remind }: {
+  a: PracticeAppointment; now: Date; busy: boolean; run: Run; onMove: (a: PracticeAppointment) => void; onCancel: (a: PracticeAppointment) => void; remind: string | null;
 }) {
   const { t } = useI18n();
   const open = isOpen(a, now);
@@ -147,6 +174,7 @@ function Row({ a, now, busy, run, onMove, onCancel }: {
         {a.note && <span className="small pre-line">{a.note}</span>}
         {closed && a.cancel_reason && <span className="small">{t('rcReason')}: {t(CANCEL_LABEL[a.cancel_reason])}{a.cancel_note ? ` – ${a.cancel_note}` : ''}</span>}
         {a.overridden && !closed && <span className="small owner-note">{t('bkOverridden')}</span>}
+        {remind && future && (a.has_access || a.source === 'online') && <span className="small muted">{t('wlRemindRow', { h: remind })}</span>}
         {a.source !== 'online' && <span className="muted small">{t('bkBy', { n: a.created_by_name })}</span>}
       </div>
       <div className="row-actions">
@@ -421,19 +449,21 @@ function MoveDialog({ a, onClose, onDone }: { a: PracticeAppointment; onClose: (
   );
 }
 
-export function CancelDialog({ a, busy, onClose, onCancel }: { a: PracticeAppointment; busy: boolean; onClose: () => void; onCancel: (reason: CancelReason, note: string) => Promise<boolean> }) {
+export function CancelDialog({ a, busy, onClose, onCancel }: { a: PracticeAppointment; busy: boolean; onClose: () => void; onCancel: (reason: CancelReason, note: string, alternatives: boolean) => Promise<boolean> }) {
   const { t, lang } = useI18n();
   const uid = useId();
   const [reason, setReason] = useState<CancelReason | ''>('');
   const [note, setNote] = useState('');
   const [err, setErr] = useState<MessageKey | null>(null);
+  const inApp = a.has_access || a.source === 'online';
+  const [alts, setAlts] = useState(inApp && a.status !== 'new');
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!reason) return setErr('rcErrReason');
     if (reason === 'other' && !note.trim()) return setErr('rcErrNote');
     setErr(null);
-    if (await onCancel(reason, note)) onClose();
+    if (await onCancel(reason, note, inApp && alts)) onClose();
   }
 
   return (
@@ -457,7 +487,13 @@ export function CancelDialog({ a, busy, onClose, onCancel }: { a: PracticeAppoin
         <Field id={`${uid}-n`} label={t('bkCancelNote')} error={err === 'rcErrNote' ? { key: err } : undefined} required={reason === 'other'} optional={reason !== 'other'}>
           {(x) => <textarea {...x} rows={2} maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />}
         </Field>
-        <p className="muted small">{t(a.has_access || a.source === 'online' ? 'bkCancelInfoApp' : 'bkCancelInfoPhone')}</p>
+        {inApp && (
+          <label className="check-row">
+            <input type="checkbox" checked={alts} onChange={(e) => setAlts(e.target.checked)} />
+            <span>{t('wlAltCheck')}</span>
+          </label>
+        )}
+        <p className="muted small">{t(inApp ? (alts ? 'wlAltInfo' : 'bkCancelInfoApp') : 'bkCancelInfoPhone')}</p>
       </form>
     </Dialog>
   );

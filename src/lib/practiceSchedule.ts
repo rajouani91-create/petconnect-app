@@ -8,7 +8,7 @@ import { isIsoDate } from './record';
 export interface DayHours { weekday: number; open: boolean; opens: string; closes: string; break_from: string | null; break_to: string | null }
 export interface AppointmentType { id: string; name: string; minutes: number; online: boolean }
 export interface Absence { id: string; from: string; to: string; reason: string | null }
-export interface PracticeSchedule { can_edit: boolean; weeks_ahead: number; online_enabled: boolean; hours: DayHours[]; types: AppointmentType[]; absences: Absence[] }
+export interface PracticeSchedule { can_edit: boolean; weeks_ahead: number; online_enabled: boolean; remind_48h?: boolean; remind_2h?: boolean; hours: DayHours[]; types: AppointmentType[]; absences: Absence[] }
 
 export const MINUTES = [10, 15, 20, 30, 45, 60] as const;
 export const WEEKS_AHEAD = [4, 8, 12] as const;
@@ -115,5 +115,10 @@ export async function setBookingWindow(weeks: number): Promise<void> {
 
 export async function setOnlineBooking(on: boolean): Promise<void> {
   const { error } = await supabase.rpc('practice_set_online_booking', { p_on: on });
+  if (error) throw error;
+}
+
+export async function setReminders(r48: boolean, r2: boolean): Promise<void> {
+  const { error } = await supabase.rpc('practice_set_reminders', { p_48h: r48, p_2h: r2 });
   if (error) throw error;
 }

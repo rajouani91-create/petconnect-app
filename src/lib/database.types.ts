@@ -1260,7 +1260,39 @@ export type Database = {
       }
       owner_practice_bookings: {
         Args: Record<PropertyKey, never>
-        Returns: { appointment_id: string; status: string; source: string; practice_name: string; practice_phone: string | null; cancel_reason: string | null; cancel_note: string | null; can_cancel: boolean }[]
+        Returns: { appointment_id: string; status: string; source: string; practice_name: string; practice_phone: string | null; cancel_reason: string | null; cancel_note: string | null; can_cancel: boolean; alternatives: string[] | null; reminders: string[] }[]
+      }
+      practice_set_reminders: {
+        Args: { p_48h: boolean; p_2h: boolean }
+        Returns: undefined
+      }
+      practice_waitlist: {
+        Args: Record<PropertyKey, never>
+        Returns: { id: string; pet_label: string; owner_label: string; type_name: string; wish_day: string | null; status: string; offered_at: string | null; created_at: string }[]
+      }
+      practice_waitlist_remove: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      waitlist_join: {
+        Args: { p: Json }
+        Returns: string
+      }
+      owner_waitlist: {
+        Args: Record<PropertyKey, never>
+        Returns: { id: string; practice_id: string; practice_name: string; pet_id: string; pet_name: string; type_name: string; wish_day: string | null; status: string; offered_at: string | null; can_take: boolean }[]
+      }
+      waitlist_leave: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      waitlist_take: {
+        Args: { p_id: string }
+        Returns: string | null
+      }
+      owner_take_alternative: {
+        Args: { p_appointment: string; p_slot: string }
+        Returns: string
       }
       owner_cancel_booking: {
         Args: { p_appointment: string }
@@ -1287,7 +1319,7 @@ export type Database = {
         Returns: undefined
       }
       practice_cancel_appointment: {
-        Args: { p_id: string; p_reason: string; p_note?: string }
+        Args: { p_id: string; p_reason: string; p_note?: string; p_alternatives?: boolean }
         Returns: undefined
       }
       practice_mark_appointment: {
