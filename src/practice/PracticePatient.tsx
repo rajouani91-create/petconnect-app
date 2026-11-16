@@ -44,13 +44,13 @@ export function PracticePatient() {
     void load();
   }, [load]);
 
-  const run = useCallback(async (fn: () => Promise<unknown>, okText: string) => {
+  const run = useCallback(async (fn: () => Promise<unknown>, okText: string | (() => string)) => {
     setBusy(true);
     setMsg(null);
     try {
       await fn();
       await load();
-      setMsg({ ok: true, text: okText });
+      setMsg({ ok: true, text: typeof okText === 'function' ? okText() : okText });
       return true;
     } catch (e) {
       setMsg({ ok: false, text: t(recordErrorKey(e)) });
@@ -90,13 +90,6 @@ export function PracticePatient() {
           <VoidedCard ctx={ctx} />
         </div>
         <div className="stack-lg record-side">
-          {!p.deceased && (
-            <section className="card stack" aria-labelledby="bill-h">
-              <h2 id="bill-h">{t('blBillCardTitle')}</h2>
-              <p className="small muted">{t('blBillCardText')}</p>
-              <div className="row-actions"><Link to={`/praxis/abrechnung/neu?tier=${petId}`} className="btn btn-secondary">{t('blBillBtn')}</Link></div>
-            </section>
-          )}
           <EntryForms ctx={ctx} />
         </div>
       </div>

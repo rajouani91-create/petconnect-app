@@ -7,7 +7,9 @@ import {
   EMPTY_FORM, VALIDITY_YEARS, addEntry, canWrite, entryData, entryErrors, validUntil, vaccinesFor, type EntryKind, type FormValues,
 } from '../../lib/practiceRecord';
 import { isIsoDate } from '../../lib/record';
+import { addLine, vaccineSuggestions, type ServiceLine } from '../../lib/billing';
 import { EntryFields, type RecordCtx } from './shared';
+import { TreatmentForm, useTreatmentBilling } from './TreatmentForm';
 
 const TITLE: Record<EntryKind, MessageKey> = { vaccination: 'rcAddVacc', finding: 'rcAddFind', medication: 'rcAddMed', weight: 'wkAdd' };
 const SAVED: Record<EntryKind, MessageKey> = { vaccination: 'rcSavedVacc', finding: 'rcSavedFind', medication: 'rcSavedMed', weight: 'rcSavedWeight' };
@@ -45,7 +47,7 @@ function SimpleForm({ ctx, kind }: { ctx: RecordCtx; kind: Exclude<EntryKind, 'v
 }
 
 /** Impfung: übliche Impfstoffe der Tierart zur Auswahl, Gültigkeit 1 oder 3 Jahre (oder eigenes Datum) */
-function VaccinationForm({ ctx }: { ctx: RecordCtx }) {
+function VaccinationForm({ ctx, onSaved }: { ctx: RecordCtx; onSaved?: ((name: string, day: string) => void) | undefined }) {
   const { t } = useI18n();
   const uid = useId();
   const f = useEntryForm(ctx, 'vaccination');
@@ -59,6 +61,7 @@ function VaccinationForm({ ctx }: { ctx: RecordCtx }) {
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (await f.save({ name, given_on: given, valid_until: until })) {
+      onSaved?.(name, given);
       setPick(list[0] ?? OTHER);
       setYears('1');
     }
@@ -109,11 +112,23 @@ function VaccinationForm({ ctx }: { ctx: RecordCtx }) {
 export function EntryForms({ ctx }: { ctx: RecordCtx }) {
   const { t } = useI18n();
   const role = ctx.rec.role;
+  const clinical = canWrite(role, 'finding') && !ctx.rec.pet.deceased;
+  const bill = useTreatmentBilling(ctx.petId, ctx.today, clinical);
+  const [lines, setLines] = useState<ServiceLine[]>([]);
+  const [suggested, setSuggested] = useState(false);
+  // Nach einer Impfung: Impfleistung und Impfstoff aus dem Katalog als Vorschlag in „Erbrachte Leistungen“
+  const onVaccinated = (name: string, day: string) => {
+    const items = bill.data?.catalog?.items ?? [];
+    const sugg = vaccineSuggestions(name, items, day);
+    if (!sugg.length) return;
+    setLines((ls) => sugg.reduce((acc, i) => (acc.some((l) => l.catalog_item_id === i.id) ? acc : addLine(acc, i, 1, true)), ls));
+    setSuggested(true);
+  };
   if (ctx.rec.pet.deceased) return <p className="notice notice-info">{t('rcDeceasedNote')}</p>;
   return (
     <>
-      {canWrite(role, 'vaccination') && <VaccinationForm ctx={ctx} />}
-      {canWrite(role, 'finding') && <SimpleForm ctx={ctx} kind="finding" />}
+      {canWrite(role, 'vaccination') && <VaccinationForm ctx={ctx} onSaved={clinical ? onVaccinated : undefined} />}
+      {clinical && <TreatmentForm ctx={ctx} bill={bill} lines={lines} setLines={(fn) => setLines(fn)} suggested={suggested} clearSuggested={() => setSuggested(false)} />}
       {canWrite(role, 'medication') && <SimpleForm ctx={ctx} kind="medication" />}
       <SimpleForm ctx={ctx} kind="weight" />
       {!canWrite(role, 'finding') && <p className="notice notice-info">{t('rcTeamNote')}</p>}

@@ -16,8 +16,8 @@ export interface RecordCtx {
   petId: string;
   today: string;
   busy: boolean;
-  /** Führt eine Aktion aus, meldet Erfolg oder Fehler und lädt die Akte neu. true = hat geklappt */
-  run: (fn: () => Promise<unknown>, okText: string) => Promise<boolean>;
+  /** Führt eine Aktion aus, meldet Erfolg oder Fehler und lädt die Akte neu. true = hat geklappt. okText als Funktion: erst nach der Aktion gebildet */
+  run: (fn: () => Promise<unknown>, okText: string | (() => string)) => Promise<boolean>;
   openEdit: (e: EditTarget) => void;
   openVoid: (v: VoidTarget) => void;
   openLog: (l: LogTarget) => void;
