@@ -144,3 +144,56 @@ export function stepSlot(slots: readonly string[], currentIso: string, dir: -1 |
   if (dir === 1) return sorted.find((s) => new Date(s).getTime() > cur) ?? null;
   return sorted.toReversed().find((s) => new Date(s).getTime() < cur) ?? null;
 }
+
+// ---------- Zeitraster (Release B: Woche und Tag als Raster, Termine nach Uhrzeit und Dauer) ----------
+
+export const GRID_STEP = 15;
+export const PX_PER_MIN = 1.6;
+
+/** Sichtbarer Bereich des Rasters in Minuten: früheste Öffnung bis späteste Schließung, Termine außerhalb eingeschlossen; volle Stunden */
+export function gridRange(statuses: readonly DayStatus[], items: readonly PracticeAppointment[]): { start: number; end: number } {
+  let start = Infinity;
+  let end = -Infinity;
+  for (const s of statuses) if (s.kind === 'open') { start = Math.min(start, toMin(s.opens)); end = Math.max(end, toMin(s.closes)); }
+  for (const a of items) { const m = toMin(timeOf(a.starts_at)); start = Math.min(start, m); end = Math.max(end, m + a.minutes); }
+  if (!Number.isFinite(start)) { start = 8 * 60; end = 18 * 60; }
+  start = Math.max(0, Math.floor(start / 60) * 60);
+  end = Math.min(24 * 60, Math.max(start + 60, Math.ceil(end / 60) * 60));
+  return { start, end };
+}
+
+/** Nebeneinander-Spalten für gleichzeitige Termine: jede Gruppe teilt sich die Breite */
+export function layoutDay(items: readonly PracticeAppointment[]): { a: PracticeAppointment; col: number; cols: number }[] {
+  const out: { a: PracticeAppointment; col: number; cols: number }[] = [];
+  for (const g of overlapGroups(items)) {
+    const ends: number[] = [];
+    const placed = g.map((a) => {
+      const s = new Date(a.starts_at).getTime();
+      let col = ends.findIndex((e) => e <= s);
+      if (col < 0) { col = ends.length; ends.push(0); }
+      ends[col] = s + a.minutes * 60000;
+      return { a, col };
+    });
+    for (const p of placed) out.push({ ...p, cols: ends.length });
+  }
+  return out;
+}
+
+/** Bereiche ohne Sprechzeit (geschlossen, Pause) innerhalb des Rasters, in Minuten */
+export function closedBands(s: DayStatus, start: number, end: number): { from: number; to: number; kind: 'closed' | 'pause' }[] {
+  if (s.kind !== 'open') return [{ from: start, to: end, kind: 'closed' }];
+  const out: { from: number; to: number; kind: 'closed' | 'pause' }[] = [];
+  const o = toMin(s.opens);
+  const c = toMin(s.closes);
+  if (o > start) out.push({ from: start, to: o, kind: 'closed' });
+  if (s.breakFrom && s.breakTo) out.push({ from: toMin(s.breakFrom), to: toMin(s.breakTo), kind: 'pause' });
+  if (c < end) out.push({ from: c, to: end, kind: 'closed' });
+  return out;
+}
+
+/** Uhrzeit an einer senkrechten Position im Raster, auf 15 Minuten gerundet und im Raster gehalten */
+export function timeAtY(y: number, start: number, end: number, minutes = 0, step = GRID_STEP): string {
+  const raw = start + y / PX_PER_MIN;
+  const snapped = Math.round(raw / step) * step;
+  return toHHMM(Math.min(Math.max(snapped, start), Math.max(start, end - Math.max(step, minutes))));
+}

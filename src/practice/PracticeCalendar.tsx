@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent as RPointerEvent } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type PointerEvent as RPointerEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { formatDate, formatIsoDate, type MessageKey } from '../i18n';
@@ -12,8 +12,8 @@ import {
   moveAppointment, practiceAppointments, timeOf, toInstant, whenErrors, type PracticeAppointment, type Warnings,
 } from '../lib/practiceAppointments';
 import {
-  CAL_VIEWS, dayRows, dayStatus, inRow, isClosed, isMovable, isoWeek, monthGrid, nearestSlot, onDay, overlapGroups, rowCovered, shiftAnchor,
-  stepSlot, weekDays, type CalView, type DayStatus,
+  CAL_VIEWS, PX_PER_MIN, closedBands, dayStatus, gridRange, isClosed, isMovable, isoWeek, layoutDay, monthGrid, nearestSlot, onDay, shiftAnchor,
+  stepSlot, timeAtY, toHHMM, toMin, weekDays, type CalView, type DayStatus,
 } from '../lib/practiceCalendar';
 import { CancelDialog, SlotPicker, WarningBox } from './PracticeAppointments';
 import { usePractice } from './PracticeProvider';
@@ -55,6 +55,15 @@ export function PracticeCalendar() {
     }
   }, []);
   useEffect(() => { if (!pending) void load(); }, [load, pending]);
+
+  // Woche auf dem Handy: zum heutigen Tag blättern
+  const gridRef = useRef<HTMLDivElement>(null);
+  const loaded = rows !== null && sched !== null;
+  useEffect(() => {
+    const w = gridRef.current;
+    const head = w?.querySelector<HTMLElement>('.tg-head.is-today');
+    if (w && head && w.scrollWidth > w.clientWidth) w.scrollLeft = Math.max(0, head.offsetLeft - 56);
+  }, [view, anchor, loaded]);
 
   const status = (d: string): DayStatus => (sched ? dayStatus(d, sched.hours, sched.absences) : { kind: 'closed' });
   const notifies = (a: PracticeAppointment) => a.has_access || a.source === 'online';
@@ -123,7 +132,13 @@ export function PracticeCalendar() {
   const suppressClick = useRef(false);
   const dropAt = (x: number, y: number): Drop | null => {
     const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-drop-day]');
-    return el ? { day: el.dataset.dropDay!, time: el.dataset.dropTime } : null;
+    if (!el) return null;
+    // Zeitraster: Uhrzeit aus der Höhe in der Spalte, auf 15 Minuten gerundet
+    if (el.dataset.gridStart !== undefined) {
+      const r = el.getBoundingClientRect();
+      return { day: el.dataset.dropDay!, time: timeAtY(y - r.top, Number(el.dataset.gridStart), Number(el.dataset.gridEnd), drag.current?.a.minutes ?? 0) };
+    }
+    return { day: el.dataset.dropDay!, time: el.dataset.dropTime };
   };
   const keyOf = (d: Drop | null) => (d ? `${d.day}|${d.time ?? ''}` : null);
 
@@ -201,6 +216,66 @@ export function PracticeCalendar() {
     );
   };
 
+  // ---------- Zeitraster für Tag und Woche ----------
+  const nowMin = zonedNow(now).minutes;
+  const grid = (days: string[]) => {
+    const all = days.flatMap((d) => onDay(rows ?? [], d));
+    const { start, end } = gridRange(days.map(status), all);
+    const px = (m: number) => `${(m - start) * PX_PER_MIN}px`;
+    const hours: number[] = [];
+    for (let m = start; m <= end; m += 60) hours.push(m);
+    const dragA = dragId ? (rows ?? []).find((r) => r.id === dragId) ?? null : null;
+    const [hDay, hTime] = (hover ?? '').split('|');
+    const height = `${(end - start) * PX_PER_MIN}px`;
+    return (
+      <div className="tg-wrap" ref={gridRef}>
+        <div className={`tg${days.length === 1 ? ' tg-one' : ''}`} style={{ '--tg-cols': days.length } as CSSProperties}>
+          <div className="tg-corner" aria-hidden="true" />
+          {days.map((d) => {
+            const s = status(d);
+            return days.length === 1 ? (
+              <div key={d} className={`tg-head${d === today ? ' is-today' : ''}`}><strong>{formatDate(new Date(`${d}T12:00:00Z`), lang, { weekday: 'long', timeZone: 'UTC' })}</strong></div>
+            ) : (
+              <button key={d} type="button" className={`tg-head${d === today ? ' is-today' : ''}${s.kind !== 'open' ? ' is-closed' : ''}`} onClick={() => go('day', d)} aria-label={t('calOpenDay', { d: formatIsoDate(d, lang) })}>
+                <span>{formatDate(new Date(`${d}T12:00:00Z`), lang, { weekday: 'short', timeZone: 'UTC' })} <strong>{formatDate(new Date(`${d}T12:00:00Z`), lang, { day: 'numeric', month: 'numeric', timeZone: 'UTC' })}</strong></span>
+                <span className="small muted">{statusText(s)} · {onDay(rows ?? [], d).length}</span>
+              </button>
+            );
+          })}
+          <div className="tg-times" style={{ height }} aria-hidden="true">
+            {hours.map((m) => <span key={m} style={{ top: px(m) }}>{toHHMM(m)}</span>)}
+          </div>
+          {days.map((d) => {
+            const s = status(d);
+            return (
+              <div key={d} className={`tg-col${d === today ? ' is-today' : ''}${hDay === d ? ' is-hover' : ''}`} style={{ height }}
+                data-drop-day={d} data-grid-start={start} data-grid-end={end}>
+                {closedBands(s, start, end).map((b) => (
+                  <div key={`${b.kind}-${b.from}`} className={`tg-band tg-${b.kind}`} style={{ top: px(b.from), height: `${(b.to - b.from) * PX_PER_MIN}px` }}>
+                    {b.kind === 'pause' && b.to - b.from >= 30 && <span className="small muted">{t('scBreak')}</span>}
+                    {s.kind === 'absence' && <span className="small muted">{s.reason || t('calAbsent')}</span>}
+                  </div>
+                ))}
+                {layoutDay(onDay(rows ?? [], d)).map(({ a, col, cols }) => (
+                  <div key={a.id} className={`tg-ev${a.minutes < 30 ? ' is-short' : ''}`} style={{
+                    top: px(toMin(timeOf(a.starts_at))), height: `${Math.max(22, a.minutes * PX_PER_MIN - 2)}px`,
+                    left: `calc(${(col / cols) * 100}% + 2px)`, width: `calc(${100 / cols}% - 4px)`,
+                  }}>{card(a, a.minutes < 25 || cols > 2)}</div>
+                ))}
+                {dragA && hDay === d && hTime && (
+                  <div className="tg-ghost" aria-hidden="true" style={{ top: px(toMin(hTime)), height: `${dragA.minutes * PX_PER_MIN}px` }}>
+                    {hTime}–{toHHMM(toMin(hTime) + dragA.minutes)} · {dragA.pet_label}
+                  </div>
+                )}
+                {d === today && nowMin >= start && nowMin <= end && <div className="tg-now" style={{ top: px(nowMin) }} aria-hidden="true" />}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const statusText = (s: DayStatus) => s.kind === 'open' ? `${s.opens}–${s.closes}` : s.kind === 'absence' ? (s.reason || t('calAbsent')) : t('scClosed');
   const title = view === 'day'
     ? formatDate(new Date(`${anchor}T12:00:00Z`), lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
@@ -239,58 +314,10 @@ export function PracticeCalendar() {
           </div>
 
           {view === 'day' && (() => {
-            const s = status(anchor);
-            const items = onDay(rows, anchor);
-            return (
-              <div className="stack">
-                <p className="muted small">{statusText(s)} · {t('calCount', { n: items.length })}</p>
-                {s.kind !== 'open' && items.length === 0 ? <p className="muted">{t('calNoHours')}</p> : (
-                  <ul className="cal-day">
-                    {dayRows(s).map(({ time, pause }) => {
-                      const here = inRow(items, time);
-                      const key = `${anchor}|${time}`;
-                      return (
-                        <li key={time} className={`cal-row${pause ? ' is-pause' : ''}${hover === key ? ' is-hover' : ''}`} data-drop-day={anchor} data-drop-time={time}>
-                          <span className="mono cal-row-time">{time}</span>
-                          <div className="cal-row-items">
-                            {here.length ? here.map((a) => card(a)) : <span className="muted small">{pause ? t('scBreak') : rowCovered(items, time) ? '' : t('calFree')}</span>}
-                          </div>
-                        </li>
-                      );
-                    })}
-                    {/* Termine außerhalb der Sprechzeit */}
-                    {items.filter((a) => s.kind !== 'open' || timeOf(a.starts_at) < s.opens || timeOf(a.starts_at) >= s.closes).map((a) => (
-                      <li key={a.id} className="cal-row"><span className="mono cal-row-time">{timeOf(a.starts_at)}</span><div className="cal-row-items">{card(a)}</div></li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            );
+            const st = status(anchor);
+            return <p className="muted small">{statusText(st)} · {t('calCount', { n: onDay(rows, anchor).length })}</p>;
           })()}
-
-          {view === 'week' && (
-            <div className="cal-week-wrap">
-              {/* Gleichzeitige Termine stehen nebeneinander – die Spalte wird dafür breiter */}
-              <div className="cal-week" style={{ gridTemplateColumns: weekDays(anchor).map((d) => `minmax(${120 * Math.max(1, ...overlapGroups(onDay(rows, d)).map((g) => g.length))}px, ${Math.max(1, ...overlapGroups(onDay(rows, d)).map((g) => g.length))}fr)`).join(' ') }}>
-                {weekDays(anchor).map((d) => {
-                  const s = status(d);
-                  const items = onDay(rows, d);
-                  return (
-                    <div key={d} className={`cal-col${d === today ? ' is-today' : ''}${s.kind !== 'open' ? ' is-closed' : ''}${hover === `${d}|` ? ' is-hover' : ''}`} data-drop-day={d}>
-                      <button type="button" className="cal-col-head" onClick={() => go('day', d)} aria-label={t('calOpenDay', { d: formatIsoDate(d, lang) })}>
-                        <span>{formatDate(new Date(`${d}T12:00:00Z`), lang, { weekday: 'short', timeZone: 'UTC' })}</span>
-                        <strong>{formatDate(new Date(`${d}T12:00:00Z`), lang, { day: 'numeric', month: 'numeric', timeZone: 'UTC' })}</strong>
-                      </button>
-                      <span className="cal-col-status small muted">{statusText(s)}</span>
-                      <div className="cal-col-items">
-                        {overlapGroups(items).map((g) => <div key={g[0]!.id} className="cal-group">{g.map((a) => card(a, g.length > 1))}</div>)}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {view !== 'month' && grid(view === 'day' ? [anchor] : weekDays(anchor))}
 
           {view === 'month' && (
             <div className="cal-month" role="grid" aria-label={title}>
