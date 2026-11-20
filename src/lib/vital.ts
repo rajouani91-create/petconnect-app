@@ -69,6 +69,9 @@ export const VITAL_ERROR: Record<Exclude<VitalResult, { ok: true }>['error'], Me
 };
 
 /** Zeitpunkt aus Datum (YYYY-MM-DD): heute = jetzt, sonst 12 Uhr Ortszeit des Geräts. */
+/** Messzeitpunkt für einen gewählten Tag zum aktuellen Zeitpunkt (für Ereignis-Handler) */
+export const measuredAtNow = (date: string, today: string): string => measuredAtFor(date, today, new Date());
+
 export function measuredAtFor(date: string, today: string, now: Date): string {
   if (date === today) return now.toISOString();
   const [y, m, d] = date.split('-').map(Number) as [number, number, number];

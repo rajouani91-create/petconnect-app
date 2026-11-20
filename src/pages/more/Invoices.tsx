@@ -166,6 +166,7 @@ function ClaimCard({ inv }: { inv: Invoice }) {
   const [pick, setPick] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [loadErr, setLoadErr] = useState(false);
   const petId = inv.pet_id!;
   const number = inv.number!;
   const load = useCallback(async () => {
@@ -174,11 +175,19 @@ function ClaimCard({ inv }: { inv: Invoice }) {
       setIns(i);
       setClaims(c);
       setPick((p) => p || i[0]?.id || '');
+      setLoadErr(false);
     } catch {
-      setIns([]);
+      setLoadErr(true);
     }
   }, [petId]);
   useEffect(() => { void load(); }, [load]);
+  if (loadErr && !ins) {
+    return (
+      <section className="card stack no-print">
+        <p className="notice notice-warn" role="alert">{t('blClaimLoadErr')} <button type="button" className="link-btn" onClick={() => void load()}>{t('blTrRetry')}</button></p>
+      </section>
+    );
+  }
   if (!ins) return null;
   const done = claims.find((c) => c.title.includes(number));
   const submit = async () => {

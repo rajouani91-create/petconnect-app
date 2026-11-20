@@ -6,7 +6,7 @@ import { addVital, deleteVital, listVitals, updateVital, type VitalRow } from '.
 import { WEIGHT_RANGES, chartPoints, filterWeightsByRange, formatKg, pastDateError, recordErrorKey, type WeightRange } from '../../lib/record';
 import { localDate } from '../../lib/schedule';
 import {
-  CONTEXT_LABEL, KIND_CONTEXTS, KIND_EXAMPLE, KIND_LABEL, VITAL_ERROR, VITAL_KINDS, isVitalContext, measuredAtFor, normalRange, parseVital, sortVitalsDesc, toChartRows,
+  CONTEXT_LABEL, KIND_CONTEXTS, KIND_EXAMPLE, KIND_LABEL, VITAL_ERROR, VITAL_KINDS, isVitalContext, measuredAtNow, normalRange, parseVital, sortVitalsDesc, toChartRows,
   type VitalContext, type VitalKind,
 } from '../../lib/vital';
 import type { FieldError } from '../../lib/validate';
@@ -63,13 +63,13 @@ export function VitalSection({ petId, editable, today, species }: { petId: strin
     if (mode?.kind === 'edit') {
       const old = mode.row;
       const keepTime = localDate(new Date(old.measured_at)) === dateV;
-      const row = await updateVital(old.id, { value, context, measured_at: keepTime ? old.measured_at : measuredAtFor(dateV, today, new Date()) });
+      const row = await updateVital(old.id, { value, context, measured_at: keepTime ? old.measured_at : measuredAtNow(dateV, today) });
       setRows((cur) => sortVitalsDesc((cur ?? []).map((r) => (r.id === row.id ? row : r))));
       setMode(null);
       setStatus(t('vtUpdated', { v: val(row.value), d: date(row.measured_at) }));
       focusLater(`edit-${row.id}`);
     } else {
-      const row = await addVital(petId, { kind, value, context, measured_at: measuredAtFor(dateV, today, new Date()) });
+      const row = await addVital(petId, { kind, value, context, measured_at: measuredAtNow(dateV, today) });
       setRows((cur) => sortVitalsDesc([...(cur ?? []), row]));
       setMode(null);
       setStatus(t('vtSaved', { v: val(row.value), d: date(row.measured_at) }));

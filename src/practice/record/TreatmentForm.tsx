@@ -21,6 +21,8 @@ export interface TreatmentBilling {
   appt: PracticeAppointment | null;
   /** Gültige Rechnung zu diesem Termin (Entwurf, offen oder bezahlt) */
   apptInvoice: InvoiceRow | null;
+  /** Katalog, Pakete, Termine oder Rechnungen konnten nicht geladen werden */
+  loadErr: boolean;
   reload: () => Promise<void>;
 }
 
@@ -38,14 +40,18 @@ export function useTreatmentBilling(petId: string, today: string, enabled: boole
   const [packages, setPackages] = useState<BillPackage[]>([]);
   const [appts, setAppts] = useState<PracticeAppointment[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
+  const [loadErr, setLoadErr] = useState(false);
   const reload = useCallback(async () => {
     if (!enabled) return;
+    let failed = false;
+    const soft = <T,>(pr: Promise<T>, fallback: T) => pr.catch(() => { failed = true; return fallback; });
     const [b, p, a, i] = await Promise.all([
-      practiceBilling().catch(() => null),
-      billPackages().catch(() => [] as BillPackage[]),
-      practiceAppointments().catch(() => [] as PracticeAppointment[]),
-      practiceInvoices().catch(() => [] as InvoiceRow[]),
+      soft(practiceBilling(), null),
+      soft(billPackages(), [] as BillPackage[]),
+      soft(practiceAppointments(), [] as PracticeAppointment[]),
+      soft(practiceInvoices(), [] as InvoiceRow[]),
     ]);
+    setLoadErr(failed);
     setData(b);
     setPackages(p);
     setAppts(a);
@@ -60,7 +66,7 @@ export function useTreatmentBilling(petId: string, today: string, enabled: boole
     () => (appt ? (invoices.find((r) => r.appointment_id === appt.id && r.kind === 'invoice' && ['draft', 'open', 'paid'].includes(r.status)) ?? null) : null),
     [appt, invoices],
   );
-  return { data, packages, appt, apptInvoice, reload };
+  return { data, packages, appt, apptInvoice, loadErr, reload };
 }
 
 const clampQty = (n: number) => Math.min(Math.max(Math.round(n), 1), 9999);
@@ -105,6 +111,8 @@ export function TreatmentForm({ ctx, bill, lines, setLines, suggested, clearSugg
     const price = parse(free.price);
     const tax = parse(free.tax);
     if (!free.name.trim()) return setFreeErr('blErrLine');
+    // leere Felder nicht als 0 übernehmen
+    if (!free.price.trim() || !free.tax.trim() || !free.qty.trim()) return setFreeErr('blErrFreeEmpty');
     if (!Number.isFinite(qty) || qty < 1 || qty > 9999 || !Number.isFinite(price) || price < 0 || price > 100000 || !Number.isFinite(tax) || tax < 0 || tax > 30) return setFreeErr('blErrLine');
     setLines((ls) => [...ls, freeLine(free.name.trim().slice(0, 120), Math.round(qty), Math.round(price * 100) / 100, tax)]);
     setFree(null);
@@ -141,9 +149,10 @@ export function TreatmentForm({ ctx, bill, lines, setLines, suggested, clearSugg
     let invoiceErr: MessageKey | null = null;
     const n = lines.length;
     const appt = bill.appt;
+    let markFailed = false;
     const work = async () => {
       if (appt && appt.status === 'confirmed' && new Date(appt.starts_at) <= new Date() && v.date === ctx.today) {
-        await markAppointment(appt.id, true).catch(() => undefined);
+        await markAppointment(appt.id, true).catch(() => { markFailed = true; });
       }
       if (!willBill) return;
       try {
@@ -171,9 +180,11 @@ export function TreatmentForm({ ctx, bill, lines, setLines, suggested, clearSugg
       setV(EMPTY_FORM.finding(ctx.today));
       setLines(() => []);
       clearSuggested();
-      setNote({ ok: true, text: t(hasFinding ? 'blTrDraftReady' : 'blTrSavedBill', { n }), invoiceId });
+      setNote({ ok: true, text: t(hasFinding ? 'blTrDraftReady' : 'blTrSavedBill', { n }) + (markFailed ? ` ${t('blTrMarkFailed')}` : ''), invoiceId });
     } else if (invoiceErr) {
       setNote({ ok: false, text: t(invoiceErr) });
+    } else if (markFailed) {
+      setNote({ ok: false, text: t('blTrMarkFailed') });
     }
     await bill.reload();
   }
@@ -185,6 +196,11 @@ export function TreatmentForm({ ctx, bill, lines, setLines, suggested, clearSugg
       <h2 id={`${uid}-h`}>{t('blTrTitle')}</h2>
       <form className="stack" onSubmit={(e) => void submit(e)} noValidate>
         <EntryFields kind="finding" v={v} set={set} errors={errors} uid={uid} />
+        {bill.loadErr && (
+          <p className="notice notice-warn small" role="alert">
+            {t('blTrLoadErr')} <button type="button" className="link-btn" onClick={() => void bill.reload()}>{t('blTrRetry')}</button>
+          </p>
+        )}
         {bill.data && (
           <fieldset className="fieldset tr-services">
             <legend>{t('blTrServices')}</legend>
