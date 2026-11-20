@@ -5,6 +5,7 @@ import { formatIsoDate, localeOf, type MessageKey } from '../../i18n';
 import { Dialog } from '../../components/Dialog';
 import { Field } from '../../components/Field';
 import { formatKg } from '../../lib/record';
+import { CONTEXT_LABEL, KIND_CONTEXTS, KIND_EXAMPLE, KIND_LABEL as VITAL_LABEL, VITAL_KINDS, isVitalKind, type VitalKind } from '../../lib/vital';
 import {
   NOTE_MAX, REASONS, REASON_LABEL, entryData, entryErrors, entryLog, reasonError, recordErrorKey,
   type EntryKind, type FormValues, type LogRow, type PatientRecord, type Reason,
@@ -26,7 +27,7 @@ export interface EditTarget { kind: EntryKind; entryId: string; title: string; v
 export interface VoidTarget { entryId: string; title: string; confirmed?: boolean }
 export interface LogTarget { entryId: string | null; title: string }
 
-export const KIND_LABEL: Record<EntryKind, MessageKey> = { vaccination: 'hsKindVacc', finding: 'hsKindDoc', medication: 'hsKindMed', weight: 'hsKindWeight' };
+export const KIND_LABEL: Record<EntryKind, MessageKey> = { vaccination: 'hsKindVacc', finding: 'hsKindDoc', medication: 'hsKindMed', weight: 'hsKindWeight', vital: 'rcKindVital' };
 
 /** „Erfasst am {d} von {n}“ plus Kennzeichen „geändert“ (öffnet den Verlauf) */
 export function EnteredBy({ at, by, changed, onLog }: { at: string | null; by: string | null; changed: boolean; onLog?: (() => void) | undefined }) {
@@ -69,7 +70,10 @@ export function EntryFields({ kind, v, set, errors, uid }: { kind: EntryKind; v:
   if (kind === 'finding') {
     return (
       <>
-        {text('date', 'wkDate', { required: true, type: 'date' })}
+        <div className="row-2">
+          {text('date', 'wkDate', { required: true, type: 'date' })}
+          {text('time', 'rcFTime', { optional: true, type: 'time' })}
+        </div>
         {text('title', 'rcFTitle', { required: true })}
         <Field id={`${uid}-text`} label={t('rcFText')} optional>
           {(a) => <textarea {...a} rows={4} maxLength={4000} value={v.text ?? ''} onChange={(e) => set('text', e.target.value)} />}
@@ -85,6 +89,37 @@ export function EntryFields({ kind, v, set, errors, uid }: { kind: EntryKind; v:
         {text('reason', 'rcFReason', { optional: true, max: 200 })}
         {text('starts_on', 'rcFStart', { required: true, type: 'date' })}
         {text('ends_on', 'rcFEnd', { optional: true, type: 'date', hint: 'rcFEndHint' })}
+      </>
+    );
+  }
+  if (kind === 'vital') {
+    const vk = isVitalKind(v.vkind ?? '') ? (v.vkind as VitalKind) : 'temperature';
+    return (
+      <>
+        <Field id={`${uid}-vkind`} label={t('rcVitalKind')} error={err('vkind')} required>
+          {(a) => (
+            <select {...a} value={vk} onChange={(e) => { set('vkind', e.target.value); set('context', ''); }}>
+              {VITAL_KINDS.map((k) => <option key={k} value={k}>{t(VITAL_LABEL[k])}</option>)}
+            </select>
+          )}
+        </Field>
+        <div className="row-2">
+          <Field id={`${uid}-value`} label={vk === 'temperature' ? `${t('vtValue')} (°C)` : `${t('vtValue')} (${t('vtUnitRate')})`} error={err('value')} hint={t(KIND_EXAMPLE[vk])} required>
+            {(a) => <input {...a} type="text" inputMode="decimal" autoComplete="off" maxLength={6} value={v.value ?? ''} onChange={(e) => set('value', e.target.value)} />}
+          </Field>
+          <Field id={`${uid}-ctx`} label={t('rcVitalContext')} optional>
+            {(a) => (
+              <select {...a} value={v.context ?? ''} onChange={(e) => set('context', e.target.value)}>
+                <option value="">–</option>
+                {KIND_CONTEXTS[vk].map((c) => <option key={c} value={c}>{t(CONTEXT_LABEL[c])}</option>)}
+              </select>
+            )}
+          </Field>
+        </div>
+        <div className="row-2">
+          {text('measured_on', 'wkDate', { required: true, type: 'date' })}
+          {text('time', 'rcFTime', { optional: true, type: 'time', hint: 'rcTimeNowHint' })}
+        </div>
       </>
     );
   }

@@ -30,7 +30,7 @@
   "overrides": [
     {
       // <dialog>: Klick auf den Hintergrund schließt; Tastatur (Escape) erledigt der Browser über onCancel.
-      "files": ["src/components/Dialog.tsx"],
+      "files": ["src/components/Dialog.tsx", "src/components/SidePanel.tsx"],
       "rules": { "jsx-a11y/click-events-have-key-events": "off", "jsx-a11y/no-noninteractive-element-interactions": "off" }
     }
   ],
