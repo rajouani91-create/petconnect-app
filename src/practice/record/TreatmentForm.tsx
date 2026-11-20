@@ -23,6 +23,8 @@ export interface TreatmentBilling {
   apptInvoice: InvoiceRow | null;
   /** Katalog, Pakete, Termine oder Rechnungen konnten nicht geladen werden */
   loadErr: boolean;
+  /** Rechnungen dieses Tiers (neueste zuerst) */
+  invoices: InvoiceRow[];
   reload: () => Promise<void>;
 }
 
@@ -66,14 +68,15 @@ export function useTreatmentBilling(petId: string, today: string, enabled: boole
     () => (appt ? (invoices.find((r) => r.appointment_id === appt.id && r.kind === 'invoice' && ['draft', 'open', 'paid'].includes(r.status)) ?? null) : null),
     [appt, invoices],
   );
-  return { data, packages, appt, apptInvoice, loadErr, reload };
+  const petInvoices = useMemo(() => invoices.filter((r) => r.pet_id === petId), [invoices, petId]);
+  return { data, packages, appt, apptInvoice, loadErr, invoices: petInvoices, reload };
 }
 
 const clampQty = (n: number) => Math.min(Math.max(Math.round(n), 1), 9999);
 
-export function TreatmentForm({ ctx, bill, lines, setLines, suggested, clearSuggested }: {
+export function TreatmentForm({ ctx, bill, lines, setLines, suggested, clearSuggested, onDone }: {
   ctx: RecordCtx; bill: TreatmentBilling; lines: ServiceLine[]; setLines: (fn: (l: ServiceLine[]) => ServiceLine[]) => void;
-  suggested: boolean; clearSuggested: () => void;
+  suggested: boolean; clearSuggested: () => void; onDone: () => void;
 }) {
   const { t, lang } = useI18n();
   const locale = localeOf(lang);
@@ -187,14 +190,14 @@ export function TreatmentForm({ ctx, bill, lines, setLines, suggested, clearSugg
       setNote({ ok: false, text: t('blTrMarkFailed') });
     }
     await bill.reload();
+    // Nur Befund ohne Rechnung: Leiste schließen, die Meldung steht auf der Seite
+    if (hasFinding && !invoiceId && !invoiceErr && !markFailed) onDone();
   }
 
   const qtyBtn = (l: ServiceLine, d: number) => setLines((ls) => ls.map((x) => (x.key === l.key ? { ...x, qty: clampQty(x.qty + d) } : x)));
 
   return (
-    <section className="card stack" aria-labelledby={`${uid}-h`}>
-      <h2 id={`${uid}-h`}>{t('blTrTitle')}</h2>
-      <form className="stack" onSubmit={(e) => void submit(e)} noValidate>
+      <form className="stack" onSubmit={(e) => void submit(e)} noValidate aria-label={t('blTrTitle')}>
         <EntryFields kind="finding" v={v} set={set} errors={errors} uid={uid} />
         {bill.loadErr && (
           <p className="notice notice-warn small" role="alert">
@@ -327,8 +330,10 @@ export function TreatmentForm({ ctx, bill, lines, setLines, suggested, clearSugg
             </p>
           )}
         </div>
-        <button type="submit" className="btn btn-primary btn-start" disabled={ctx.busy || busy}>{t(willBill ? 'blTrSave' : 'saveBtn')}</button>
+        <div className="panel-actions">
+          <button type="button" className="btn btn-ghost" onClick={onDone}>{t(note?.invoiceId ? 'close' : 'cancelBtn')}</button>
+          <button type="submit" className="btn btn-primary" disabled={ctx.busy || busy}>{t(willBill ? 'blTrSave' : 'rcSaveFind')}</button>
+        </div>
       </form>
-    </section>
   );
 }

@@ -171,8 +171,9 @@ export function VitalSection({ petId, editable, today, species }: { petId: strin
                         <span className="mono">{date(r.measured_at)}</span> · {val(r.value)}
                       </span>
                       {ctxText(r.context) && <span className="muted small">{ctxText(r.context)}</span>}
+                      {r.source === 'practice' && <span className="small practice-note">{t('vtFromPractice')}</span>}
                     </div>
-                    {editable && (
+                    {editable && r.source !== 'practice' && (
                       <div className="row-actions">
                         <button type="button" ref={register(`edit-${r.id}`)} className="btn btn-ghost" aria-label={t('vtEditL', { d: date(r.measured_at), v: val(r.value) })} onClick={() => { setMode({ kind: 'edit', row: r }); setStatus(''); }}>
                           {t('editBtn')}

@@ -21,13 +21,13 @@ export function FindingsCard({ ctx }: { ctx: RecordCtx }) {
               <li key={f.id} className="record-row">
                 <div className="record-main">
                   <span className="record-title">{f.title}</span>
-                  <span className="muted small">{formatIsoDate(f.date, lang)}{!f.mine && ` · ${f.practice_name}`}</span>
+                  <span className="muted small">{formatIsoDate(f.date, lang)}{f.time ? ` · ${f.time}` : ''}{!f.mine && ` · ${f.practice_name}`}</span>
                   {f.text && <span className="pre-line">{f.text}</span>}
                   <EnteredBy at={f.entered_at} by={f.by_name} changed={f.changed && f.mine} onLog={() => ctx.openLog({ entryId: f.id, title })} />
                 </div>
                 {f.mine && clinical && (
                   <div className="row-actions">
-                    <button type="button" className="btn btn-ghost" aria-label={t('rcEditL', { n: f.title })} onClick={() => ctx.openEdit({ kind: 'finding', entryId: f.id, title, values: entryForm('finding', { date: f.date, title: f.title, text: f.text }, String) })}>
+                    <button type="button" className="btn btn-ghost" aria-label={t('rcEditL', { n: f.title })} onClick={() => ctx.openEdit({ kind: 'finding', entryId: f.id, title, values: entryForm('finding', { date: f.date, time: f.time ?? null, title: f.title, text: f.text }, String) })}>
                       {t('editBtn')}
                     </button>
                     <button type="button" className="btn btn-ghost" aria-label={t('rcVoidL', { n: f.title })} onClick={() => ctx.openVoid({ entryId: f.id, title })}>{t('rcVoid')}</button>

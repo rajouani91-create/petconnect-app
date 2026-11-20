@@ -7,10 +7,13 @@ import type { StaffRole } from './practiceAccount';
 import type { PatientDetail } from './practiceAccess';
 import { addDays } from './schedule';
 import { isIsoDate, parseKg } from './record';
+import { VITAL_ERROR, parseVital, isVitalKind, type VitalKind } from './vital';
+import { berlinHHMM } from './medication';
+import { berlinDay } from './monthReport';
 
 // ---------- Daten ----------
 
-export type EntryKind = 'vaccination' | 'finding' | 'medication' | 'weight';
+export type EntryKind = 'vaccination' | 'finding' | 'medication' | 'weight' | 'vital';
 
 interface Origin {
   /** Eintrag dieser Praxis (nur dann korrigier- und stornierbar) */
@@ -26,11 +29,16 @@ export interface RecVaccination extends Origin {
   id: string; name: string; given_on: string | null; valid_until: string | null; source: 'owner' | 'practice'; created_at: string; confirmed: boolean;
 }
 export interface RecWeight { id: string; entry_id: string | null; kg: number; measured_on: string; mine: boolean; by_name: string | null; changed: boolean }
+/** Vitalwert (Temperatur, Herz-, Atemfrequenz): von der Halter:in oder der Praxis */
+export interface RecVital {
+  id: string; entry_id: string | null; kind: VitalKind; value: number; context: string | null; measured_at: string;
+  source: 'owner' | 'practice' | 'device'; mine: boolean; by_name: string | null; changed: boolean;
+}
 export interface RecMedication extends Origin {
   id: string; name: string; source: 'owner' | 'practice'; dosage_text: string | null; amount: number; unit: string; frequency: string; times: string[];
   intake_hint: string; note: string | null; reason: string | null; starts_on: string; ends_on: string | null; stopped_on: string | null;
 }
-export interface RecFinding { id: string; date: string; title: string; text: string; mine: boolean; by_name: string; practice_name: string; entered_at: string; changed: boolean }
+export interface RecFinding { id: string; date: string; time?: string | null; title: string; text: string; mine: boolean; by_name: string; practice_name: string; entered_at: string; changed: boolean }
 export interface RecVoided {
   id: string; kind: EntryKind; data: Record<string, string | number | null>; confirmed: boolean; voided_at: string; voided_by_name: string | null; reason: Reason; note: string | null;
 }
@@ -43,6 +51,7 @@ export interface PatientRecord {
   master_changed: boolean;
   vaccinations: RecVaccination[];
   weights: RecWeight[];
+  vitals: RecVital[];
   medications: RecMedication[];
   findings: RecFinding[];
   voided: RecVoided[];
@@ -75,7 +84,7 @@ export function reasonError(reason: Reason | '', note: string): MessageKey | nul
 
 /** Leitung und Tierärzt:innen dürfen alles; das Team: Gewicht, Stammdaten, Impfungen der Halter:in bestätigen */
 export const isClinical = (role: StaffRole | null | undefined) => role === 'lead' || role === 'vet';
-export const canWrite = (role: StaffRole | null | undefined, kind: EntryKind) => (kind === 'weight' ? !!role : isClinical(role));
+export const canWrite = (role: StaffRole | null | undefined, kind: EntryKind) => (kind === 'weight' || kind === 'vital' ? !!role : isClinical(role));
 
 // ---------- Impfstoffe ----------
 
@@ -131,9 +140,12 @@ export function vaccErrors(v: VaccInput, today: string): Partial<Record<keyof Va
   return e;
 }
 
-export interface FindingInput { date: string; title: string; text: string }
+export const isHHMM = (s: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(s);
+
+export interface FindingInput { date: string; time?: string; title: string; text: string }
 export function findingErrors(v: FindingInput, today: string): Partial<Record<keyof FindingInput, MessageKey>> {
   const e: Partial<Record<keyof FindingInput, MessageKey>> = {};
+  if (v.time && !isHHMM(v.time)) e.time = 'rcErrTime';
   if (!v.title.trim()) e.title = 'rcErrTitle';
   if (!v.date) e.date = 'errDateRequired';
   else if (!isIsoDate(v.date)) e.date = 'errDate';
@@ -153,16 +165,20 @@ export function medErrors(v: MedInput): Partial<Record<keyof MedInput, MessageKe
 
 // ---------- Zeitleiste ----------
 
-export interface TimelineItem { key: string; kind: EntryKind; date: string; title: string; detail: string }
+export interface TimelineItem { key: string; kind: EntryKind; date: string; time: string | null; title: string; detail: string; by: string | null }
 
-/** Die letzten Ereignisse (neueste zuerst): Impfungen, Befunde, Medikamente (Beginn) und Gewichte */
-export function recordTimeline(r: Pick<PatientRecord, 'vaccinations' | 'findings' | 'medications' | 'weights'>, kgText: (kg: number) => string, limit = 12): TimelineItem[] {
+/** Die letzten Ereignisse (neueste zuerst) mit Uhrzeit, wo bekannt: Impfungen, Befunde, Medikamente (Beginn), Gewichte, Vitalwerte */
+export function recordTimeline(
+  r: Pick<PatientRecord, 'vaccinations' | 'findings' | 'medications' | 'weights'> & Partial<Pick<PatientRecord, 'vitals'>>,
+  kgText: (kg: number) => string, limit = 12, vitalText: (v: RecVital) => string = (v) => String(v.value),
+): TimelineItem[] {
   const out: TimelineItem[] = [];
-  for (const v of r.vaccinations) if (v.given_on) out.push({ key: `v-${v.id}`, kind: 'vaccination', date: v.given_on, title: v.name, detail: '' });
-  for (const f of r.findings) out.push({ key: `f-${f.id}`, kind: 'finding', date: f.date, title: f.title, detail: '' });
-  for (const m of r.medications) out.push({ key: `m-${m.id}`, kind: 'medication', date: m.starts_on, title: m.name, detail: m.dosage_text ?? '' });
-  for (const w of r.weights) out.push({ key: `w-${w.id}`, kind: 'weight', date: w.measured_on, title: kgText(Number(w.kg)), detail: '' });
-  return out.sort((a, b) => b.date.localeCompare(a.date) || a.key.localeCompare(b.key)).slice(0, limit);
+  for (const v of r.vaccinations) if (v.given_on) out.push({ key: `v-${v.id}`, kind: 'vaccination', date: v.given_on, time: null, title: v.name, detail: '', by: v.by_name });
+  for (const f of r.findings) out.push({ key: `f-${f.id}`, kind: 'finding', date: f.date, time: f.time ?? null, title: f.title, detail: '', by: f.by_name });
+  for (const m of r.medications) out.push({ key: `m-${m.id}`, kind: 'medication', date: m.starts_on, time: null, title: m.name, detail: m.dosage_text ?? '', by: m.by_name });
+  for (const w of r.weights) out.push({ key: `w-${w.id}`, kind: 'weight', date: w.measured_on, time: null, title: kgText(Number(w.kg)), detail: '', by: w.by_name });
+  for (const v of r.vitals ?? []) out.push({ key: `t-${v.id}`, kind: 'vital', date: berlinDay(v.measured_at), time: berlinHHMM(v.measured_at), title: vitalText(v), detail: '', by: v.by_name });
+  return out.sort((a, b) => b.date.localeCompare(a.date) || (b.time ?? '').localeCompare(a.time ?? '') || a.key.localeCompare(b.key)).slice(0, limit);
 }
 
 /** Tag vor heute (Ende beim „Beenden“) – nur für die Anzeige */
@@ -175,6 +191,7 @@ const ERROR_KEYS: Record<string, MessageKey> = {
   no_change: 'rcErrNoChange', entry_gone: 'rcErrGone', entry_voided: 'rcErrGone', entry_not_found: 'rcErrGone', already_confirmed: 'rcErrConfirmed',
   already_ended: 'rcErrEnded', no_vaccinations: 'cfErrNone', reason_required: 'rcErrReason', note_required: 'rcErrNote', date_invalid: 'errDate', valid_until_invalid: 'rcErrValidUntil',
   ends_before_start: 'rcErrEnds', kg_invalid: 'wkErrRange', name_invalid: 'rcErrName', title_invalid: 'rcErrTitle', dosage_invalid: 'rcErrDosage',
+  value_invalid: 'vtErrRange', time_invalid: 'rcErrTime', context_invalid: 'pe_generic', kind_invalid: 'pe_generic',
 };
 const CODES = Object.keys(ERROR_KEYS);
 
@@ -189,7 +206,8 @@ export function recordErrorKey(e: unknown): MessageKey {
 export async function practiceRecord(petId: string): Promise<PatientRecord> {
   const { data, error } = await supabase.rpc('practice_record', { p_pet: petId });
   if (error) throw error;
-  return data as unknown as PatientRecord;
+  const r = data as unknown as PatientRecord;
+  return { ...r, vitals: r.vitals ?? [] };
 }
 
 export async function addEntry(petId: string, kind: EntryKind, data: Record<string, string | number | null>): Promise<string> {
@@ -265,16 +283,18 @@ export type FormValues = Record<string, string>;
 
 export const EMPTY_FORM: Record<EntryKind, (today: string) => FormValues> = {
   vaccination: (today) => ({ name: '', given_on: today, valid_until: '' }),
-  finding: (today) => ({ date: today, title: '', text: '' }),
+  finding: (today) => ({ date: today, time: '', title: '', text: '' }),
   medication: (today) => ({ name: '', dosage: '', reason: '', starts_on: today, ends_on: '' }),
   weight: (today) => ({ kg: '', measured_on: today }),
+  vital: (today) => ({ vkind: 'temperature', value: '', context: '', measured_on: today, time: '' }),
 };
 
 const KG_KEYS: Record<string, MessageKey> = { required: 'wkErrRequired', format: 'wkErrFormat', decimals: 'wkErrDecimals', range: 'wkErrRange' };
 
 export function entryErrors(kind: EntryKind, v: FormValues, today: string): Record<string, MessageKey> {
   if (kind === 'vaccination') return vaccErrors({ name: v.name ?? '', given_on: v.given_on ?? '', valid_until: v.valid_until ?? '' }, today);
-  if (kind === 'finding') return findingErrors({ date: v.date ?? '', title: v.title ?? '', text: v.text ?? '' }, today);
+  if (kind === 'finding') return findingErrors({ date: v.date ?? '', time: (v.time ?? '').trim(), title: v.title ?? '', text: v.text ?? '' }, today);
+  if (kind === 'vital') return vitalErrors(v, today);
   if (kind === 'medication') return medErrors({ name: v.name ?? '', dosage: v.dosage ?? '', reason: v.reason ?? '', starts_on: v.starts_on ?? '', ends_on: v.ends_on ?? '' });
   const e: Record<string, MessageKey> = {};
   const kg = parseKg(v.kg ?? '');
@@ -285,12 +305,40 @@ export function entryErrors(kind: EntryKind, v: FormValues, today: string): Reco
   return e;
 }
 
+/** Vitalwert prüfen: Wert passend zur Art, Datum nicht in der Zukunft, Uhrzeit HH:MM (optional) */
+export function vitalErrors(v: FormValues, today: string): Record<string, MessageKey> {
+  const e: Record<string, MessageKey> = {};
+  const vk = v.vkind ?? '';
+  if (!isVitalKind(vk)) e.vkind = 'pe_generic';
+  else {
+    const r = parseVital(vk, v.value ?? '');
+    if (!r.ok) e.value = VITAL_ERROR[r.error];
+  }
+  const d = v.measured_on ?? '';
+  if (!d) e.measured_on = 'errDateRequired';
+  else if (!isIsoDate(d)) e.measured_on = 'errDate';
+  else if (d > today) e.measured_on = 'errFuture';
+  const tm = (v.time ?? '').trim();
+  if (tm && !isHHMM(tm)) e.time = 'rcErrTime';
+  return e;
+}
+
+/** Vitalwert der Akte → Formularwerte (Datum und Uhrzeit in Berlin) */
+export function vitalForm(r: Pick<RecVital, 'kind' | 'value' | 'context' | 'measured_at'>, num: (n: number) => string): FormValues {
+  return { vkind: r.kind, value: num(Number(r.value)), context: r.context ?? '', measured_on: berlinDay(r.measured_at), time: berlinHHMM(r.measured_at) };
+}
+
 /** Formularwerte → Daten für die Datenbank (leere Texte als null) */
 export function entryData(kind: EntryKind, v: FormValues): Record<string, string | number | null> {
   const s = (k: string) => (v[k] ?? '').trim();
   const n = (k: string) => s(k) || null;
   if (kind === 'vaccination') return { name: s('name'), given_on: s('given_on'), valid_until: n('valid_until') };
-  if (kind === 'finding') return { date: s('date'), title: s('title'), text: s('text') };
+  if (kind === 'finding') return { date: s('date'), time: n('time'), title: s('title'), text: s('text') };
+  if (kind === 'vital') {
+    const vk = isVitalKind(s('vkind')) ? (s('vkind') as VitalKind) : 'temperature';
+    const r = parseVital(vk, v.value ?? '');
+    return { vkind: vk, value: r.ok ? r.value : null, context: n('context'), measured_on: s('measured_on'), time: n('time') };
+  }
   if (kind === 'medication') return { name: s('name'), dosage: s('dosage'), reason: n('reason'), starts_on: s('starts_on'), ends_on: n('ends_on') };
   const kg = parseKg(v.kg ?? '');
   return { kg: kg.ok ? kg.kg : null, measured_on: s('measured_on') };
