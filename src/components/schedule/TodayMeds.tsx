@@ -99,7 +99,7 @@ export function stateText(s: DoseState, myId: string | undefined, names: Readonl
   }
 }
 
-function DoseItem({ p, d, actions, register }: { p: PlannedDose<MedicationRow>; d: Doses; actions: ReturnType<typeof useDoseActions>; register: (k: string) => (el: HTMLElement | null) => void }) {
+export function DoseItem({ p, d, actions, register }: { p: PlannedDose<MedicationRow>; d: Doses; actions: ReturnType<typeof useDoseActions>; register: (k: string) => (el: HTMLElement | null) => void }) {
   const { t, lang } = useI18n();
   const locale = localeOf(lang);
   const { user } = useAuth();

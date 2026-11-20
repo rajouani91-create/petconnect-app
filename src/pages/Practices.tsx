@@ -59,11 +59,11 @@ import { canEdit } from '../lib/sharing';
 import { useNow } from '../lib/useNow';
 import { Dialog } from '../components/Dialog';
 import { Loading } from '../components/Loading';
-import { Switch } from '../components/Switch';
 import { PlaceCombobox, placeLabel } from '../components/practices/PlaceCombobox';
 import { PracticeCard, type PracticeView } from '../components/practices/PracticeCard';
 import { StatusLine, useFocusAfter, useStatus } from '../components/record/shared';
 import { recordErrorKey } from '../lib/record';
+import { practiceBookingInfo, type PracticeBookingInfo } from '../lib/booking';
 
 type Center = { lat: number; lon: number; label: string; fromDevice: boolean };
 
@@ -90,6 +90,9 @@ export function Practices() {
   const [Oh, setOh] = useState<OhConstructor | null>(null);
   const [vetFor, setVetFor] = useState<PracticeView | null>(null);
   const [inviteFor, setInviteFor] = useState<PracticeView | null>(null);
+  // Release C: registrierte Praxen oben, mit Online-Buchung
+  const [onlineOnly, setOnlineOnly] = useState(false);
+  const [bookInfo, setBookInfo] = useState<Map<string, PracticeBookingInfo>>(new Map());
   const [status, setStatus] = useStatus();
   const counter = useRef<HTMLParagraphElement>(null);
   const focusCounter = useRef(false);
@@ -245,6 +248,16 @@ export function Practices() {
       alive = false;
     };
   }, [rpcKey]);
+  // Online-Buchung und nächster freier Termin für registrierte Praxen
+  const regKey = (rows ?? []).filter((r) => r.registered).map((r) => r.id).join(',');
+  useEffect(() => {
+    if (!regKey) { setBookInfo(new Map()); return; }
+    let alive = true;
+    practiceBookingInfo(regKey.split(','))
+      .then((m) => { if (alive) setBookInfo(m); })
+      .catch((e: unknown) => { console.error(e); if (alive) setBookInfo(new Map()); });
+    return () => { alive = false; };
+  }, [regKey]);
   // Ergebnisse gehören zu genau einer Suche; bis die neue fertig ist, nichts Altes mit neuem Ort anzeigen
   const fresh = rowsKey === rpcKey;
   const busy = loading || (!!rpcKey && !fresh && !error);
@@ -340,8 +353,17 @@ export function Practices() {
       onSetVet={() => setVetFor(p)}
       onInvite={() => setInviteFor(p)}
       registerFocus={register}
+      booking={p.registered ? bookInfo.get(p.id) ?? null : null}
     />
   );
+  // Registrierte Praxen getrennt oben; „Online buchbar“ zeigt nur diese
+  const isPc = (p: PracticeHit) => p.registered;
+  const pcRows = (rows ?? []).filter((p) => isPc(p) && (!onlineOnly || bookInfo.get(p.id)?.online) && (!offer || p.matches)
+      && (!filters.openNow || infoOf(p).state !== 'closed'))
+    .sort((a, b) => Number(!!bookInfo.get(b.id)?.online) - Number(!!bookInfo.get(a.id)?.online) || (a.distance_km ?? 0) - (b.distance_km ?? 0));
+  const notPc = <T extends PracticeHit>(l: T[]) => (onlineOnly ? [] : l.filter((p) => !isPc(p)));
+  const emergency = filters.services.includes('emergency_24h');
+  const moreActive = filters.services.filter((x) => x !== 'emergency_24h').length + filters.titles.length + filters.languages.length + filters.features.length + (filters.species ? 1 : 0);
 
   const chip = (pressed: boolean, label: string, onClick: () => void, key: string) => (
     <button key={key} type="button" className="chip" aria-pressed={pressed} onClick={() => { focusCounter.current = false; onClick(); }}>{label}</button>
@@ -375,6 +397,11 @@ export function Practices() {
         </div>
         {geoMsg && <p className={`notice ${geoMsg === 'psGeoWait' ? 'notice-info' : 'notice-warn'}`} role="status">{t(geoMsg)}</p>}
         <p className="muted small">{t('psGeoPrivacy')}</p>
+        <div className="quick-chips" role="group" aria-label={t('psQuick')}>
+          <button type="button" className="chip" aria-pressed={onlineOnly} onClick={() => setOnlineOnly((v) => !v)}>{t('psOnlineBookable')}</button>
+          <button type="button" className="chip" aria-pressed={filters.openNow} onClick={() => setFilters({ openNow: !filters.openNow })}>{t('psOpenNowChip')}</button>
+          <button type="button" className="chip" aria-pressed={emergency} onClick={() => setFilters({ services: toggle(filters.services, 'emergency_24h') })}>{t('psEmergencyChip')}</button>
+        </div>
         <div className="row-2">
           <div className="field">
             <label htmlFor={`${uid}-r`}>{t('psRadius')}</label>
@@ -389,8 +416,9 @@ export function Practices() {
         </div>
       </section>
 
-      <section className="card stack" aria-labelledby={`${uid}-filters`}>
-        <h2 id={`${uid}-filters`} className="sr-only">{t('psFilters')}</h2>
+      <details className="card disclosure filters-more">
+        <summary id={`${uid}-filters`}>{t('psMoreFilters')}{moreActive > 0 ? ` (${moreActive})` : ''}</summary>
+        <div className="stack">
         <div role="group" aria-labelledby={`${uid}-g-sp`} className="stack">
           <div className="filter-group-head">
             <h3 id={`${uid}-g-sp`}>{t('psFor')}</h3>
@@ -451,7 +479,6 @@ export function Practices() {
             {PRACTICE_FEATURES.map((x) => chip(filters.features.includes(x), t(FEATURE_TEXT[x]), () => setFilters({ features: toggle(filters.features, x) }), `ft-${x}`))}
           </div>
         </div>
-        <Switch checked={filters.openNow} onChange={(on) => setFilters({ openNow: on })} label={t('psOpenSwitch')} />
         <div className="actions actions-start">
           <div className="field">
             <label htmlFor={`${uid}-sort`}>{t('psSort')}</label>
@@ -466,7 +493,8 @@ export function Practices() {
             </button>
           )}
         </div>
-      </section>
+        </div>
+      </details>
 
       <section className="stack" aria-labelledby={`${uid}-res`}>
         <h2 id={`${uid}-res`}>{t('psResults')}</h2>
@@ -504,17 +532,25 @@ export function Practices() {
                 {empty.radius && <button type="button" className="btn btn-primary btn-start" onClick={() => expandTo(empty.radius!)}>{t('psExpand', { n: empty.radius })}</button>}
               </div>
             )}
-            {openMatches.shown.length > 0 && <ul className="practice-list">{openMatches.shown.map((p) => card(p, !offer))}</ul>}
-            {openMatches.unknownTimes.length > 0 && (
+            {pcRows.length > 0 && (
+              <div className="stack">
+                <h3 className="section-label">{t('psPcH')}</h3>
+                <ul className="practice-list">{pcRows.map((p) => card(p, false))}</ul>
+              </div>
+            )}
+            {onlineOnly && pcRows.length === 0 && <p className="notice notice-info">{t('psOnlineNone')}</p>}
+            {notPc(openMatches.shown).length + notPc(openMatches.unknownTimes).length > 0 && pcRows.length > 0 && <h3 className="section-label">{t('psOtherH')}</h3>}
+            {notPc(openMatches.shown).length > 0 && <ul className="practice-list">{notPc(openMatches.shown).map((p) => card(p, !offer))}</ul>}
+            {notPc(openMatches.unknownTimes).length > 0 && (
               <>
                 <h3>{t('psHoursUnknownH')}</h3>
-                <ul className="practice-list">{openMatches.unknownTimes.map((p) => card(p, !offer))}</ul>
+                <ul className="practice-list">{notPc(openMatches.unknownTimes).map((p) => card(p, !offer))}</ul>
               </>
             )}
-            {offer && openUnknown.shown.length + openUnknown.unknownTimes.length > 0 && (
+            {offer && notPc(openUnknown.shown).length + notPc(openUnknown.unknownTimes).length > 0 && (
               <div className="stack">
                 <h3>{t('psUnknownH')}</h3>
-                <ul className="practice-list">{[...openUnknown.shown, ...openUnknown.unknownTimes].map((p) => card(p, true, split.hinted.has(p)))}</ul>
+                <ul className="practice-list">{[...notPc(openUnknown.shown), ...notPc(openUnknown.unknownTimes)].map((p) => card(p, true, split.hinted.has(p)))}</ul>
               </div>
             )}
           </>

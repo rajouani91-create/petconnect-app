@@ -1177,3 +1177,38 @@ button.tg-head:hover { background: var(--surface-2); }
 .tg-ev.is-short .cal-appt { flex-direction: row; align-items: center; gap: 6px; padding-block: 2px; white-space: nowrap; }
 .tg-ev.is-short .cal-appt .cal-type { display: none; }
 .tg-times span:last-child { transform: translateY(-100%); }
+
+/* ---------- Release C: Halter-Seite ---------- */
+/* Dialog als Blatt von unten (Handy) */
+@media (max-width: 600px) {
+  .dialog.dialog-sheet { margin: auto 0 0; width: 100vw; max-width: 100vw; max-height: 92dvh; border-radius: var(--r-lg) var(--r-lg) 0 0; overflow-y: auto; }
+  .dialog.dialog-sheet .dialog-actions { position: sticky; bottom: 0; background: var(--surface); padding-top: var(--s-2); }
+  .dialog.dialog-sheet .dialog-actions .btn { flex: 1 1 auto; }
+}
+.move-days { display: flex; gap: var(--s-2); overflow-x: auto; padding-bottom: 4px; }
+.move-day { flex: 0 0 auto; min-width: 58px; min-height: var(--tap); padding: 6px 8px; border-radius: var(--r); border: 1px solid var(--control); background: var(--surface); color: var(--fg); display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; font: inherit; }
+.move-day[aria-pressed="true"] { border: 2px solid var(--brand); background: var(--brand-soft); color: var(--brand); }
+.move-day-wd { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+.move-day-n { font-size: 1rem; font-weight: 700; }
+.move-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr)); gap: var(--s-2); }
+.move-slots .chip { justify-content: center; }
+
+/* Praxissuche */
+.quick-chips { display: flex; gap: var(--s-2); overflow-x: auto; padding-bottom: 2px; }
+.quick-chips .chip { flex: 0 0 auto; }
+.filters-more > summary { font-weight: 600; }
+.filters-more[open] > summary { margin-bottom: var(--s-4); }
+.section-label { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.practice-card.is-pc { border: 2px solid var(--brand); }
+.pc-badges { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: 0; }
+.pill-brand { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+.pc-cta { align-self: stretch; justify-content: center; }
+@media (min-width: 600px) { .pc-cta { align-self: flex-start; } }
+
+/* Tieransicht */
+.card.next-appt { flex-direction: row; }
+.next-appt { display: flex; align-items: center; gap: var(--s-3); text-decoration: none; color: var(--fg); padding: var(--s-3) var(--s-4); }
+.next-appt:hover { border-color: var(--brand); }
+.next-appt-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.next-appt-title { font-weight: 600; }
+.pet-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }

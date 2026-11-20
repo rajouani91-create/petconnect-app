@@ -7,10 +7,12 @@ interface DialogProps {
   children: ReactNode;
   /** Schaltflächen am Ende */
   actions: ReactNode;
+  /** Auf dem Handy als Blatt von unten (Release C) */
+  sheet?: boolean;
 }
 
 /** Modaler Dialog auf Basis von <dialog>: Fokusfalle, Escape und Hintergrund-Sperre vom Browser. */
-export function Dialog({ open, title, onClose, children, actions }: DialogProps) {
+export function Dialog({ open, title, onClose, children, actions, sheet = false }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const returnFocus = useRef<Element | null>(null);
@@ -30,7 +32,7 @@ export function Dialog({ open, title, onClose, children, actions }: DialogProps)
   return (
     <dialog
       ref={ref}
-      className="dialog"
+      className={sheet ? 'dialog dialog-sheet' : 'dialog'}
       aria-labelledby={titleId}
       onCancel={(e) => {
         e.preventDefault();

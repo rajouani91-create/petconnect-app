@@ -77,6 +77,12 @@ function PracticePicker({ onPick }: { onPick: (p: BookingPractice) => void }) {
         setMine(list);
         const hit = want ? list.find((p) => p.id === want) : undefined;
         if (hit) onPick(hit);
+        // aus der Praxissuche: auch Praxen, bei denen ich noch kein Tier habe
+        else if (want && /^[0-9a-f-]{36}$/.test(want)) {
+          bookingOptions(want)
+            .then((o) => { if (alive) onPick({ ...o.practice, linked: false }); })
+            .catch((e: unknown) => console.error(e));
+        }
       })
       .catch((e: unknown) => { console.error(e); if (alive) { setErr(true); setMine([]); } });
     return () => { alive = false; };

@@ -1,9 +1,12 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
-import { formatIsoDate, type MessageKey } from '../i18n';
+import { formatIsoDate, localeOf, type MessageKey } from '../i18n';
 import { usePets } from '../pets/PetsProvider';
-import { deletePet, removePhotoFile, updatePet } from '../lib/api';
+import { deletePet, listWeights, removePhotoFile, updatePet } from '../lib/api';
+import { ageText } from '../lib/petSummary';
+import { useLocalToday } from '../components/schedule/shared';
+import { PetNextAppointment, PetTiles, PetToday } from '../components/pet/PetOverview';
 import { isSpecies } from '../lib/domain';
 import { canEdit } from '../lib/sharing';
 import { petToForm } from '../lib/validate';
@@ -19,7 +22,7 @@ import { MedicationCard } from '../components/record/MedicationCard';
 import { PracticeFindings } from '../components/record/PracticeFindings';
 import { HealthTimeline } from '../components/record/HealthTimeline';
 import { MoreAboutPet } from '../components/more/MoreAboutPet';
-import { IconAssistant, IconBack, IconCalendar, IconEmergency, IconList, IconPlus, KindIcon } from '../components/Icons';
+import { IconBack, IconPlus } from '../components/Icons';
 import { VaccChip } from '../components/VaccChip';
 import { useVaccStatus } from '../hooks/useVaccStatus';
 import { SPECIES_LABEL } from '../components/SpeciesPicker';
@@ -32,7 +35,7 @@ const PET_TAB_LABEL: Record<PetTab, MessageKey> = { overview: 'petTabOverview', 
 
 /** Stammdaten und Foto ansehen und bearbeiten, Tierakte (Gewicht, Impfungen, Dokumente), weiteres Tier anlegen, Tier löschen. */
 export function Pet() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const { active, upsertLocal, myRole, reload } = usePets();
   const [editing, setEditing] = useState(false);
@@ -45,6 +48,17 @@ export function Pet() {
   const uid = useId();
   const [photoOpen, setPhotoOpen] = useState(false);
   const vacc = useVaccStatus(active ? [active.id] : []);
+  const today = useLocalToday();
+  const [kg, setKg] = useState<{ pet: string; kg: number } | null>(null);
+  const activeId = active?.id;
+  useEffect(() => {
+    if (!activeId) return;
+    let alive = true;
+    listWeights(activeId)
+      .then((w) => { if (alive) setKg(w[0] ? { pet: activeId, kg: Number(w[0].kg) } : null); })
+      .catch((e: unknown) => console.error(e));
+    return () => { alive = false; };
+  }, [activeId]);
 
   // „Gewicht & Verlauf“ unter „Mehr“ springt zum Reiter Gesundheit
   useEffect(() => {
@@ -101,7 +115,7 @@ export function Pet() {
         </div>
         <div className="pet-hero-text">
           <h1 id={`${uid}-name`}>{pet.name}</h1>
-          <p className="muted">{speciesText(pet, t)}</p>
+          <p className="muted">{heroLine(pet, t, today, kg?.pet === pet.id ? kg.kg : null, lang)}</p>
           <VaccChip status={vacc.get(pet.id)} />
         </div>
         {editable && (
@@ -149,17 +163,14 @@ export function Pet() {
       {tab === 'overview' && (
         <div role="tabpanel" id={`${uid}-panel-overview`} aria-labelledby={`${uid}-tab-overview`} className="stack-lg">
           {!editing && (
-            <section aria-labelledby={`${uid}-qa`} className="stack">
-              <h2 id={`${uid}-qa`}>{t('qaTitle')}</h2>
-              <ul className="quick-grid">
-                <li><Link to="/termine" className="quick-btn"><IconCalendar size={26} />{t('apAdd')}</Link></li>
-                <li><Link to={{ hash: 'medikation' }} className="quick-btn"><KindIcon kind="med" size={26} />{t('qaMed')}</Link></li>
-                <li><Link to={{ hash: 'dokumente' }} className="quick-btn"><IconList size={26} />{t('qaDoc')}</Link></li>
-                <li><Link to={{ hash: 'gewicht' }} className="quick-btn"><IconPlus size={26} />{t('wkAdd')}</Link></li>
-                <li><Link to={`/tier/${encodeURIComponent(pet.id)}/notfallkarte`} className="quick-btn"><IconEmergency size={26} />{t('mCard')}</Link></li>
-                <li><Link to="/mehr/assistent" className="quick-btn"><IconAssistant size={26} />{t('qaAi')}</Link></li>
-              </ul>
-            </section>
+            <>
+              <PetToday key={`today-${pet.id}`} petId={pet.id} />
+              <PetNextAppointment key={`next-${pet.id}`} petId={pet.id} canBook={editable && !pet.deceased} />
+              <section aria-labelledby={`${uid}-qa`} className="stack">
+                <h2 id={`${uid}-qa`}>{t('petAreasH')}</h2>
+                <PetTiles petId={pet.id} />
+              </section>
+            </>
           )}
           {editing && editable ? (
             <PetForm
@@ -246,6 +257,13 @@ function BreedInfoSection({ species, breed }: { species: 'dog' | 'cat'; breed: s
 }
 
 type T = (key: MessageKey, vars?: Record<string, string | number>) => string;
+
+/** Kopfzeile: Tierart, Rasse, Alter, letztes Gewicht */
+function heroLine(p: PetRow, t: T, today: string, kg: number | null, lang: Parameters<typeof formatIsoDate>[1]): string {
+  const age = ageText(p.birth_date, today);
+  const w = kg !== null ? `${new Intl.NumberFormat(localeOf(lang), { maximumFractionDigits: 1 }).format(kg)} kg` : null;
+  return [speciesText(p, t), age ? t(age.key, { n: age.n }) : null, w].filter(Boolean).join(' · ');
+}
 
 function speciesText(p: PetRow, t: T): string {
   const sp = isSpecies(p.species) ? (p.species === 'other' && p.species_other ? p.species_other : t(SPECIES_LABEL[p.species])) : p.species;
