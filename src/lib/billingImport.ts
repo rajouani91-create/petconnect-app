@@ -28,25 +28,58 @@ export const MAX_ROWS = 2000;
 
 export interface ImportRow extends CatalogChange { currency: string }
 export interface ImportError { line: number; key: MessageKey }
-export interface ImportResult { items: ImportRow[]; errors: ImportError[]; fatal: MessageKey | null; currency: string }
+export interface ImportResult {
+  items: ImportRow[]; errors: ImportError[]; fatal: MessageKey | null; currency: string;
+  /** Hinweise, die vor der Übernahme bestätigt werden müssen (fehlende Steuer- oder Währungsspalte, „1.200“) */
+  warnings: ImportError[];
+}
+
+/** Datei-Bytes als Text: UTF-8 (mit oder ohne BOM), sonst Windows-1252 (deutsches Excel „CSV (Trennzeichen-getrennt)“) */
+export function decodeCsv(bytes: ArrayBuffer | Uint8Array): { text: string; encoding: 'utf-8' | 'windows-1252' } {
+  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  try {
+    return { text: new TextDecoder('utf-8', { fatal: true }).decode(u8).replace(/^\uFEFF/, ''), encoding: 'utf-8' };
+  } catch {
+    return { text: new TextDecoder('windows-1252').decode(u8), encoding: 'windows-1252' };
+  }
+}
 
 /** Eine CSV-Zeile in Felder teilen (Anführungszeichen, verdoppelte Anführungszeichen) */
 export function splitLine(line: string, d: string): string[] {
-  const out: string[] = [];
+  return splitRecords(line, d)[0]?.fields ?? [''];
+}
+
+/** Ganze Datei in Datensätze teilen; Zeilenumbrüche in Anführungszeichen gehören zum Feld. line = Zeilennummer des Anfangs */
+export function splitRecords(text: string, d: string): { fields: string[]; line: number }[] {
+  const out: { fields: string[]; line: number }[] = [];
+  let fields: string[] = [];
   let cur = '';
   let q = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i]!;
+  let line = 1;
+  let start = 1;
+  const push = () => {
+    fields.push(cur);
+    if (fields.some((f) => f.trim() !== '')) out.push({ fields: fields.map((f) => f.trim()), line: start });
+    fields = [];
+    cur = '';
+  };
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]!;
     if (q) {
       if (ch === '"') {
-        if (line[i + 1] === '"') { cur += '"'; i++; } else q = false;
-      } else cur += ch;
+        if (text[i + 1] === '"') { cur += '"'; i++; } else q = false;
+      } else {
+        if (ch === '\n') line++;
+        cur += ch;
+      }
     } else if (ch === '"') q = true;
-    else if (ch === d) { out.push(cur); cur = ''; }
+    else if (ch === d) { fields.push(cur); cur = ''; }
+    else if (ch === '\r' && text[i + 1] === '\n') continue;
+    else if (ch === '\n' || ch === '\r') { push(); line++; start = line; }
     else cur += ch;
   }
-  out.push(cur);
-  return out.map((s) => s.trim());
+  push();
+  return out;
 }
 
 /** „1.234,50“, „1,234.50“, „24,00 €“ → Zahl; ungültig → NaN */
@@ -76,31 +109,37 @@ export function parseDate(s: string): string | null | undefined {
 
 const r2 = (x: number) => Math.round((x + Number.EPSILON) * 100) / 100;
 
+/** „1.200“ (Punkt, genau drei Ziffern danach): in Deutschland meist Tausenderpunkt, gelesen wird aber 1,2 */
+export const ambiguousThousands = (s: string) => /^\d{1,3}\.\d{3}$/.test(s.replace(/[\s€£$\u00a0]/g, ''));
+
 export function parseCatalogCsv(text: string): ImportResult {
-  const lines = text.replace(/^﻿/, '').split(/\r?\n/);
-  const used = lines.map((l, i) => ({ l, n: i + 1 })).filter((x) => x.l.trim());
-  const empty: ImportResult = { items: [], errors: [], fatal: 'blImpErrEmpty', currency: 'EUR' };
-  if (used.length < 2) return empty;
-  const head = used[0]!.l;
-  const d = head.split(';').length >= head.split(',').length ? ';' : ',';
-  const names = splitLine(head, d).map((x) => x.toLowerCase());
+  const clean = text.replace(/^\uFEFF/, '');
+  const empty: ImportResult = { items: [], errors: [], warnings: [], fatal: 'blImpErrEmpty', currency: 'EUR' };
+  const firstLine = clean.split(/\r?\n/).find((l) => l.trim()) ?? '';
+  const d = firstLine.split(';').length >= firstLine.split(',').length ? ';' : ',';
+  const recs = splitRecords(clean, d);
+  if (recs.length < 2) return empty;
+  const names = recs[0]!.fields.map((x) => x.toLowerCase());
   const ix: Partial<Record<Col, number>> = {};
   for (const k of Object.keys(COLS) as Col[]) {
     const j = names.findIndex((x) => (COLS[k] as readonly string[]).includes(x));
     if (j >= 0) ix[k] = j;
   }
   if (ix.code === undefined || ix.name === undefined || ix.price === undefined) return { ...empty, fatal: 'blImpErrCols' };
-  if (used.length - 1 > MAX_ROWS) return { ...empty, fatal: 'blImpErrTooMany' };
+  if (recs.length - 1 > MAX_ROWS) return { ...empty, fatal: 'blImpErrTooMany' };
 
   const items: ImportRow[] = [];
   const errors: ImportError[] = [];
+  const warnings: ImportError[] = [];
+  if (ix.tax_rate === undefined) warnings.push({ line: 1, key: 'blImpWarnNoTax' });
+  if (ix.currency === undefined) warnings.push({ line: 1, key: 'blImpWarnNoCurrency' });
   const seen = new Set<string>();
-  for (const { l, n } of used.slice(1)) {
-    const c = splitLine(l, d);
+  for (const { fields: c, line: n } of recs.slice(1)) {
     const get = (k: Col) => (ix[k] === undefined ? '' : (c[ix[k]!] ?? ''));
     const code = get('code').toUpperCase();
-    const name = get('name');
-    const price = parseNum(get('price'));
+    const name = get('name').replace(/\s+/g, ' ');
+    const priceText = get('price');
+    const price = parseNum(priceText);
     const fail = (key: MessageKey) => errors.push({ line: n, key });
     if (!code) { fail('blImpErrCode'); continue; }
     if (code.length > 20) { fail('blImpErrCodeLong'); continue; }
@@ -114,13 +153,15 @@ export function parseCatalogCsv(text: string): ImportResult {
     const f = fa ? parseNum(fa) : 1;
     const fMin = fi ? parseNum(fi) : fx ? 1 : f;
     const fMax = fx ? parseNum(fx) : f;
+    if (ix.tax_rate !== undefined && !ta) { fail('blImpErrTax'); continue; }
     const tax = ta ? parseNum(ta.replace('%', '')) : 0;
     if ([f, fMin, fMax, tax].some((x) => !Number.isFinite(x)) || fMin <= 0 || fMin > fMax || fMax > 10 || tax < 0 || tax > 30) { fail('blImpErrNum'); continue; }
     const from = parseDate(get('valid_from'));
     const to = parseDate(get('valid_to'));
     if (from === undefined || to === undefined || (from && to && to < from)) { fail('blImpErrDate'); continue; }
+    if (ambiguousThousands(priceText)) warnings.push({ line: n, key: 'blImpWarnThousands' });
     seen.add(code);
-    const desc = get('description');
+    const desc = get('description').replace(/\s+/g, ' ');
     items.push({
       code, name: name.slice(0, 120), description: desc ? desc.slice(0, 200) : null, price: r2(price),
       factor: r2(Math.min(Math.max(f, fMin), fMax)), factor_min: r2(fMin), factor_max: r2(fMax), tax_rate: r2(tax),
@@ -128,9 +169,21 @@ export function parseCatalogCsv(text: string): ImportResult {
     });
   }
   const currency = items[0]?.currency ?? 'EUR';
-  if (items.length && !/^[A-Z]{3}$/.test(currency)) return { items: [], errors, fatal: 'blImpErrCurrency', currency: 'EUR' };
-  if (items.some((i) => i.currency !== currency)) return { items: [], errors, fatal: 'blImpErrMixed', currency };
-  return { items, errors, fatal: items.length ? null : 'blImpErrNone', currency };
+  if (items.length && !/^[A-Z]{3}$/.test(currency)) return { items: [], errors, warnings, fatal: 'blImpErrCurrency', currency: 'EUR' };
+  if (items.some((i) => i.currency !== currency)) return { items: [], errors, warnings, fatal: 'blImpErrMixed', currency };
+  return { items, errors, warnings, fatal: items.length ? null : 'blImpErrNone', currency };
+}
+
+/** Übernahme nur nach Bestätigung, wenn Zeilen übersprungen wurden oder Hinweise offen sind */
+export const needsConfirm = (r: ImportResult) => r.errors.length > 0 || r.warnings.length > 0;
+
+/** Kennzahlen für die Vorschau: Preisspanne und Steuersätze */
+export function importSummary(r: ImportResult): { min: number; max: number; rates: number[] } {
+  const prices = r.items.map((i) => i.price);
+  return {
+    min: prices.length ? Math.min(...prices) : 0, max: prices.length ? Math.max(...prices) : 0,
+    rates: [...new Set(r.items.map((i) => Number(i.tax_rate)))].sort((a, b) => b - a),
+  };
 }
 
 /** Übergabe an practice_catalog_publish (Modus „ersetzen“) */

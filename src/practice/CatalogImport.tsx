@@ -5,7 +5,7 @@ import { localeOf } from '../i18n';
 import { Dialog } from '../components/Dialog';
 import { Field } from '../components/Field';
 import { billPackages, deleteBillPackage, money, publishCatalog, type BillPackage, type BillingData } from '../lib/billing';
-import { CSV_TEMPLATE, importPayload, parseCatalogCsv, type ImportResult } from '../lib/billingImport';
+import { CSV_TEMPLATE, decodeCsv, importPayload, importSummary, needsConfirm, parseCatalogCsv, type ImportResult } from '../lib/billingImport';
 
 type Run = (fn: () => Promise<unknown>, ok: string) => Promise<boolean>;
 const MAX_BYTES = 2_000_000;
@@ -19,6 +19,8 @@ export function ImportCard({ data, busy, run }: { data: BillingData; busy: boole
   const [fileErr, setFileErr] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [inputKey, setInputKey] = useState(0);
+  const [encoding, setEncoding] = useState<'utf-8' | 'windows-1252'>('utf-8');
+  const [ack, setAck] = useState(false);
 
   const onFile = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -26,8 +28,11 @@ export function ImportCard({ data, busy, run }: { data: BillingData; busy: boole
     setFileErr(null);
     if (!f) return;
     if (f.size > MAX_BYTES) { setFileErr(t('blImpErrBig')); return; }
-    f.text().then((text) => {
-      setRes(parseCatalogCsv(text));
+    setAck(false);
+    f.arrayBuffer().then((buf) => {
+      const dec = decodeCsv(buf);
+      setEncoding(dec.encoding);
+      setRes(parseCatalogCsv(dec.text));
       setName(f.name.replace(/\.[^.]+$/, '').slice(0, 120));
     }, () => setFileErr(t('blImpErrEmpty')));
   };
@@ -41,7 +46,7 @@ export function ImportCard({ data, busy, run }: { data: BillingData; busy: boole
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  const reset = () => { setRes(null); setName(''); setInputKey((k) => k + 1); };
+  const reset = () => { setRes(null); setName(''); setAck(false); setInputKey((k) => k + 1); };
 
   return (
     <section className="card stack" aria-labelledby={`${uid}-h`}>
@@ -63,6 +68,20 @@ export function ImportCard({ data, busy, run }: { data: BillingData; busy: boole
         <div className="stack">
           <h3>{t('blImpPreview')}</h3>
           <p>{t('blImpFound', { n: res.items.length, m: res.errors.length })}</p>
+          {(() => {
+            const sm = importSummary(res);
+            return <p className="small muted">{t('blImpSummary', { min: money(sm.min, res.currency, locale), max: money(sm.max, res.currency, locale), rates: sm.rates.map((r) => `${r} %`).join(', '), cur: res.currency })}</p>;
+          })()}
+          {encoding === 'windows-1252' && <p className="small muted">{t('blImpEncoding')}</p>}
+          {res.warnings.length > 0 && (
+            <div className="notice notice-warn stack-sm">
+              <strong>{t('blImpWarnTitle')}</strong>
+              <ul className="bl-imp-errs small">
+                {res.warnings.slice(0, 30).map((w, i) => <li key={`${w.line}-${i}`}>{w.line > 1 ? t('blImpRowErr', { n: w.line, e: t(w.key) }) : t(w.key)}</li>)}
+                {res.warnings.length > 30 && <li>…</li>}
+              </ul>
+            </div>
+          )}
           {res.errors.length > 0 && (
             <ul className="bl-imp-errs small">
               {res.errors.slice(0, 50).map((e) => <li key={e.line}>{t('blImpRowErr', { n: e.line, e: t(e.key) })}</li>)}
@@ -86,8 +105,14 @@ export function ImportCard({ data, busy, run }: { data: BillingData; busy: boole
           <Field id={`${uid}-name`} label={t('blImpName')} required>
             {(a) => <input {...a} type="text" maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />}
           </Field>
+          {needsConfirm(res) && (
+            <label className="check-row">
+              <input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} />
+              <span>{t('blImpAck', { n: res.items.length })}</span>
+            </label>
+          )}
           <div className="row-actions">
-            <button type="button" className="btn btn-primary" disabled={busy || !name.trim()} onClick={() => setConfirm(true)}>{t('blImpAdopt')}</button>
+            <button type="button" className="btn btn-primary" disabled={busy || !name.trim() || (needsConfirm(res) && !ack)} onClick={() => setConfirm(true)}>{t('blImpAdopt')}</button>
             <button type="button" className="btn btn-ghost" onClick={reset}>{t('cancelBtn')}</button>
           </div>
         </div>

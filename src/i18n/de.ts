@@ -2464,6 +2464,19 @@ export const de = {
   blClaimOpen: "Zu den Versicherungen",
   blClaimNoIns: "Für dieses Tier ist noch keine Versicherung hinterlegt.",
   blClaimAddIns: "Versicherung hinzufügen",
+  blImpWarnTitle: "Bitte prüfen Sie vor der Übernahme:",
+  blImpWarnNoTax: "Die Datei hat keine Steuerspalte. Alle Leistungen werden mit 0 % Steuer übernommen.",
+  blImpWarnNoCurrency: "Die Datei hat keine Währungsspalte. Es wird Euro (EUR) angenommen.",
+  blImpWarnThousands: "Preis mit Punkt und drei Ziffern (z. B. „1.200“) wurde als 1,20 gelesen. Falls 1200 gemeint ist, bitte „1200“ oder „1.200,00“ schreiben.",
+  blImpErrTax: "Steuersatz fehlt",
+  blImpSummary: "Preise von {min} bis {max} · Steuersätze: {rates} · Währung {cur}",
+  blImpEncoding: "Die Datei war im Excel-Zeichensatz (Windows-1252) gespeichert und wurde umgewandelt. Bitte Umlaute in der Vorschau prüfen.",
+  blImpAck: "Ich habe die Hinweise geprüft. Nur die {n} erkannten Leistungen werden übernommen.",
+  blErrFreeEmpty: "Bitte Menge, Preis und Steuersatz ausfüllen (0 ist erlaubt, wenn gewollt).",
+  blTrMarkFailed: "Der Termin konnte nicht als „erschienen“ vermerkt werden. Bitte unter Buchungen nachtragen.",
+  blTrLoadErr: "Katalog, Pakete oder Termine konnten nicht geladen werden. Abrechnen ist gerade nicht möglich.",
+  blTrRetry: "Erneut versuchen",
+  blClaimLoadErr: "Versicherungen konnten nicht geladen werden.",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;
