@@ -1260,7 +1260,19 @@ export type Database = {
       }
       owner_practice_bookings: {
         Args: Record<PropertyKey, never>
-        Returns: { appointment_id: string; status: string; source: string; practice_name: string; practice_phone: string | null; cancel_reason: string | null; cancel_note: string | null; can_cancel: boolean; alternatives: string[] | null; reminders: string[] }[]
+        Returns: { appointment_id: string; status: string; source: string; practice_name: string; practice_phone: string | null; cancel_reason: string | null; cancel_note: string | null; can_cancel: boolean; alternatives: string[] | null; reminders: string[]; can_move: boolean; practice_id: string; owner_note: string | null; moved_from: string | null; minutes: number }[]
+      }
+      owner_move_slots: {
+        Args: { p_appointment: string; p_from: string; p_days?: number }
+        Returns: string[]
+      }
+      owner_move_booking: {
+        Args: { p_appointment: string; p_slot: string; p_note?: string | null }
+        Returns: undefined
+      }
+      practice_booking_info: {
+        Args: { p_ids: string[] }
+        Returns: { directory_id: string; practice_id: string; online: boolean; next_slot: string | null }[]
       }
       practice_set_reminders: {
         Args: { p_48h: boolean; p_2h: boolean }
@@ -1423,12 +1435,12 @@ export type Database = {
         Returns: string
       }
       owner_cancel_booking: {
-        Args: { p_appointment: string }
+        Args: { p_appointment: string; p_reason?: string | null; p_note?: string | null }
         Returns: undefined
       }
       practice_appointments: {
         Args: Record<PropertyKey, never>
-        Returns: { id: string; pet_id: string | null; has_access: boolean; pet_label: string; owner_label: string; phone: string | null; type_id: string | null; type_name: string; starts_at: string; minutes: number; status: string; source: string; new_client: boolean; note: string | null; cancel_reason: string | null; cancel_note: string | null; overridden: boolean; created_by_name: string; created_at: string }[]
+        Returns: { id: string; pet_id: string | null; has_access: boolean; pet_label: string; owner_label: string; phone: string | null; type_id: string | null; type_name: string; starts_at: string; minutes: number; status: string; source: string; new_client: boolean; note: string | null; cancel_reason: string | null; cancel_note: string | null; overridden: boolean; created_by_name: string; created_at: string; owner_note: string | null; moved_from: string | null }[]
       }
       practice_appointment_check: {
         Args: { p_starts_at: string; p_minutes: number; p_exclude?: string }

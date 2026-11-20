@@ -21,6 +21,12 @@ export interface OwnerBooking {
   alternatives?: string[] | null;
   /** Erinnerungen der Praxis in Stunden vorher, z. B. ['48', '2'] */
   reminders?: string[];
+  /** Release C: selbst verschieben möglich (bis 24 Stunden vorher, höchstens 3-mal, Praxis bucht online) */
+  can_move?: boolean;
+  practice_id?: string;
+  owner_note?: string | null;
+  moved_from?: string | null;
+  minutes?: number;
 }
 export interface OwnerWaitlistEntry {
   id: string; practice_id: string; practice_name: string; pet_id: string; pet_name: string; type_name: string;
@@ -75,6 +81,7 @@ const ERROR_KEYS: Record<string, MessageKey> = {
   pet_not_found: 'obErrPet', too_many_open: 'obErrTooManyOpen', too_many_requests: 'piErrTooMany', too_late: 'obErrTooLate',
   appointment_closed: 'obErrClosed', appointment_not_found: 'scErrGone', text_too_long: 'obErrLong',
   offer_expired: 'wlErrExpired', entry_not_found: 'scErrGone',
+  reason_invalid: 'pe_generic', too_many_moves: 'obErrTooManyMoves',
 };
 const CODES = Object.keys(ERROR_KEYS).sort((a, b) => b.length - a.length);
 export function bookingOwnerErrorKey(e: unknown): MessageKey {
@@ -115,9 +122,34 @@ export async function ownerPracticeBookings(): Promise<OwnerBooking[]> {
   return (data ?? []) as unknown as OwnerBooking[];
 }
 
-export async function cancelBooking(appointmentId: string): Promise<void> {
-  const { error } = await supabase.rpc('owner_cancel_booking', { p_appointment: appointmentId });
+export async function cancelBooking(appointmentId: string, reason: string | null = null, note = ''): Promise<void> {
+  const { error } = await supabase.rpc('owner_cancel_booking', { p_appointment: appointmentId, p_reason: reason, p_note: note.trim() || null });
   if (error) throw error;
+}
+
+// ---------- Verschieben durch die Halter:in (Release C) ----------
+
+/** Freie Zeiten zum Verschieben (gleiche Dauer) ab einem Tag, höchstens 14 Tage */
+export async function moveSlots(appointmentId: string, from: string, days = 14): Promise<string[]> {
+  const { data, error } = await supabase.rpc('owner_move_slots', { p_appointment: appointmentId, p_from: from, p_days: days });
+  if (error) throw error;
+  return (data ?? []) as string[];
+}
+
+export async function moveBooking(appointmentId: string, slot: string, note: string): Promise<void> {
+  const { error } = await supabase.rpc('owner_move_booking', { p_appointment: appointmentId, p_slot: slot, p_note: note.trim() || null });
+  if (error) throw error;
+}
+
+/** Freie Zeiten nach Tag (Europe/Berlin) gruppiert, Tage und Zeiten aufsteigend */
+export function slotsByDay(slots: readonly string[], dayOf: (iso: string) => string): { day: string; slots: string[] }[] {
+  const m = new Map<string, string[]>();
+  for (const s of [...slots].sort((a, b) => new Date(a).getTime() - new Date(b).getTime())) {
+    const d = dayOf(s);
+    const list = m.get(d);
+    if (list) list.push(s); else m.set(d, [s]);
+  }
+  return [...m.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([day, s]) => ({ day, slots: s }));
 }
 
 // ---------- Warteliste und Ausweichtermine (Etappe P5e) ----------
@@ -148,4 +180,17 @@ export async function takeWaitlistOffer(id: string): Promise<boolean> {
 export async function takeAlternative(appointmentId: string, slot: string): Promise<void> {
   const { error } = await supabase.rpc('owner_take_alternative', { p_appointment: appointmentId, p_slot: slot });
   if (error) throw error;
+}
+
+// ---------- Praxissuche: Online-Buchung bei registrierten Praxen (Release C) ----------
+
+export interface PracticeBookingInfo { directory_id: string; practice_id: string; online: boolean; next_slot: string | null }
+
+/** Für Verzeichnis-IDs registrierter Praxen: online buchbar und nächster freier Termin */
+export async function practiceBookingInfo(directoryIds: string[]): Promise<Map<string, PracticeBookingInfo>> {
+  const ids = [...new Set(directoryIds)].slice(0, 50);
+  if (!ids.length) return new Map();
+  const { data, error } = await supabase.rpc('practice_booking_info', { p_ids: ids });
+  if (error) throw error;
+  return new Map((data ?? []).map((r) => [r.directory_id, r]));
 }

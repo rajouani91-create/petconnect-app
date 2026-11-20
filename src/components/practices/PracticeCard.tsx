@@ -4,7 +4,11 @@ import { telHref } from '../../lib/care';
 import { openingText, type OpeningInfo } from '../../lib/openingHours';
 import { FEATURE_TEXT, SERVICE_TEXT, SPECIES_TEXT, TITLE_TEXT, isPracticeFeature, isPracticeService, isPracticeSpecies, isPracticeTitle, languageName } from '../../lib/practiceCatalog';
 import { formatAddress, formatKm, isAppleDevice, osmNoteLink, routeLinks, safeWebsite } from '../../lib/practices';
-import { IconPhone } from '../Icons';
+import { Link } from 'react-router';
+import { IconCalendar, IconPhone } from '../Icons';
+import { formatDate } from '../../i18n';
+import { timeOf } from '../../lib/practiceAppointments';
+import type { PracticeBookingInfo } from '../../lib/booking';
 
 export interface PracticeView {
   id: string;
@@ -43,6 +47,7 @@ export function PracticeCard({
   onSetVet,
   onInvite,
   registerFocus,
+  booking = null,
 }: {
   p: PracticeView;
   info: OpeningInfo | null;
@@ -58,6 +63,8 @@ export function PracticeCard({
   onSetVet: () => void;
   onInvite: () => void;
   registerFocus: (key: string) => (el: HTMLElement | null) => void;
+  /** Registrierte Praxis: online buchbar und nächster freier Termin (Release C) */
+  booking?: PracticeBookingInfo | null;
 }) {
   const { t, lang } = useI18n();
   const locale = localeOf(lang);
@@ -79,13 +86,33 @@ export function PracticeCard({
   };
 
   return (
-    <li className="card stack practice-card" aria-labelledby={headingId}>
+    <li className={`card stack practice-card${p.registered ? ' is-pc' : ''}`} aria-labelledby={headingId}>
       <div className="practice-head">
         <h3 id={headingId}>{p.name}</h3>
         {typeof p.distance_km === 'number' && <span className="pill">{formatKm(p.distance_km, locale)}</span>}
       </div>
       {addr && <p className="muted">{addr}</p>}
-      <p className={`small practice-reg${p.registered ? ' is-reg' : ''}`}>{t(p.registered ? 'nbReg' : 'nbNot')}</p>
+      {p.registered ? (
+        <div className="pc-book stack-sm">
+          <p className="pc-badges">
+            <span className="pill pill-ok">{t('nbReg')}</span>
+            {booking?.online && <span className="pill pill-brand">{t('psOnlineBookable')}</span>}
+          </p>
+          {booking?.online && booking.next_slot && (
+            <p className="small">{t('psNextFree')} <strong>{formatDate(new Date(booking.next_slot), lang, { weekday: 'short', day: 'numeric', month: 'short' })}, {timeOf(booking.next_slot)}</strong></p>
+          )}
+          {booking?.online ? (
+            <Link className="btn btn-primary pc-cta" to={`/termine/buchen?praxis=${booking.practice_id}`} aria-label={t('psBookL', { x: p.name })}>
+              <IconCalendar size={18} />
+              {t('psBook')}
+            </Link>
+          ) : (
+            <Link className="btn btn-secondary pc-cta" to="/mehr/anfragen" aria-label={t('psAskL', { x: p.name })}>{t('psAsk')}</Link>
+          )}
+        </div>
+      ) : (
+        <p className="small practice-reg">{t('nbNot')}</p>
+      )}
 
       {info && (
         <p className="small">

@@ -11,8 +11,12 @@ export type ApptStatus = 'new' | 'confirmed' | 'cancelled_practice' | 'cancelled
 export interface PracticeAppointment {
   id: string; pet_id: string | null; has_access: boolean; pet_label: string; owner_label: string; phone: string | null;
   type_id: string | null; type_name: string; starts_at: string; minutes: number; status: ApptStatus; source: 'phone' | 'online';
-  new_client: boolean; note: string | null; cancel_reason: CancelReason | null; cancel_note: string | null; overridden: boolean;
+  new_client: boolean; note: string | null; cancel_reason: string | null; cancel_note: string | null; overridden: boolean;
   created_by_name: string; created_at: string;
+  /** Notiz der Halter:in beim Verschieben (Release C) */
+  owner_note?: string | null;
+  /** Alte Zeit, wenn die Halter:in den Termin verschoben hat */
+  moved_from?: string | null;
 }
 
 export const STATUS_LABEL: Record<ApptStatus, MessageKey> = {
@@ -28,6 +32,21 @@ export type CancelReason = (typeof CANCEL_REASONS)[number];
 export const CANCEL_LABEL: Record<CancelReason, MessageKey> = {
   vet_ill: 'bkReasonIll', emergency: 'bkReasonEmergency', closed: 'bkReasonClosed', double: 'bkReasonDouble', other: 'rcReasonOther',
 };
+
+/** Absagegründe der Halter:in (Release C) */
+export const OWNER_CANCEL_REASONS = ['recovered', 'conflict', 'unwell', 'other_practice', 'other'] as const;
+export type OwnerCancelReason = (typeof OWNER_CANCEL_REASONS)[number];
+export const OWNER_CANCEL_LABEL: Record<OwnerCancelReason, MessageKey> = {
+  recovered: 'obRsRecovered', conflict: 'obRsConflict', unwell: 'obRsUnwell', other_practice: 'obRsOtherPractice', other: 'rcReasonOther',
+};
+
+/** Beschriftung eines Absagegrunds (Praxis oder Halter:in); unbekannte Werte ergeben null */
+export function cancelReasonKey(r: string | null | undefined): MessageKey | null {
+  if (!r) return null;
+  if ((CANCEL_REASONS as readonly string[]).includes(r)) return CANCEL_LABEL[r as CancelReason];
+  if ((OWNER_CANCEL_REASONS as readonly string[]).includes(r)) return OWNER_CANCEL_LABEL[r as OwnerCancelReason];
+  return null;
+}
 
 // ---------- Zeit ----------
 

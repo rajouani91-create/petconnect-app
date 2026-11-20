@@ -13,12 +13,14 @@ import {
 } from '../lib/api';
 import { appointmentIcs, downloadIcs, icsFilename } from '../lib/ics';
 import {
-  OWNER_STATUS_LABEL, OWNER_STATUS_TONE, bookingOwnerErrorKey, cancelBooking, leaveWaitlist, ownerPracticeBookings, ownerWaitlist, takeAlternative, takeWaitlistOffer,
+  OWNER_STATUS_LABEL, OWNER_STATUS_TONE, bookingOwnerErrorKey, leaveWaitlist, ownerPracticeBookings, ownerWaitlist, takeAlternative, takeWaitlistOffer,
   type OwnerBooking, type OwnerWaitlistEntry,
 } from '../lib/booking';
 import { formatDate, formatIsoDate } from '../i18n';
 import { dayOf, timeOf } from '../lib/practiceAppointments';
-import { CANCEL_LABEL, CANCEL_REASONS, type CancelReason } from '../lib/practiceAppointments';
+import { cancelReasonKey } from '../lib/practiceAppointments';
+import { CancelSheet } from '../components/booking/CancelSheet';
+import { MoveSheet } from '../components/booking/MoveSheet';
 import { recordErrorKey } from '../lib/record';
 import {
   APPT_KINDS,
@@ -64,6 +66,7 @@ export function Appointments() {
   const [waitlist, setWaitlist] = useState<OwnerWaitlistEntry[]>([]);
   const [wlBusy, setWlBusy] = useState(false);
   const [toCancel, setToCancel] = useState<AppointmentRow | null>(null);
+  const [toMove, setToMove] = useState<AppointmentRow | null>(null);
   const [status, setStatus] = useStatus();
   const { register, focusLater } = useFocusAfter();
 
@@ -120,16 +123,12 @@ export function Appointments() {
     focusLater('add');
   }
 
-  async function cancelAtPractice(row: AppointmentRow) {
+  /** Nach Absagen oder Verschieben im Blatt: schließen, neu laden, Meldung */
+  async function sheetDone(msg: string) {
     setToCancel(null);
-    try {
-      await cancelBooking(row.id);
-      await load();
-      setStatus(t('obCancelled', { x: row.title }));
-    } catch (e) {
-      console.error(e);
-      setStatus(t(bookingOwnerErrorKey(e)), false);
-    }
+    setToMove(null);
+    await load();
+    setStatus(msg);
     focusLater('add');
   }
 
@@ -159,7 +158,7 @@ export function Appointments() {
     const fromPractice = !!r.practice_appointment_id;
     const canChange = editable.has(r.pet_id) && !fromPractice;
     const bk = fromPractice ? bookings.get(r.id) : undefined;
-    const reason = bk?.cancel_reason && (CANCEL_REASONS as readonly string[]).includes(bk.cancel_reason) ? (bk.cancel_reason as CancelReason) : null;
+    const reason = bk?.status === 'cancelled_practice' ? cancelReasonKey(bk.cancel_reason) : null;
     const st = isApptStatus(r.status) ? r.status : 'planned';
     const isPast = st === 'planned' && localDate(new Date(r.starts_at)) < today;
     return (
@@ -183,7 +182,9 @@ export function Appointments() {
             {[isApptKind(r.kind) ? t(APPT_KIND_LABEL[r.kind]) : r.kind, petName(r.pet_id), r.location].filter(Boolean).join(' · ')}
           </span>
           {r.note && <span className="small appt-note">{shorten(r.note)}</span>}
-          {bk?.status === 'cancelled_practice' && reason && <span className="small">{t('rcReason')}: {t(CANCEL_LABEL[reason])}</span>}
+          {reason && <span className="small">{t('rcReason')}: {t(reason)}</span>}
+          {bk?.status === 'new' && bk.moved_from && <span className="small muted">{t('obMovedFrom', { d: slotText(bk.moved_from) })}</span>}
+          {bk?.owner_note && (bk.status === 'new' || bk.status === 'confirmed') && <span className="small appt-note">{t('obYourNote')}: {shorten(bk.owner_note)}</span>}
           {fromPractice && bk?.status === 'new' && <span className="small practice-note">{t('obRequestedNote')}</span>}
           {fromPractice && (!bk || bk.status !== 'new') && <span className="small practice-note">{t('apFromPractice')}</span>}
           {bk && (bk.status === 'new' || bk.status === 'confirmed') && !isPast && (bk.reminders?.length ?? 0) > 0 && (
@@ -198,8 +199,13 @@ export function Appointments() {
             <IconCalendar size={18} />
             {t('calExport')}
           </button>
+          {bk?.can_move && editable.has(r.pet_id) && (
+            <button type="button" className="btn btn-secondary" aria-label={t('obMoveL', { x: r.title })} onClick={() => { setToMove(r); setStatus(''); }}>
+              {t('obMoveBtn')}
+            </button>
+          )}
           {bk?.can_cancel && editable.has(r.pet_id) && (
-            <button type="button" className="btn btn-ghost" aria-label={t('apCancelL', { x: r.title })} onClick={() => setToCancel(r)}>
+            <button type="button" className="btn btn-ghost" aria-label={t('apCancelL', { x: r.title })} onClick={() => { setToCancel(r); setStatus(''); }}>
               {t('apCancel')}
             </button>
           )}
@@ -359,9 +365,13 @@ export function Appointments() {
       )}
       <StatusLine status={status} />
 
-      <ConfirmDelete open={toCancel !== null} title={t('obCancelTitle')} confirmLabel={t('obCancelBtn')} onCancel={() => setToCancel(null)} onConfirm={() => toCancel && void cancelAtPractice(toCancel)}>
-        {toCancel && <p>{t('obCancelAsk', { x: toCancel.title, d: formatDateTime(toCancel.starts_at, locale), p: toCancel.location ?? '' })}</p>}
-      </ConfirmDelete>
+      <CancelSheet
+        appt={toCancel && { id: toCancel.id, title: toCancel.title, starts_at: toCancel.starts_at, petName: petName(toCancel.pet_id) }}
+        canMove={!!(toCancel && bookings.get(toCancel.id)?.can_move)}
+        onClose={() => setToCancel(null)}
+        onMove={() => { const r = toCancel; setToCancel(null); setToMove(r); }}
+        onDone={(m) => void sheetDone(m)} />
+      <MoveSheet appt={toMove} today={today} onClose={() => setToMove(null)} onDone={(m) => void sheetDone(m)} />
       <ConfirmDelete open={toDelete !== null} title={t('apDelTitle')} onCancel={() => setToDelete(null)} onConfirm={() => toDelete && void remove(toDelete)}>
         {toDelete && <p>{t('apDelAsk', { x: toDelete.title, d: formatDateTime(toDelete.starts_at, locale) })}</p>}
       </ConfirmDelete>

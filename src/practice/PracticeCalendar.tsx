@@ -17,6 +17,7 @@ import {
 } from '../lib/practiceCalendar';
 import { CancelDialog, SlotPicker, WarningBox } from './PracticeAppointments';
 import { usePractice } from './PracticeProvider';
+import { OwnerChangeNote } from './OwnerChangeNote';
 
 const VIEW_LABEL: Record<CalView, MessageKey> = { day: 'calDay', week: 'calWeek', month: 'calMonth' };
 type Msg = { ok: boolean; text: string; undo?: () => Promise<void> };
@@ -428,6 +429,7 @@ function EditDialog({ a, now, onClose, onDone, onCancel }: {
           <span className="muted small">{a.type_name} · {t(a.source === 'online' ? 'bkSrcOnline' : 'bkSrcPhone')}{a.phone ? ` · ${a.phone}` : ''}</span>
         </p>
         {a.note && <p className="small pre-line">{a.note}</p>}
+        <OwnerChangeNote a={a} as="p" />
         {closed ? <p className="notice notice-info">{t('calClosedAppt')}</p> : !movable ? <p className="muted small">{t('calStarted')}</p> : (
           <form id={`${uid}-f`} className="stack" onSubmit={(e: FormEvent) => { e.preventDefault(); void save(false); }} noValidate>
             <div className="row-2">

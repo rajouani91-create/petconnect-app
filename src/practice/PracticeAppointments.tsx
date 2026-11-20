@@ -9,11 +9,12 @@ import { zonedNow } from '../lib/time';
 import { practicePatients, type PatientRow } from '../lib/practiceAccess';
 import { practiceSchedule, type AppointmentType } from '../lib/practiceSchedule';
 import {
-  CANCEL_LABEL, CANCEL_REASONS, CLOSED_LABEL, FILTERS, FILTER_LABEL, STATUS_LABEL, STATUS_TONE, bookAppointment, bookErrors, bookingErrorKey, byDay,
+  CANCEL_LABEL, CANCEL_REASONS, CLOSED_LABEL, cancelReasonKey, FILTERS, FILTER_LABEL, STATUS_LABEL, STATUS_TONE, bookAppointment, bookErrors, bookingErrorKey, byDay,
   cancelAppointment, checkSlot, confirmAppointment, counts, dayOf, emptyBook, endOf, filterAppointments, freeSlots, hasWarnings, isOpen, markAppointment, moveAppointment,
   practiceAppointments, practiceWaitlist, removeWaitlistEntry, timeOf, toInstant, type WaitlistEntry, whenErrors, type BookForm, type CancelReason, type Filter, type PracticeAppointment, type Warnings,
 } from '../lib/practiceAppointments';
 import { usePractice } from './PracticeProvider';
+import { OwnerChangeNote } from './OwnerChangeNote';
 
 type Run = (fn: () => Promise<unknown>, ok: string) => Promise<boolean>;
 
@@ -172,7 +173,10 @@ function Row({ a, now, busy, run, onMove, onCancel, remind }: {
         <span className="small">{a.type_name} · {t(a.source === 'online' ? 'bkSrcOnline' : 'bkSrcPhone')}</span>
         {a.phone && <span className="small"><a href={`tel:${a.phone.replace(/[^\d+]/g, '')}`}>{a.phone}</a></span>}
         {a.note && <span className="small pre-line">{a.note}</span>}
-        {closed && a.cancel_reason && <span className="small">{t('rcReason')}: {t(CANCEL_LABEL[a.cancel_reason])}{a.cancel_note ? ` – ${a.cancel_note}` : ''}</span>}
+        {closed && (a.cancel_reason || a.cancel_note) && (
+          <span className="small">{t('rcReason')}: {[cancelReasonKey(a.cancel_reason) ? t(cancelReasonKey(a.cancel_reason)!) : null, a.cancel_note].filter(Boolean).join(' – ')}</span>
+        )}
+        <OwnerChangeNote a={a} />
         {a.overridden && !closed && <span className="small owner-note">{t('bkOverridden')}</span>}
         {remind && future && (a.has_access || a.source === 'online') && <span className="small muted">{t('wlRemindRow', { h: remind })}</span>}
         {a.source !== 'online' && <span className="muted small">{t('bkBy', { n: a.created_by_name })}</span>}
