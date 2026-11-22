@@ -2569,4 +2569,5 @@ export const sv: Messages = {
   psPcH: "På PetConnect",
   psQuick: "Snabbfilter",
   petTileDocs: "Dokument",
+  ncGone: "Posten finns inte längre eller så har du ingen åtkomst till den.",
 };

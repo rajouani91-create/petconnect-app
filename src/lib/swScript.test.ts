@@ -92,11 +92,12 @@ for (const base of ['', '/app']) {
     it('Push mit Medikament: Knopf „Gegeben“ öffnet die Startseite der App mit Bestätigung', () => {
       const sw = load(base);
       sw.fire('push', {
-        data: { json: () => ({ title: 'Medikament', body: 'x', tag: `medication-${MED}-2026-01-15T08:00:00.000Z` }) },
+        data: { json: () => ({ title: 'Medikament', body: 'x', url: '/erinnerungen', tag: `medication-${MED}-2026-01-15T08:00:00.000Z` }) },
         waitUntil: () => undefined,
       });
-      const options = sw.firstShown().options as { data: { url: string }; actions: { action: string }[] };
-      expect(options.data.url).toBe(`${home}?gegeben=${MED}&zeit=09:00`);
+      const options = sw.firstShown().options as { data: { url: string; actionUrl: string }; actions: { action: string }[] };
+      expect(options.data.actionUrl).toBe(`${home}?gegeben=${MED}&zeit=09:00`);
+      expect(options.data.url).toBe(`${base}/erinnerungen`);
       expect(options.actions.map((a) => a.action)).toEqual(['give']);
     });
 
@@ -106,8 +107,39 @@ for (const base of ['', '/app']) {
         data: { json: () => ({ title: 'Alltag', tag: `routine-${ROUTINE}-2026-01-15T08:00:00.000Z` }) },
         waitUntil: () => undefined,
       });
-      const options = sw.firstShown().options as { data: { url: string } };
-      expect(options.data.url).toBe(`${home}?erledigt=${ROUTINE}`);
+      const options = sw.firstShown().options as { data: { url: string; actionUrl: string } };
+      expect(options.data.actionUrl).toBe(`${home}?erledigt=${ROUTINE}`);
+      expect(options.data.url).toBe(home);
+    });
+
+    it('Push mit Ziel: Antippen öffnet genau dieses Ziel (z. B. die Rechnung)', async () => {
+      const sw = load(base);
+      sw.fire('push', {
+        data: { json: () => ({ title: 'Neue Rechnung', body: 'x', url: '/mehr/rechnungen/abc?x=1#k', tag: 'invoice-1-2' }) },
+        waitUntil: () => undefined,
+      });
+      const options = sw.firstShown().options as { data: unknown; actions?: unknown };
+      expect(options.actions).toBeUndefined();
+      await click(sw, options.data);
+      expect(sw.opened).toEqual([`${ORIGIN}${base}/mehr/rechnungen/abc?x=1#k`]);
+    });
+
+    it('Push mit Medikament: Antippen ohne Knopf öffnet das Ziel, Knopf die Bestätigung', async () => {
+      const sw = load(base);
+      sw.fire('push', {
+        data: { json: () => ({ title: 'Medikament', url: '/erinnerungen', tag: `medication-${MED}-2026-01-15T08:00:00.000Z` }) },
+        waitUntil: () => undefined,
+      });
+      const data = sw.firstShown().options.data;
+      await click(sw, data);
+      await click(sw, data, 'give');
+      expect(sw.opened).toEqual([`${ORIGIN}${base}/erinnerungen`, `${ORIGIN}${home}?gegeben=${MED}&zeit=09:00`]);
+    });
+
+    it('Ziel auf fremder Origin wird verworfen', () => {
+      const sw = load(base);
+      sw.fire('push', { data: { json: () => ({ title: 'x', url: 'https://evil.example/mehr' }) }, waitUntil: () => undefined });
+      expect((sw.firstShown().options as { data: { url: string } }).data.url).toBe(home);
     });
 
     it('Push ohne lesbare Nachricht: neutrale Meldung, Ziel = Startseite der App', () => {
@@ -131,6 +163,8 @@ for (const base of ['', '/app']) {
       expect(safe(`/?gegeben=${MED}&zeit=09:00`)).toBe(`${home}?gegeben=${MED}&zeit=09:00`);
       expect(safe(`/?erledigt=${ROUTINE}`)).toBe(`${home}?erledigt=${ROUTINE}`);
       expect(safe('/')).toBe(home);
+      expect(safe('/termine?termin=1')).toBe(`${base}/termine?termin=1`);
+      expect(safe(`${base}/termine`)).toBe(`${base}/termine`);
     });
 
     it('Klick auf die Benachrichtigung öffnet ein Fenster in der App (Aktion mit alter Adresse)', async () => {

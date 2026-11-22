@@ -2569,4 +2569,5 @@ export const ar: Messages = {
   psPcH: "على PetConnect",
   psQuick: "مرشحات سريعة",
   petTileDocs: "المستندات",
+  ncGone: "هذا العنصر لم يعد موجودًا أو ليس لديك صلاحية الوصول إليه.",
 };

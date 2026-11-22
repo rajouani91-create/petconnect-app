@@ -2569,4 +2569,5 @@ export const da: Messages = {
   psPcH: "På PetConnect",
   psQuick: "Hurtigfiltre",
   petTileDocs: "Dokumenter",
+  ncGone: "Elementet findes ikke længere, eller du har ikke adgang til det.",
 };

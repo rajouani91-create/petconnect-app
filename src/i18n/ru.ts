@@ -2569,4 +2569,5 @@ export const ru: Messages = {
   psPcH: "В PetConnect",
   psQuick: "Быстрые фильтры",
   petTileDocs: "Документы",
+  ncGone: "Эта запись больше не существует или у вас нет к ней доступа.",
 };

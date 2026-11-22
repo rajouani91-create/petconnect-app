@@ -2569,4 +2569,5 @@ export const tr: Messages = {
   psPcH: "PetConnect’te",
   psQuick: "Hızlı filtreler",
   petTileDocs: "Belgeler",
+  ncGone: "Bu kayıt artık mevcut değil veya erişim izniniz yok.",
 };

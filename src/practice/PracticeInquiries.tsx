@@ -13,6 +13,7 @@ import {
   practiceInquiries, replyInquiry, sortInquiries, type PracticeInquiry,
 } from '../lib/inquiries';
 import { usePractice } from './PracticeProvider';
+import { useDeepLink } from '../components/useDeepLink';
 
 type Run = (fn: () => Promise<unknown>, ok: string) => Promise<boolean>;
 type Tab = 'open' | 'done';
@@ -23,6 +24,8 @@ export function PracticeInquiries() {
   const { me } = usePractice();
   const pending = me?.practice?.status === 'pending';
   const [rows, setRows] = useState<PracticeInquiry[] | null>(null);
+  // ?anfrage=<ID> aus einer Benachrichtigung
+  const deep = useDeepLink('anfrage', rows ? rows.map((q) => q.id) : null);
   const [types, setTypes] = useState<AppointmentType[]>([]);
   const [loadErr, setLoadErr] = useState(false);
   const [tab, setTab] = useState<Tab>('open');
@@ -71,6 +74,7 @@ export function PracticeInquiries() {
         <h1>{t('iqTitle')}</h1>
         <p className="muted">{t('iqSub')}</p>
       </div>
+      {deep.missing && <p className="notice notice-warn" role="alert">{t('ncGone')}</p>}
       {pending ? (
         <div className="notice notice-warn" role="status">
           <p><strong>{t('pp_pendingTitle')}</strong></p>
@@ -117,7 +121,7 @@ function Item({ q, busy, run, canOffer, onOffer }: { q: PracticeInquiry; busy: b
   };
 
   return (
-    <li className={`iq-item is-${done ? 'done' : q.urgency}`}>
+    <li id={`dl-${q.id}`} className={`iq-item is-${done ? 'done' : q.urgency}`}>
       <div className="iq-head">
         <span className="record-title">
           {q.has_access ? <Link to={`/praxis/patienten/${q.pet_id}`} className="link">{q.pet_label}</Link> : q.pet_label}

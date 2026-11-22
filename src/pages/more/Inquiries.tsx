@@ -5,6 +5,7 @@ import { formatDate, type MessageKey } from '../../i18n';
 import { Field } from '../../components/Field';
 import { IconBack, IconPhone } from '../../components/Icons';
 import { Loading } from '../../components/Loading';
+import { useDeepLink } from '../../components/useDeepLink';
 import {
   MESSAGE_MAX, STATUS_LABEL, STATUS_TONE, TOPICS, TOPIC_LABEL, URGENCIES, URGENCY_LABEL, URGENCY_TONE, closeOwnerInquiry, emptyInquiry,
   inquiryErrorKey, inquiryErrors, inquiryTargets, ownerInquiries, sendInquiry, takeInquirySlot, targetKey,
@@ -16,6 +17,8 @@ export function Inquiries() {
   const { t } = useI18n();
   const [targets, setTargets] = useState<InquiryTarget[] | null>(null);
   const [rows, setRows] = useState<OwnerInquiry[] | null>(null);
+  // ?anfrage=<ID> aus einer Benachrichtigung
+  const deep = useDeepLink('anfrage', rows ? rows.map((q) => q.id) : null);
   const [loadErr, setLoadErr] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -56,6 +59,7 @@ export function Inquiries() {
         <h1>{t('iqOwnerTitle')}</h1>
         <p className="muted">{t('iqOwnerSub')}</p>
       </header>
+      {deep.missing && <p className="notice notice-warn" role="alert">{t('ncGone')}</p>}
       {loadErr && !rows ? <p className="notice notice-crit" role="alert">{t('errGeneric')}</p> : !rows || !targets ? <Loading /> : (
         <>
           <div role="status" aria-live="polite">
@@ -148,7 +152,7 @@ function Item({ q, busy, run }: { q: OwnerInquiry; busy: boolean; run: (fn: () =
   const when = (iso: string) => formatDate(new Date(iso), lang, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' });
   const done = q.status === 'done';
   return (
-    <li className={`iq-item is-${done ? 'done' : q.urgency}`}>
+    <li id={`dl-${q.id}`} className={`iq-item is-${done ? 'done' : q.urgency}`}>
       <div className="iq-head">
         <span className="record-title">{q.pet_name} <span className="muted">· {q.practice_name}</span></span>
         <span className="small muted">{when(q.created_at)}</span>

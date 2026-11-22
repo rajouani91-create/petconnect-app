@@ -2569,4 +2569,5 @@ export const fr: Messages = {
   psPcH: "Sur PetConnect",
   psQuick: "Filtres rapides",
   petTileDocs: "Documents",
+  ncGone: "Cet élément n’existe plus ou vous n’y avez pas accès.",
 };

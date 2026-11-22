@@ -2,7 +2,8 @@
  * - App-Shell offline: Startseite der App, index.html und die gebauten Dateien aus index.html beim Installieren,
  *   danach Assets und Icons „stale-while-revalidate“. Nur Adressen der App (siehe APP_BASE) werden bearbeitet.
  * - Antworten von Supabase (andere Origin) werden nie angefasst oder gespeichert.
- * - Push: Nachricht anzeigen; Klick öffnet „Heute“ (gleiche Origin). Medikament/Alltag: Knopf „Gegeben“/„Erledigt“ öffnet „Heute“ mit Bestätigungskarte.
+ * - Push: Nachricht anzeigen; Antippen öffnet das Ziel der Nachricht (Rechnung, Termin, Tierakte …, gleiche Origin, unter APP_BASE).
+ *   Medikament/Alltag: Knopf „Gegeben“/„Erledigt“ öffnet „Heute“ mit Bestätigungskarte.
  */
 const VERSION = 'pc-v2';
 const SHELL = `${VERSION}-shell`;
@@ -141,31 +142,32 @@ function readPush(data) {
     msg = null;
   }
   const ok = msg && typeof msg === 'object' && typeof msg.title === 'string' && msg.title.trim();
-  if (!ok) return { title: FALLBACK_TITLE, options: { body: '', tag: 'petconnect', data: { url: TODAY_URL } } };
+  if (!ok) return { title: FALLBACK_TITLE, options: { body: '', tag: 'petconnect', data: { v: 2, url: TODAY_URL } } };
+  const tag = typeof msg.tag === 'string' ? msg.tag : '';
+  // Ziel beim Antippen: die Adresse aus der Nachricht (z. B. die Rechnung), sonst „Heute“
+  const target = { v: 2, url: typeof msg.url === 'string' && msg.url ? safeUrl(msg.url) : TODAY_URL };
+  const a = actionFromTag(tag);
+  if (a) target.actionUrl = actionUrl(a);
   return {
     title: msg.title.slice(0, 120),
     options: {
       body: typeof msg.body === 'string' ? msg.body.slice(0, 300) : '',
-      tag: typeof msg.tag === 'string' ? msg.tag.slice(0, 100) : 'petconnect',
-      data: { url: TODAY_URL },
-      ...actionOptions(typeof msg.tag === 'string' ? msg.tag : ''),
+      tag: tag ? tag.slice(0, 100) : 'petconnect',
+      data: target,
+      // Knopf „Gegeben“ bzw. „Erledigt“, wenn die Meldung zu einem Medikament oder Alltagspunkt gehört
+      ...(a ? { actions: [{ action: a.kind, title: actionLabel(a.kind) }] } : {}),
     },
   };
 }
 
-/** Knopf „Gegeben“ bzw. „Erledigt“, wenn die Meldung zu einem Medikament oder Alltagspunkt gehört */
-function actionOptions(tag) {
-  const a = actionFromTag(tag);
-  if (!a) return {};
-  return { actions: [{ action: a.kind, title: actionLabel(a.kind) }], data: { url: actionUrl(a) } };
-}
-
-/** Nur Pfade der eigenen Origin zulassen. Alte Adressen „/?gegeben=…“ (bereits angezeigte Benachrichtigungen) führen zur Startseite der App. */
+/** Nur Pfade der eigenen Origin zulassen. Pfade der App ohne APP_BASE (so liefert sie die Datenbank, z. B. „/mehr/rechnungen/…“)
+ *  bekommen APP_BASE davor; alte Adressen „/?gegeben=…“ führen zur Startseite der App. */
 function safeUrl(u) {
   try {
     const url = new URL(typeof u === 'string' ? u : '/', self.location.origin);
     if (url.origin !== self.location.origin) return TODAY_URL;
-    const path = APP_BASE !== '' && url.pathname === '/' ? APP_HOME : url.pathname;
+    let path = url.pathname;
+    if (APP_BASE !== '' && !inApp(path)) path = path === '/' ? APP_HOME : `${APP_BASE}${path}`;
     return path + url.search + url.hash;
   } catch {
     return TODAY_URL;
@@ -201,8 +203,14 @@ async function openUrl(path) {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  // Jede Push-Meldung führt zu „Heute“ – dort werden Medikamente, Erinnerungen und Alltag abgehakt.
-  const data = event.notification.data;
-  const target = event.action && data && typeof data.url === 'string' ? data.url : TODAY_URL;
+  const data = event.notification.data || {};
+  let target = TODAY_URL;
+  if (data.v === 2) {
+    // Knopf → „Heute“ mit Bestätigungskarte; Antippen → Ziel der Nachricht
+    target = event.action && typeof data.actionUrl === 'string' ? data.actionUrl : typeof data.url === 'string' ? data.url : TODAY_URL;
+  } else if (event.action && typeof data.url === 'string') {
+    // bereits angezeigte Meldungen aus der Zeit vor Version 2: Knopf wie bisher, Antippen → „Heute“
+    target = data.url;
+  }
   event.waitUntil(openUrl(target));
 });

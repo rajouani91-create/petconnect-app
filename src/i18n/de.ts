@@ -2568,6 +2568,7 @@ export const de = {
   psPcH: "Bei PetConnect",
   psQuick: "Schnellfilter",
   petTileDocs: "Dokumente",
+  ncGone: "Dieser Eintrag ist nicht mehr vorhanden oder Sie haben keinen Zugriff darauf.",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;

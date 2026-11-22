@@ -2569,4 +2569,5 @@ export const nl: Messages = {
   psPcH: "Bij PetConnect",
   psQuick: "Snelfilters",
   petTileDocs: "Documenten",
+  ncGone: "Dit item bestaat niet meer of u hebt er geen toegang toe.",
 };
