@@ -5,9 +5,10 @@ import { formatDate, type MessageKey } from '../../i18n';
 import { Field } from '../../components/Field';
 import { IconBack, IconPhone } from '../../components/Icons';
 import { Loading } from '../../components/Loading';
+import { useDeepLink } from '../../components/useDeepLink';
 import {
   MESSAGE_MAX, STATUS_LABEL, STATUS_TONE, TOPICS, TOPIC_LABEL, URGENCIES, URGENCY_LABEL, URGENCY_TONE, closeOwnerInquiry, emptyInquiry,
-  inquiryErrorKey, inquiryErrors, inquiryTargets, ownerInquiries, sendInquiry, takeInquirySlot, targetKey,
+  inquiryErrorKey, inquiryErrors, inquiryTargets, ownerInquiries, replyPracticeMessage, sendInquiry, takeInquirySlot, targetKey,
   type InquiryForm, type InquiryTarget, type OwnerInquiry,
 } from '../../lib/inquiries';
 
@@ -16,6 +17,8 @@ export function Inquiries() {
   const { t } = useI18n();
   const [targets, setTargets] = useState<InquiryTarget[] | null>(null);
   const [rows, setRows] = useState<OwnerInquiry[] | null>(null);
+  // ?anfrage=<ID> aus einer Benachrichtigung
+  const deep = useDeepLink('anfrage', rows ? rows.map((q) => q.id) : null);
   const [loadErr, setLoadErr] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -56,6 +59,7 @@ export function Inquiries() {
         <h1>{t('iqOwnerTitle')}</h1>
         <p className="muted">{t('iqOwnerSub')}</p>
       </header>
+      {deep.missing && <p className="notice notice-warn" role="alert">{t('ncGone')}</p>}
       {loadErr && !rows ? <p className="notice notice-crit" role="alert">{t('errGeneric')}</p> : !rows || !targets ? <Loading /> : (
         <>
           <div role="status" aria-live="polite">
@@ -147,8 +151,9 @@ function Item({ q, busy, run }: { q: OwnerInquiry; busy: boolean; run: (fn: () =
   const { t, lang } = useI18n();
   const when = (iso: string) => formatDate(new Date(iso), lang, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' });
   const done = q.status === 'done';
+  if (q.origin === 'practice') return <MessageItem q={q} busy={busy} run={run} when={when} />;
   return (
-    <li className={`iq-item is-${done ? 'done' : q.urgency}`}>
+    <li id={`dl-${q.id}`} className={`iq-item is-${done ? 'done' : q.urgency}`}>
       <div className="iq-head">
         <span className="record-title">{q.pet_name} <span className="muted">· {q.practice_name}</span></span>
         <span className="small muted">{when(q.created_at)}</span>
@@ -181,6 +186,59 @@ function Item({ q, busy, run }: { q: OwnerInquiry; busy: boolean; run: (fn: () =
       )}
       {!done && q.can_edit && (
         <div className="row-actions">
+          <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => void run(() => closeOwnerInquiry(q.id), t('iqClosedOwner'))}>{t('iqCloseOwner')}</button>
+        </div>
+      )}
+    </li>
+  );
+}
+
+/** Nachricht der Praxis (Auftrag 13): lesen, antworten, erledigt */
+function MessageItem({ q, busy, run, when }: { q: OwnerInquiry; busy: boolean; run: (fn: () => Promise<unknown>, ok: string) => Promise<boolean>; when: (iso: string) => string }) {
+  const { t } = useI18n();
+  const uid = useId();
+  const [replying, setReplying] = useState(false);
+  const [text, setText] = useState('');
+  const [err, setErr] = useState<MessageKey | null>(null);
+  const done = q.status === 'done';
+  const send = async (e: FormEvent) => {
+    e.preventDefault();
+    const v = text.trim();
+    if (!v) { setErr('iqErrMessage'); return; }
+    if (v.length > MESSAGE_MAX) { setErr('obErrLong'); return; }
+    setErr(null);
+    if (await run(() => replyPracticeMessage(q.id, v), t('msgReplied'))) { setReplying(false); setText(''); }
+  };
+  return (
+    <li id={`dl-${q.id}`} className={`iq-item is-msg${done ? ' is-done' : ''}`}>
+      <div className="iq-head">
+        <span className="record-title">{t('msgFrom', { p: q.practice_name })} <span className="muted">· {q.pet_name}</span></span>
+        <span className="small muted">{when(q.created_at)}</span>
+      </div>
+      <div className="cal-tags"><span className="pill pill-brand">{t('ncCatMsg')}</span>{done && <span className="pill">{t('iqStDone')}</span>}</div>
+      <p className="iq-msg">{q.message}</p>
+      {q.sent_by_name && <p className="small muted">{t('msgSentBy', { n: q.sent_by_name })}</p>}
+      {q.owner_reply && (
+        <div className="iq-reply">
+          <p className="small muted">{t('msgYourReply', { d: q.owner_replied_at ? when(q.owner_replied_at) : '' })}</p>
+          <p>{q.owner_reply}</p>
+        </div>
+      )}
+      {replying && (
+        <form className="stack" onSubmit={(e) => void send(e)} noValidate>
+          <Field id={`${uid}-r`} label={t('msgReplyLabel')} error={err ? { key: err } : undefined}>
+            {(a) => <textarea {...a} rows={3} maxLength={MESSAGE_MAX} value={text} onChange={(e) => setText(e.target.value)} />}
+          </Field>
+          <div className="row-actions">
+            <button type="submit" className="btn btn-primary" disabled={busy}>{t('iqSendReply')}</button>
+            <button type="button" className="btn btn-ghost" onClick={() => { setReplying(false); setErr(null); }}>{t('cancelBtn')}</button>
+          </div>
+        </form>
+      )}
+      {!done && q.can_edit && !replying && (
+        <div className="row-actions">
+          <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => setReplying(true)}>{t(q.owner_reply ? 'iqReplyAgain' : 'iqReply')}</button>
+          {q.practice_phone && <a className="btn btn-ghost" href={`tel:${q.practice_phone.replace(/[^\d+]/g, '')}`}><IconPhone size={18} />{t('nbCall')}</a>}
           <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => void run(() => closeOwnerInquiry(q.id), t('iqClosedOwner'))}>{t('iqCloseOwner')}</button>
         </div>
       )}

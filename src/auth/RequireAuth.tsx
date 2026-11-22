@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router';
 import { useAuth } from './AuthProvider';
 import { Loading } from '../components/Loading';
 import { inviteLink, readPendingInvite, savePendingInvite, tokenFromPath } from '../lib/sharing';
+import { clearReturn, peekReturn, rememberReturn, safeReturn } from '../lib/returnTo';
 
 /** Pfad zur gemerkten Einladung (vor der Anmeldung geöffnet), sonst null. */
 function pendingInvitePath(): string | null {
@@ -14,6 +15,15 @@ function pendingInvitePath(): string | null {
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { ready, session, lastEvent } = useAuth();
   const location = useLocation();
+  const here = location.pathname + location.search + location.hash;
+  // Ziel samt ?… und #… merken (z. B. Rechnung aus einer Benachrichtigung); angemeldet angekommen: vergessen
+  useEffect(() => {
+    if (!ready) return;
+    if (!session) {
+      if (lastEvent === 'SIGNED_OUT') clearReturn();
+      else rememberReturn(here);
+    } else clearReturn();
+  }, [ready, session, lastEvent, here]);
   if (!ready) return <Loading />;
   // Nach bewusstem Abmelden keine Rücksprung-Seite merken: Das nächste Konto (z. B. Partnerin am selben Gerät)
   // soll nicht auf der zuletzt besuchten Seite des vorherigen Kontos landen.
@@ -24,7 +34,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
       savePendingInvite(token);
       return <Navigate to="/login" replace />;
     }
-    return <Navigate to="/login" replace state={lastEvent === 'SIGNED_OUT' ? null : { from: location.pathname }} />;
+    return <Navigate to="/login" replace state={lastEvent === 'SIGNED_OUT' ? null : { from: here }} />;
   }
   // Angemeldet und eine Einladung wartet: dorthin (die Einladungsseite löscht den Eintrag).
   const invite = pendingInvitePath();
@@ -40,8 +50,8 @@ export function RedirectIfAuthed({ children }: { children: ReactNode }) {
   if (session) {
     const invite = pendingInvitePath();
     if (invite) return <Navigate to={invite} replace />;
-    const from = (location.state as { from?: unknown } | null)?.from;
-    return <Navigate to={typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : '/'} replace />;
+    const from = safeReturn((location.state as { from?: unknown } | null)?.from) ?? peekReturn();
+    return <Navigate to={from ?? '/'} replace />;
   }
   return <>{children}</>;
 }

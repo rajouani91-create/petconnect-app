@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { formatIsoDate, localeOf, type MessageKey } from '../i18n';
 import { usePets } from '../pets/PetsProvider';
@@ -30,6 +30,8 @@ import { BreedInfoCard, BreedInfoSkeleton } from '../components/BreedInfoCard';
 import { useBreedInfo } from '../hooks/useBreedInfo';
 
 const PET_TABS = ['overview', 'health', 'more'] as const;
+/** Sprungmarken, die den Reiter „Gesundheit“ öffnen (auch aus Benachrichtigungen) */
+const HEALTH_HASHES = ['#gewicht', '#dokumente', '#medikation', '#vitalwerte', '#impfungen', '#labor', '#befunde'];
 type PetTab = (typeof PET_TABS)[number];
 const PET_TAB_LABEL: Record<PetTab, MessageKey> = { overview: 'petTabOverview', health: 'petTabHealth', more: 'petTabMore' };
 
@@ -37,13 +39,25 @@ const PET_TAB_LABEL: Record<PetTab, MessageKey> = { overview: 'petTabOverview', 
 export function Pet() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
-  const { active, upsertLocal, myRole, reload } = usePets();
+  const { active, pets, loaded, setActiveId, upsertLocal, myRole, reload } = usePets();
+  const [params, setParams] = useSearchParams();
+  // ?tier=<ID> (z. B. aus einer Benachrichtigung): dieses Tier zeigen; unbekannt → Hinweis statt fremdem Tier
+  const wantPet = params.get('tier');
+  const [petMissing, setPetMissing] = useState(false);
+  useEffect(() => {
+    if (!wantPet || !loaded) return;
+    if (pets.some((p) => p.id === wantPet)) {
+      setActiveId(wantPet);
+      setPetMissing(false);
+    } else setPetMissing(true);
+    setParams((cur) => { const n = new URLSearchParams(cur); n.delete('tier'); return n; }, { replace: true });
+  }, [wantPet, loaded, pets, setActiveId, setParams]);
   const [editing, setEditing] = useState(false);
   const [status, setStatus] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const { hash, key: locKey } = useLocation();
-  const [tab, setTab] = useState<PetTab>(['#gewicht', '#dokumente', '#medikation', '#vitalwerte', '#impfungen', '#labor'].includes(hash) ? 'health' : 'overview');
+  const [tab, setTab] = useState<PetTab>(HEALTH_HASHES.includes(hash) ? 'health' : 'overview');
   const tabRefs = useRef(new Map<PetTab, HTMLButtonElement>());
   const uid = useId();
   const [photoOpen, setPhotoOpen] = useState(false);
@@ -62,14 +76,18 @@ export function Pet() {
 
   // „Gewicht & Verlauf“ unter „Mehr“ springt zum Reiter Gesundheit
   useEffect(() => {
-    if (['#gewicht', '#dokumente', '#medikation', '#vitalwerte', '#impfungen', '#labor'].includes(hash)) setTab('health');
+    if (HEALTH_HASHES.includes(hash)) setTab('health');
   }, [hash, locKey]);
 
-  // „Medikament“ in den Schnellaktionen: nach dem Wechsel zum Reiter Gesundheit zur Medikation springen
+  // Sprungmarke (Kacheln, Benachrichtigungen): nach dem Wechsel zum Reiter Gesundheit zum Abschnitt springen;
+  // ein bestimmter Befund (?eintrag=) springt selbst. Abschnitte, die erst nachladen, bekommen einen zweiten Versuch.
   useEffect(() => {
-    if (hash !== '#medikation' || tab !== 'health') return;
-    document.getElementById('medikation')?.scrollIntoView({ block: 'start' });
-  }, [hash, locKey, tab]);
+    if (!HEALTH_HASHES.includes(hash) || tab !== 'health' || params.get('eintrag')) return;
+    const go = () => document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' });
+    go();
+    const timer = window.setTimeout(go, 700);
+    return () => window.clearTimeout(timer);
+  }, [hash, locKey, tab, params]);
 
   function onTabKey(e: KeyboardEvent<HTMLButtonElement>) {
     const i = PET_TABS.indexOf(tab);
@@ -108,6 +126,7 @@ export function Pet() {
         <IconBack size={20} />
         {t('myPetsTitle')}
       </Link>
+      {petMissing && <p className="notice notice-warn" role="alert">{t('ncGone')}</p>}
 
       <section className="card pet-hero" aria-labelledby={`${uid}-name`}>
         <div className="pet-ava pet-ava-hero">

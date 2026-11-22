@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useState, type FormEvent } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { formatDate, type MessageKey } from '../i18n';
 import { Dialog } from '../components/Dialog';
@@ -10,9 +10,11 @@ import { practiceSchedule, type AppointmentType } from '../lib/practiceSchedule'
 import { freeSlots, timeOf } from '../lib/practiceAppointments';
 import {
   MAX_OFFER, MESSAGE_MAX, STATUS_LABEL, STATUS_TONE, TOPIC_LABEL, URGENCY_LABEL, URGENCY_TONE, closeInquiry, inquiryErrorKey, offerInquiry,
-  practiceInquiries, replyInquiry, sortInquiries, type PracticeInquiry,
+  practiceInquiries, replyInquiry, sendPracticeMessage, sortInquiries, type PracticeInquiry,
 } from '../lib/inquiries';
 import { usePractice } from './PracticeProvider';
+import { practicePatients, type PatientRow } from '../lib/practiceAccess';
+import { useDeepLink } from '../components/useDeepLink';
 
 type Run = (fn: () => Promise<unknown>, ok: string) => Promise<boolean>;
 type Tab = 'open' | 'done';
@@ -23,12 +25,17 @@ export function PracticeInquiries() {
   const { me } = usePractice();
   const pending = me?.practice?.status === 'pending';
   const [rows, setRows] = useState<PracticeInquiry[] | null>(null);
+  // ?anfrage=<ID> aus einer Benachrichtigung
+  const deep = useDeepLink('anfrage', rows ? rows.map((q) => q.id) : null);
   const [types, setTypes] = useState<AppointmentType[]>([]);
   const [loadErr, setLoadErr] = useState(false);
   const [tab, setTab] = useState<Tab>('open');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [offering, setOffering] = useState<PracticeInquiry | null>(null);
+  // Nachricht schreiben (Auftrag 13); ?schreiben=<Tier-ID> aus der Patientenakte wählt den Patienten vor
+  const [params] = useSearchParams();
+  const [writing, setWriting] = useState<string | null>(() => params.get('schreiben'));
 
   const load = useCallback(async () => {
     try {
@@ -67,10 +74,14 @@ export function PracticeInquiries() {
 
   return (
     <div className="page stack-lg">
-      <div className="page-head">
-        <h1>{t('iqTitle')}</h1>
-        <p className="muted">{t('iqSub')}</p>
+      <div className="page-head page-head-row">
+        <div>
+          <h1>{t('iqTitle')}</h1>
+          <p className="muted">{t('iqSub')}</p>
+        </div>
+        {!pending && <button type="button" className="btn btn-primary" onClick={() => setWriting('')}>{t('msgWrite')}</button>}
       </div>
+      {deep.missing && <p className="notice notice-warn" role="alert">{t('ncGone')}</p>}
       {pending ? (
         <div className="notice notice-warn" role="status">
           <p><strong>{t('pp_pendingTitle')}</strong></p>
@@ -95,6 +106,7 @@ export function PracticeInquiries() {
         </>
       )}
       {offering && <OfferDialog q={offering} types={types} busy={busy} run={run} onClose={() => setOffering(null)} />}
+      {writing !== null && !pending && <WriteDialog petId={writing} busy={busy} run={run} onClose={() => setWriting(null)} />}
     </div>
   );
 }
@@ -116,8 +128,37 @@ function Item({ q, busy, run, canOffer, onOffer }: { q: PracticeInquiry; busy: b
     if (await run(() => replyInquiry(q.id, v), t('iqReplied'))) { setReplying(false); setText(''); }
   };
 
+  if (q.origin === 'practice') {
+    return (
+      <li id={`dl-${q.id}`} className={`iq-item is-msg${done ? ' is-done' : ''}`}>
+        <div className="iq-head">
+          <span className="record-title">
+            {t('msgTo', { o: q.owner_label })} <span className="muted">· {q.has_access ? <Link to={`/praxis/patienten/${q.pet_id}`} className="link">{q.pet_label}</Link> : q.pet_label}</span>
+          </span>
+          <span className="small muted">{when(q.created_at)}</span>
+        </div>
+        <div className="cal-tags">
+          <span className="pill pill-brand">{t('ncCatMsg')}</span>
+          <span className={`pill ${q.owner_reply && !done ? 'pill-warn' : ''}`}>{t(done ? 'iqStDone' : q.owner_reply ? 'msgReplyIn' : 'msgWaiting')}</span>
+        </div>
+        <p className="iq-msg">{q.message}</p>
+        {q.sent_by_name && <p className="small muted">{t('msgSentBy', { n: q.sent_by_name })}</p>}
+        {q.owner_reply && (
+          <div className="iq-reply">
+            <p className="small muted">{t('msgOwnerReply', { o: q.owner_label, d: q.owner_replied_at ? when(q.owner_replied_at) : '' })}</p>
+            <p>{q.owner_reply}</p>
+          </div>
+        )}
+        {!done && (
+          <div className="row-actions">
+            <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => void run(() => closeInquiry(q.id), t('iqClosed'))}>{t('iqDone')}</button>
+          </div>
+        )}
+      </li>
+    );
+  }
   return (
-    <li className={`iq-item is-${done ? 'done' : q.urgency}`}>
+    <li id={`dl-${q.id}`} className={`iq-item is-${done ? 'done' : q.urgency}`}>
       <div className="iq-head">
         <span className="record-title">
           {q.has_access ? <Link to={`/praxis/patienten/${q.pet_id}`} className="link">{q.pet_label}</Link> : q.pet_label}
@@ -238,6 +279,58 @@ function OfferDialog({ q, types, busy, run, onClose }: { q: PracticeInquiry; typ
         )}
         {err && <p className="error" role="alert">{t(err)}</p>}
       </form>
+    </Dialog>
+  );
+}
+
+/** Nachricht an die Halter:innen eines Patienten mit Freigabe (Auftrag 13) */
+function WriteDialog({ petId, busy, run, onClose }: { petId: string; busy: boolean; run: Run; onClose: () => void }) {
+  const { t } = useI18n();
+  const uid = useId();
+  const [patients, setPatients] = useState<PatientRow[] | null>(null);
+  const [pet, setPet] = useState(petId);
+  const [text, setText] = useState('');
+  const [err, setErr] = useState<{ pet?: MessageKey; text?: MessageKey }>({});
+  useEffect(() => {
+    let alive = true;
+    practicePatients()
+      .then((p) => { if (alive) setPatients(p.filter((x) => !x.deceased)); })
+      .catch(() => { if (alive) setPatients([]); });
+    return () => { alive = false; };
+  }, []);
+  const send = async () => {
+    const v = text.trim();
+    const e: { pet?: MessageKey; text?: MessageKey } = {};
+    if (!pet) e.pet = 'msgErrPet';
+    if (!v) e.text = 'iqErrMessage';
+    else if (v.length > MESSAGE_MAX) e.text = 'obErrLong';
+    setErr(e);
+    if (e.pet || e.text) return;
+    if (await run(() => sendPracticeMessage(pet, v), t('msgSent'))) onClose();
+  };
+  return (
+    <Dialog open title={t('msgWrite')} onClose={onClose} actions={
+      <>
+        <button type="button" className="btn btn-ghost" onClick={onClose}>{t('cancelBtn')}</button>
+        <button type="button" className="btn btn-primary" disabled={busy || !patients} onClick={() => void send()}>{t('msgSend')}</button>
+      </>
+    }>
+      {!patients ? <p className="muted">{t('loading')}</p> : (
+        <div className="stack">
+          <Field id={`${uid}-p`} label={t('msgPatient')} error={err.pet ? { key: err.pet } : undefined} required>
+            {(a) => (
+              <select {...a} value={pet} onChange={(e) => setPet(e.target.value)}>
+                <option value="">{t('msgChoose')}</option>
+                {patients.map((p) => <option key={p.pet_id} value={p.pet_id}>{p.name}{p.owner_name ? ` · ${p.owner_name}` : ''}</option>)}
+              </select>
+            )}
+          </Field>
+          <Field id={`${uid}-t`} label={t('msgText')} hint={t('msgHint')} error={err.text ? { key: err.text } : undefined} required>
+            {(a) => <textarea {...a} rows={5} maxLength={MESSAGE_MAX} value={text} onChange={(e) => setText(e.target.value)} />}
+          </Field>
+          <p className="small muted">{t('msgPrivacy')}</p>
+        </div>
+      )}
     </Dialog>
   );
 }

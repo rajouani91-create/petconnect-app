@@ -22,6 +22,7 @@
 /erinnerungen         /app/erinnerungen           302
 /alltag               /app/alltag                 302
 /mehr                 /app/mehr                   302
+/mitteilungen         /app/mitteilungen           302
 /mehr/*               /app/mehr/:splat            302
 /admin                /app/admin                  302
 /admin/*              /app/admin/:splat           302

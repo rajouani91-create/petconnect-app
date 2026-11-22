@@ -29,6 +29,7 @@ import { VaccCertificate } from './pages/more/VaccCertificate';
 import { SitterPublic } from './pages/SitterPublic';
 import { Practices } from './pages/Practices';
 import { Notifications } from './pages/more/Notifications';
+import { NotificationCenter } from './pages/NotificationCenter';
 import { MonthlyReport } from './pages/more/MonthlyReport';
 import { Assistant } from './pages/more/Assistant';
 import { Family } from './pages/more/Family';
@@ -89,6 +90,7 @@ export function App() {
               <Route path="/praxis/termine" element={<PracticeAppointments />} />
               <Route path="/praxis/termine/einstellungen" element={<PracticeSchedule />} />
               <Route path="/praxis/benachrichtigungen" element={<Notifications practice />} />
+              <Route path="/praxis/mitteilungen" element={<NotificationCenter practice />} />
               <Route path="/praxis/erinnerungen" element={<PracticeRecall />} />
               <Route path="/praxis/anfragen" element={<PracticeInquiries />} />
               <Route path="/praxis/abrechnung" element={<PracticeBilling />} />
@@ -132,6 +134,7 @@ export function App() {
               <Route path="alltag" element={<Routine />} />
               <Route path="mehr" element={<More />} />
               <Route path="mehr/benachrichtigungen" element={<Notifications />} />
+              <Route path="mitteilungen" element={<NotificationCenter />} />
               <Route path="mehr/monatsuebersicht" element={<MonthlyReport />} />
               <Route path="mehr/assistent" element={<Assistant />} />
               <Route path="mehr/familie" element={<Family />} />

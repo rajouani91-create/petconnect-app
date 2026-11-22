@@ -1037,6 +1037,7 @@ ul.choose-list { list-style: none; margin: 0; padding: 0; }
 .iq-item.is-emergency { border-inline-start-color: var(--crit, #b3261e); }
 .iq-item.is-soon { border-inline-start-color: var(--warn, #b7791f); }
 .iq-item.is-done { opacity: 0.75; }
+.iq-item.is-msg { border-inline-start-color: var(--brand); }
 .iq-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-2); align-items: baseline; }
 .iq-msg { white-space: pre-wrap; overflow-wrap: anywhere; margin: var(--s-2) 0; }
 .iq-reply { border-inline-start: 3px solid var(--brand); padding-inline-start: var(--s-3); white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -1212,3 +1213,33 @@ button.tg-head:hover { background: var(--surface-2); }
 .next-appt-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .next-appt-title { font-weight: 600; }
 .pet-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* Ziel aus einer Benachrichtigung kurz hervorheben */
+.dl-hit { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: var(--r); transition: outline-color 0.6s; }
+@media (prefers-reduced-motion: reduce) { .dl-hit { transition: none; } }
+
+/* ---------- Benachrichtigungen (Auftrag 13) ---------- */
+.bell { position: relative; display: inline-flex; align-items: center; justify-content: center; width: var(--tap); height: var(--tap); border-radius: 50%; color: var(--fg); margin-inline-start: auto; }
+.bell:hover { background: var(--brand-soft); color: var(--brand); }
+.bell:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.bell-badge { position: absolute; top: 4px; inset-inline-end: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--r-pill); background: var(--crit); color: var(--on-crit); font-size: 0.7rem; font-weight: 700; line-height: 18px; text-align: center; box-shadow: 0 0 0 2px var(--bg); }
+.topbar-practice + .bell { margin-inline-start: var(--s-2); }
+.nc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s-3); flex-wrap: wrap; }
+.nc-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.nc-tools .quick-chips { flex: 1 1 300px; min-width: 0; }
+.nc-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.nc-item { display: flex; align-items: flex-start; gap: var(--s-3); padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4); border-top: 1px solid var(--line); }
+.nc-item:first-child { border-top: 0; }
+.nc-item.is-unread { background: color-mix(in srgb, var(--brand-soft) 45%, var(--surface)); }
+.nc-icon { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--brand); margin-top: 2px; }
+.nc-icon.nc-medication, .nc-icon.nc-feeding { background: var(--accent-soft); color: var(--accent-ink); }
+.nc-icon.nc-message, .nc-icon.nc-appointment { background: var(--brand-soft); }
+.nc-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: start; background: none; border: 0; padding: 0; font: inherit; color: var(--fg); cursor: pointer; min-height: var(--tap); }
+.nc-main:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; border-radius: 6px; }
+.nc-title { font-weight: 500; }
+.nc-item.is-unread .nc-title { font-weight: 700; }
+.nc-body { font-size: 0.92rem; color: var(--muted); overflow-wrap: anywhere; }
+.nc-meta { font-size: 0.8rem; color: var(--muted); }
+.nc-actions { flex: none; display: flex; align-items: center; gap: 2px; }
+.nc-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--brand); margin-inline-end: 6px; }
+.nc-read:hover { background: var(--brand-soft); color: var(--brand); }

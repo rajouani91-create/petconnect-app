@@ -21,6 +21,7 @@ import { dayOf, timeOf } from '../lib/practiceAppointments';
 import { cancelReasonKey } from '../lib/practiceAppointments';
 import { CancelSheet } from '../components/booking/CancelSheet';
 import { MoveSheet } from '../components/booking/MoveSheet';
+import { useDeepLink } from '../components/useDeepLink';
 import { recordErrorKey } from '../lib/record';
 import {
   APPT_KINDS,
@@ -91,6 +92,8 @@ export function Appointments() {
     void load();
   }, [load]);
 
+  // ?termin=<ID> aus einer Benachrichtigung: zum Termin springen (Filter dafür auf „Alle Tiere“)
+  const deep = useDeepLink('termin', rows ? rows.map((r) => r.id) : null);
   const shown = (rows ?? []).filter((r) => filter === ALL_PETS || r.pet_id === filter);
   const { upcoming, past } = splitAppointments(shown, today);
   const anyEditable = editablePets.length > 0;
@@ -162,7 +165,7 @@ export function Appointments() {
     const st = isApptStatus(r.status) ? r.status : 'planned';
     const isPast = st === 'planned' && localDate(new Date(r.starts_at)) < today;
     return (
-      <li key={r.id} className={`record-row appt-row${st !== 'planned' ? ' is-closed' : ''}`}>
+      <li key={r.id} id={`dl-${r.id}`} className={`record-row appt-row${st !== 'planned' ? ' is-closed' : ''}`}>
         <span className="date-block" aria-hidden="true">
           <span className="date-block-mon">{new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(r.starts_at))}</span>
           <span className="date-block-day">{new Date(r.starts_at).getDate()}</span>
@@ -249,6 +252,7 @@ export function Appointments() {
       <PetFilter pets={pets} value={filter} onChange={setFilter} />
 
       {loadError && <p className="notice notice-crit" role="alert">{t('errGeneric')}</p>}
+      {deep.missing && <p className="notice notice-warn" role="alert">{t('ncGone')}</p>}
       {!rows && !loadError && <Loading />}
 
       {rows && (
@@ -356,7 +360,7 @@ export function Appointments() {
           </section>
 
           {past.length > 0 && (
-            <details className="card disclosure">
+            <details className="card disclosure" open={past.some((r) => r.id === deep.target) || undefined}>
               <summary>{t('apPastH', { n: past.length })}</summary>
               <ul className="record-list">{past.map(item)}</ul>
             </details>
