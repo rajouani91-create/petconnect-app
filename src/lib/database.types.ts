@@ -1299,6 +1299,14 @@ export type Database = {
         Args: { p_id: string; p_text: string }
         Returns: undefined
       }
+      owner_decline_offer: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      owner_request_other_time: {
+        Args: { p_id: string; p_days: string[]; p_next_week: boolean; p_daypart: string; p_note: string | null }
+        Returns: undefined
+      }
       push_quick_action: {
         Args: { p_token: string; p_action: string }
         Returns: Json

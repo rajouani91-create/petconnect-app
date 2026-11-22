@@ -6,9 +6,10 @@ import { Field } from '../../components/Field';
 import { IconBack, IconPhone } from '../../components/Icons';
 import { Loading } from '../../components/Loading';
 import { useDeepLink } from '../../components/useDeepLink';
+import { OfferCard } from '../../components/booking/OfferCard';
 import {
   MESSAGE_MAX, STATUS_LABEL, STATUS_TONE, TOPICS, TOPIC_LABEL, URGENCIES, URGENCY_LABEL, URGENCY_TONE, closeOwnerInquiry, emptyInquiry,
-  inquiryErrorKey, inquiryErrors, inquiryTargets, ownerInquiries, replyPracticeMessage, sendInquiry, takeInquirySlot, targetKey,
+  hasOpenOffer, inquiryErrorKey, inquiryErrors, inquiryTargets, ownerInquiries, replyPracticeMessage, sendInquiry, targetKey,
   type InquiryForm, type InquiryTarget, type OwnerInquiry,
 } from '../../lib/inquiries';
 
@@ -170,19 +171,9 @@ function Item({ q, busy, run }: { q: OwnerInquiry; busy: boolean; run: (fn: () =
           <p>{q.reply}</p>
         </div>
       ) : !done && <p className="small muted">{t('iqWaiting')}</p>}
-      {q.offered_slots && q.offered_slots.length > 0 && (
-        <div className="stack">
-          <p className="small"><strong>{t('iqOfferedOwner', { type: q.offered_type_name ?? '' })}</strong></p>
-          <div className="iq-slots">
-            {q.offered_slots.map((iso) => (
-              <button key={iso} type="button" className="btn btn-secondary" disabled={busy || !q.can_edit}
-                onClick={() => void run(() => takeInquirySlot(q.id, iso), t('iqTaken', { d: when(iso) }))}>
-                {when(iso)}
-              </button>
-            ))}
-          </div>
-          <p className="small muted">{t('iqTakeHint')}</p>
-        </div>
+      {hasOpenOffer(q) && <OfferCard q={q} busy={busy} run={run} compact />}
+      {!hasOpenOffer(q) && !done && q.owner_wish_at && (!q.offered_at || q.owner_wish_at > q.offered_at) && (
+        <p className="small muted">{t('ofWishWaiting')}</p>
       )}
       {!done && q.can_edit && (
         <div className="row-actions">

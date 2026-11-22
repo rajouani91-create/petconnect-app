@@ -23,13 +23,48 @@ export interface PracticeInquiry {
   offered_slots: string[] | null; offered_type_name: string | null; booked_appointment_id: string | null; created_at: string;
   /** Auftrag 13: Nachricht der Praxis (origin 'practice') mit Antwort der Halter:in */
   origin?: 'owner' | 'practice'; owner_reply?: string | null; owner_replied_at?: string | null; sent_by_name?: string | null;
+  /** Terminvorschläge: Zeitpunkt des Vorschlags, Wunsch/Ablehnung der Halter:in, gebuchte Zeit */
+  offered_at?: string | null; owner_wish?: OwnerWish | null; owner_wish_at?: string | null; offer_declined_at?: string | null; booked_at?: string | null;
 }
 export interface OwnerInquiry {
   id: string; pet_id: string; pet_name: string; practice_name: string; practice_phone: string | null; topic: Topic; urgency: Urgency; message: string;
   status: InquiryStatus; reply: string | null; replied_at: string | null; offered_slots: string[] | null; offered_type_name: string | null;
   can_edit: boolean; created_at: string;
   origin?: 'owner' | 'practice'; owner_reply?: string | null; owner_replied_at?: string | null; sent_by_name?: string | null;
+  offered_minutes?: number | null; offered_at?: string | null; owner_wish?: OwnerWish | null; owner_wish_at?: string | null; offer_declined_at?: string | null;
 }
+
+// ---------- Terminvorschläge ----------
+export const DAYPARTS = ['any', 'am', 'pm'] as const;
+export type Daypart = (typeof DAYPARTS)[number];
+export const DAYPART_LABEL: Record<Daypart, MessageKey> = { any: 'ofAny', am: 'ofAm', pm: 'ofPm' };
+export const WISH_NOTE_MAX = 300;
+export interface OwnerWish { days: string[]; next_week: boolean; daypart: Daypart; note: string | null }
+
+/** Offener Vorschlag, den die Halter:in annehmen kann */
+export const hasOpenOffer = (q: Pick<OwnerInquiry, 'status' | 'offered_slots' | 'origin'>) =>
+  q.status !== 'done' && q.origin !== 'practice' && (q.offered_slots?.length ?? 0) > 0;
+
+/** Was zuletzt passiert ist (für die Praxis): Vorschlag offen, Wunsch der Halter:in, abgelehnt – oder nichts davon */
+export function offerState(q: Pick<PracticeInquiry, 'status' | 'offered_slots' | 'offered_at' | 'owner_wish_at' | 'offer_declined_at'>):
+  'offer' | 'wish' | 'declined' | null {
+  if (q.status === 'done') return null;
+  if ((q.offered_slots?.length ?? 0) > 0) return 'offer';
+  const w = q.owner_wish_at ?? '', d = q.offer_declined_at ?? '', o = q.offered_at ?? '';
+  if (w && w > o && w >= d) return 'wish';
+  if (d && d > o) return 'declined';
+  return null;
+}
+
+/** Tage zur Auswahl beim Wunsch: ab morgen sieben Tage (YYYY-MM-DD) */
+export function wishDays(today: string, n = 7): string[] {
+  const out: string[] = [];
+  const base = new Date(`${today}T12:00:00Z`);
+  for (let i = 1; i <= n; i++) out.push(new Date(base.getTime() + i * 86_400_000).toISOString().slice(0, 10));
+  return out;
+}
+export const wishValid = (days: readonly string[], nextWeek: boolean, note: string): MessageKey | null =>
+  note.trim().length > WISH_NOTE_MAX ? 'obErrLong' : !days.length && !nextWeek && !note.trim() ? 'ofErrWish' : null;
 export interface InquiryTarget { pet_id: string; pet_name: string; practice_id: string; practice_name: string; practice_phone: string | null }
 
 const RANK: Record<Urgency, number> = { emergency: 0, soon: 1, normal: 2 };
@@ -115,6 +150,16 @@ export async function takeInquirySlot(id: string, slot: string): Promise<string>
   const { data, error } = await supabase.rpc('owner_take_inquiry_slot', { p_id: id, p_slot: slot });
   if (error) throw error;
   return data;
+}
+/** Vorschlag ablehnen: die Anfrage bleibt offen, die Praxis bekommt eine Mitteilung */
+export async function declineOffer(id: string): Promise<void> {
+  const { error } = await supabase.rpc('owner_decline_offer', { p_id: id });
+  if (error) throw error;
+}
+/** Andere Zeit wünschen: Tage, „nächste Woche“, Tageszeit, Notiz */
+export async function requestOtherTime(id: string, days: string[], nextWeek: boolean, daypart: Daypart, note: string): Promise<void> {
+  const { error } = await supabase.rpc('owner_request_other_time', { p_id: id, p_days: days, p_next_week: nextWeek, p_daypart: daypart, p_note: note.trim() || null });
+  if (error) throw error;
 }
 /** Antwort der Halter:in auf eine Nachricht der Praxis */
 export async function replyPracticeMessage(id: string, text: string): Promise<void> {

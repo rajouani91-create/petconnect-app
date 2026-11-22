@@ -22,6 +22,8 @@ import { cancelReasonKey } from '../lib/practiceAppointments';
 import { CancelSheet } from '../components/booking/CancelSheet';
 import { MoveSheet } from '../components/booking/MoveSheet';
 import { useDeepLink } from '../components/useDeepLink';
+import { OfferCard } from '../components/booking/OfferCard';
+import { hasOpenOffer, inquiryErrorKey, ownerInquiries, type OwnerInquiry } from '../lib/inquiries';
 import { recordErrorKey } from '../lib/record';
 import {
   APPT_KINDS,
@@ -65,6 +67,8 @@ export function Appointments() {
   const [toDelete, setToDelete] = useState<AppointmentRow | null>(null);
   const [bookings, setBookings] = useState<Map<string, OwnerBooking>>(new Map());
   const [waitlist, setWaitlist] = useState<OwnerWaitlistEntry[]>([]);
+  const [offers, setOffers] = useState<OwnerInquiry[]>([]);
+  const [ofBusy, setOfBusy] = useState(false);
   const [wlBusy, setWlBusy] = useState(false);
   const [toCancel, setToCancel] = useState<AppointmentRow | null>(null);
   const [toMove, setToMove] = useState<AppointmentRow | null>(null);
@@ -80,6 +84,8 @@ export function Appointments() {
         ownerPracticeBookings().catch((e: unknown) => { console.error(e); return [] as OwnerBooking[]; }),
       ]);
       ownerWaitlist().then(setWaitlist).catch(() => setWaitlist([]));
+      // Terminvorschläge der Praxis zu Anfragen: oben anzeigen
+      ownerInquiries().then((x) => setOffers(x.filter(hasOpenOffer))).catch(() => setOffers([]));
       setRows(list);
       setBookings(new Map(b.map((x) => [x.appointment_id, x])));
       setLoadError(false);
@@ -149,6 +155,24 @@ export function Appointments() {
       setWlBusy(false);
     }
   }
+  /** Terminvorschlag annehmen/ablehnen/Wunsch: ausführen, neu laden, Meldung */
+  const offerRun = useCallback(async (fn: () => Promise<unknown>, ok: string) => {
+    setOfBusy(true);
+    try {
+      await fn();
+      await load();
+      setStatus(ok);
+      return true;
+    } catch (e) {
+      console.error(e);
+      setStatus(t(inquiryErrorKey(e)), false);
+      await load();
+      return false;
+    } finally {
+      setOfBusy(false);
+    }
+  }, [load, setStatus, t]);
+  const shownOffers = offers.filter((o) => filter === ALL_PETS || o.pet_id === filter);
   const slotText = (iso: string) => `${formatDate(new Date(iso), lang, { weekday: 'short', day: 'numeric', month: 'short' })}, ${timeOf(iso)}`;
 
   function exportIcs(row: AppointmentRow) {
@@ -254,6 +278,14 @@ export function Appointments() {
       {loadError && <p className="notice notice-crit" role="alert">{t('errGeneric')}</p>}
       {deep.missing && <p className="notice notice-warn" role="alert">{t('ncGone')}</p>}
       {!rows && !loadError && <Loading />}
+
+      {rows && shownOffers.length > 0 && (
+        <section className="stack" aria-label={t('ofBadge')}>
+          {shownOffers.map((o) => (
+            <div key={o.id} className="card offer-box"><OfferCard q={o} busy={ofBusy} run={offerRun} /></div>
+          ))}
+        </section>
+      )}
 
       {rows && (
         <>
