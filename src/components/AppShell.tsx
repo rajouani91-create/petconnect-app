@@ -6,6 +6,7 @@ import { AssistantFab } from './AssistantFab';
 import { BottomNav } from './BottomNav';
 import { IconEmergency, LogoMark } from './Icons';
 import { Loading } from './Loading';
+import { NotificationBell } from './NotificationBell';
 
 /** Rahmen des geschützten Bereichs: Kopfzeile mit Notfall-Button, Inhalt, Navigation. */
 export function AppShell() {
@@ -15,7 +16,7 @@ export function AppShell() {
 
   const needsFirstPet = loaded && !error && pets.length === 0;
   // Einladungen und der Support-Bereich müssen auch ohne eigenes Tier erreichbar sein (Rolle prüft die Seite selbst).
-  const exempt = pathname === '/tier/neu' || pathname === '/mehr' || pathname === '/mehr/benachrichtigungen' || pathname === '/notfall' || pathname === '/admin' || pathname.startsWith('/einladung/');
+  const exempt = pathname === '/tier/neu' || pathname === '/mehr' || pathname === '/mehr/benachrichtigungen' || pathname === '/mitteilungen' || pathname === '/notfall' || pathname === '/admin' || pathname.startsWith('/einladung/');
   if (needsFirstPet && !exempt) {
     return <Navigate to="/tier/neu" replace />;
   }
@@ -31,6 +32,7 @@ export function AppShell() {
           <LogoMark />
           <span>PetConnect24</span>
         </Link>
+        <NotificationBell to="/mitteilungen" />
         <Link to="/notfall" className="btn btn-emergency" aria-label={t('emergencyOpen')}>
           <IconEmergency size={20} />
           <span>{t('nav_notfall')}</span>

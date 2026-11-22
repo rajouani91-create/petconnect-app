@@ -179,6 +179,35 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          info: Json
+          kind: string
+          pet_id: string | null
+          pet_name: string | null
+          practice_id: string | null
+          read_at: string | null
+          ref_id: string | null
+          slot: string
+          subject: string | null
+          url: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          kind: string
+          slot: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          read_at?: string | null
+        }
+        Relationships: []
+      }
       pet_documents: {
         Row: {
           category: string
@@ -1261,6 +1290,10 @@ export type Database = {
       owner_practice_bookings: {
         Args: Record<PropertyKey, never>
         Returns: { appointment_id: string; status: string; source: string; practice_name: string; practice_phone: string | null; cancel_reason: string | null; cancel_note: string | null; can_cancel: boolean; alternatives: string[] | null; reminders: string[]; can_move: boolean; practice_id: string; owner_note: string | null; moved_from: string | null; minutes: number }[]
+      }
+      push_quick_action: {
+        Args: { p_token: string; p_action: string }
+        Returns: Json
       }
       owner_move_slots: {
         Args: { p_appointment: string; p_from: string; p_days?: number }

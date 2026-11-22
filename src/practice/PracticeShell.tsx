@@ -8,6 +8,7 @@ import { openCount, practiceInquiries } from '../lib/inquiries';
 import { practiceInvoices, viewStatus } from '../lib/billing';
 import { zonedNow } from '../lib/time';
 import { usePractice } from './PracticeProvider';
+import { NotificationBell } from '../components/NotificationBell';
 
 /** Rahmen der Praxissicht (Seitenleiste wie im Prototyp). Ohne Praxis geht es zur Einrichtung bzw. zur Einladung. */
 export function PracticeShell() {
@@ -73,6 +74,7 @@ export function PracticeShell() {
           <span>PetConnect24</span>
         </span>
         <span className="muted small topbar-practice">{me.practice.name}</span>
+        <NotificationBell to="/praxis/mitteilungen" />
       </header>
       <nav className="nav nav-practice" aria-label={t('nav_main')}>
         <div className="nav-brand" aria-hidden="true">

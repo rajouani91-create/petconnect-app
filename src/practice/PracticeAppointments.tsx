@@ -15,6 +15,7 @@ import {
 } from '../lib/practiceAppointments';
 import { usePractice } from './PracticeProvider';
 import { OwnerChangeNote } from './OwnerChangeNote';
+import { useDeepLink } from '../components/useDeepLink';
 
 type Run = (fn: () => Promise<unknown>, ok: string) => Promise<boolean>;
 
@@ -30,7 +31,9 @@ export function PracticeAppointments() {
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
   const [loadErr, setLoadErr] = useState(false);
   const [params] = useSearchParams();
-  const [filter, setFilter] = useState<Filter>(() => (FILTERS as string[]).includes(params.get('filter') ?? '') ? (params.get('filter') as Filter) : 'confirmed');
+  // ?termin=<ID> aus einer Benachrichtigung: „Alle“ zeigen und zum Termin springen
+  const [filter, setFilter] = useState<Filter>(() => params.get('termin') ? 'all' : (FILTERS as string[]).includes(params.get('filter') ?? '') ? (params.get('filter') as Filter) : 'confirmed');
+  const deep = useDeepLink('termin', rows ? rows.map((a) => a.id) : null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [booking, setBooking] = useState(false);
@@ -84,6 +87,7 @@ export function PracticeAppointments() {
           </div>
         )}
       </div>
+      {deep.missing && <p className="notice notice-warn" role="alert">{t('ncGone')}</p>}
       {pending ? (
         <div className="notice notice-warn" role="status">
           <p><strong>{t('pp_pendingTitle')}</strong></p>
@@ -162,7 +166,7 @@ function Row({ a, now, busy, run, onMove, onCancel, remind }: {
   const future = (a.status === 'confirmed' || a.status === 'new') && new Date(a.starts_at) > now;
   const closed = a.status === 'cancelled_practice' || a.status === 'cancelled_owner';
   return (
-    <li className={`record-row${closed ? ' is-closed' : ''}`}>
+    <li id={`dl-${a.id}`} className={`record-row${closed ? ' is-closed' : ''}`}>
       <span className="appt-time mono">{timeOf(a.starts_at)}<span className="muted small">–{timeOf(endOf(a))}</span></span>
       <div className="record-main">
         <span className="record-title">

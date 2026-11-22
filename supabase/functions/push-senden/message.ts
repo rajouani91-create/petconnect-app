@@ -12,7 +12,7 @@ const LOCALE: Record<string, string> = { de: 'de-DE', en: 'en-GB', fr: 'fr-FR', 
 
 export function buildMessage(j: Job): { title: string; body: string; url: string; tag: string } {
   const lang = TEXTS[j.language] ? j.language : 'de';
-  const T = TEXTS[lang];
+  const T = (TEXTS[lang] ?? TEXTS['de'])!;
   const tag = `${j.kind}-${j.ref_id}-${j.slot}`;
   if (j.kind === 'medication') {
     const a = Number(j.info.amount);

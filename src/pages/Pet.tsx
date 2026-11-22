@@ -79,11 +79,15 @@ export function Pet() {
     if (HEALTH_HASHES.includes(hash)) setTab('health');
   }, [hash, locKey]);
 
-  // „Medikament“ in den Schnellaktionen: nach dem Wechsel zum Reiter Gesundheit zur Medikation springen
+  // Sprungmarke (Kacheln, Benachrichtigungen): nach dem Wechsel zum Reiter Gesundheit zum Abschnitt springen;
+  // ein bestimmter Befund (?eintrag=) springt selbst. Abschnitte, die erst nachladen, bekommen einen zweiten Versuch.
   useEffect(() => {
-    if (hash !== '#medikation' || tab !== 'health') return;
-    document.getElementById('medikation')?.scrollIntoView({ block: 'start' });
-  }, [hash, locKey, tab]);
+    if (!HEALTH_HASHES.includes(hash) || tab !== 'health' || params.get('eintrag')) return;
+    const go = () => document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' });
+    go();
+    const timer = window.setTimeout(go, 700);
+    return () => window.clearTimeout(timer);
+  }, [hash, locKey, tab, params]);
 
   function onTabKey(e: KeyboardEvent<HTMLButtonElement>) {
     const i = PET_TABS.indexOf(tab);
