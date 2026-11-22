@@ -75,12 +75,12 @@ export function buildMessage(j: Job): { title: string; body: string; url: string
     return { title: `${j.pet}: ${T.rc[0]}`, body: T.rc[1].replace('{p}', j.title).replace('{v}', j.info.vaccine ?? '').replace('{d}', d), url: j.url, tag };
   }
   if (j.kind === 'inquiry') {
-    /* Anfrage: neu → Praxis (j.title = Halter:in, ohne Inhalt der Nachricht); Antwort/Vorschlag → Halter:in (j.title = Praxis) */
+    /* Anfrage: neu, Vorschlag abgelehnt, andere Zeit gewünscht → Praxis (j.title = Halter:in, ohne Inhalt); Antwort/Vorschlag → Halter:in (j.title = Praxis) */
     const ev = j.info.event === 'new' && j.info.urgency === 'emergency' ? 'new_emergency' : j.info.event ?? '';
     const t = T.iq[ev];
     if (t) {
       const fill = (x: string) => x.replace('{pet}', j.pet).replace('{o}', j.title).replace('{p}', j.title);
-      return { title: ev.startsWith('new') || ev === 'owner_reply' ? fill(t[0]) : `${j.pet}: ${fill(t[0])}`, body: fill(t[1]), url: j.url, tag };
+      return { title: ev.startsWith('new') || ev === 'owner_reply' || ev === 'offer_declined' || ev === 'wish' ? fill(t[0]) : `${j.pet}: ${fill(t[0])}`, body: fill(t[1]), url: j.url, tag };
     }
   }
   if (j.kind === 'invoice') {

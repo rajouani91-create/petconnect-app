@@ -1243,3 +1243,20 @@ button.tg-head:hover { background: var(--surface-2); }
 .nc-actions { flex: none; display: flex; align-items: center; gap: 2px; }
 .nc-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--brand); margin-inline-end: 6px; }
 .nc-read:hover { background: var(--brand-soft); color: var(--brand); }
+
+/* Terminvorschläge der Praxis (Halter:in) */
+.offer-card { display: flex; flex-direction: column; gap: var(--s-2); }
+.offer-box { border: 2px solid var(--brand); background: linear-gradient(var(--brand-soft), var(--surface) 4.5rem); }
+.offer-card.is-compact { border-top: 1px solid var(--line); padding-top: var(--s-3); }
+.offer-slots { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--s-2); }
+.offer-slot { display: flex; align-items: center; gap: var(--s-3); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s-2) var(--s-3);
+  background: var(--surface); font-weight: 600; cursor: pointer; min-height: 44px; }
+.offer-slot input { accent-color: var(--brand); width: 1.15rem; height: 1.15rem; margin: 0; }
+.offer-slot.is-picked { border: 2px solid var(--brand); background: var(--brand-soft); }
+.offer-slots:disabled .offer-slot { cursor: default; opacity: .75; }
+.offer-actions { display: flex; flex-direction: column; gap: var(--s-2); }
+.offer-actions-2 { display: flex; gap: var(--s-2); }
+.offer-actions-2 .btn { flex: 1 1 0; }
+.pill-solid { background: var(--brand); color: var(--surface); font-weight: 600; align-self: flex-start; }
+.btn-danger-text { color: var(--crit); }
+.iq-wish { background: var(--warn-soft); color: var(--fg); border-radius: var(--r); padding: var(--s-2) var(--s-3); }

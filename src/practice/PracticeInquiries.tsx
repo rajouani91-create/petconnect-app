@@ -10,8 +10,9 @@ import { practiceSchedule, type AppointmentType } from '../lib/practiceSchedule'
 import { freeSlots, timeOf } from '../lib/practiceAppointments';
 import {
   MAX_OFFER, MESSAGE_MAX, STATUS_LABEL, STATUS_TONE, TOPIC_LABEL, URGENCY_LABEL, URGENCY_TONE, closeInquiry, inquiryErrorKey, offerInquiry,
-  practiceInquiries, replyInquiry, sendPracticeMessage, sortInquiries, type PracticeInquiry,
+  offerState, practiceInquiries, replyInquiry, sendPracticeMessage, sortInquiries, type PracticeInquiry,
 } from '../lib/inquiries';
+import { wishSummary } from '../components/booking/OfferCard';
 import { usePractice } from './PracticeProvider';
 import { practicePatients, type PatientRow } from '../lib/practiceAccess';
 import { useDeepLink } from '../components/useDeepLink';
@@ -118,6 +119,8 @@ function Item({ q, busy, run, canOffer, onOffer }: { q: PracticeInquiry; busy: b
   const [text, setText] = useState('');
   const [err, setErr] = useState<MessageKey | null>(null);
   const done = q.status === 'done';
+  const st = offerState(q);
+  const [confirmClose, setConfirmClose] = useState(false);
   const when = (iso: string) => formatDate(new Date(iso), lang, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' });
 
   const send = async (e: FormEvent) => {
@@ -169,7 +172,10 @@ function Item({ q, busy, run, canOffer, onOffer }: { q: PracticeInquiry; busy: b
       <div className="cal-tags">
         <span className={`pill ${URGENCY_TONE[q.urgency]}`}>{t(URGENCY_LABEL[q.urgency])}</span>
         <span className="pill">{t(TOPIC_LABEL[q.topic])}</span>
-        <span className={`pill ${STATUS_TONE[q.status]}`}>{t(STATUS_LABEL[q.status])}</span>
+        {st === 'offer' ? <span className="pill pill-solid">{t('ofStOpen')}</span>
+          : st === 'wish' ? <span className="pill pill-warn">{t('ofStWish')}</span>
+          : q.booked_appointment_id ? <span className="pill pill-ok">{t('ofStBooked')}</span>
+          : <span className={`pill ${STATUS_TONE[q.status]}`}>{t(STATUS_LABEL[q.status])}</span>}
       </div>
       <p className="iq-msg">{q.message}</p>
       {q.reply && (
@@ -181,7 +187,13 @@ function Item({ q, busy, run, canOffer, onOffer }: { q: PracticeInquiry; busy: b
       {q.offered_slots && q.offered_slots.length > 0 && !done && (
         <p className="small">{t('iqOffered', { type: q.offered_type_name ?? '', list: q.offered_slots.map(when).join(', ') })}</p>
       )}
-      {q.booked_appointment_id && <p className="small notice notice-ok">{t('iqBooked')}</p>}
+      {st === 'wish' && q.owner_wish && (
+        <p className="small iq-wish"><strong>{t('ofWishFrom')}</strong> {wishSummary(q.owner_wish, lang, t)}</p>
+      )}
+      {st === 'declined' && <p className="small iq-wish">{t('ofDeclinedPractice', { d: when(q.offer_declined_at!) })}</p>}
+      {q.booked_appointment_id && (
+        <p className="small notice notice-ok">{q.booked_at ? t('ofBookedAt', { d: when(q.booked_at) }) : t('iqBooked')}</p>
+      )}
       {!q.has_access && !done && <p className="small muted">{t('iqNoAccess')}</p>}
       {replying && (
         <form className="stack" onSubmit={(e) => void send(e)} noValidate>
@@ -197,10 +209,23 @@ function Item({ q, busy, run, canOffer, onOffer }: { q: PracticeInquiry; busy: b
       {!done && !replying && (
         <div className="row-actions">
           <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => setReplying(true)}>{t(q.reply ? 'iqReplyAgain' : 'iqReply')}</button>
-          <button type="button" className="btn btn-secondary" disabled={busy || !q.has_access || !canOffer} onClick={onOffer}>{t('iqOffer')}</button>
-          <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => void run(() => closeInquiry(q.id), t('iqClosed'))}>{t('iqDone')}</button>
+          <button type="button" className={`btn ${st === 'wish' || st === 'declined' ? 'btn-primary' : 'btn-secondary'}`} disabled={busy || !q.has_access || !canOffer} onClick={onOffer}>
+            {t(st === 'offer' || st === 'wish' || st === 'declined' ? 'ofNewTimes' : 'iqOffer')}
+          </button>
+          <button type="button" className="btn btn-ghost" disabled={busy}
+            onClick={() => (st === 'offer' ? setConfirmClose(true) : void run(() => closeInquiry(q.id), t('iqClosed')))}>{t('iqDone')}</button>
         </div>
       )}
+      <Dialog open={confirmClose} title={t('ofCloseTitle')} onClose={() => setConfirmClose(false)}
+        actions={(
+          <>
+            <button type="button" className="btn btn-danger" disabled={busy}
+              onClick={() => { setConfirmClose(false); void run(() => closeInquiry(q.id), t('iqClosed')); }}>{t('ofCloseYes')}</button>
+            <button type="button" className="btn btn-primary" onClick={() => setConfirmClose(false)}>{t('ofCloseKeep')}</button>
+          </>
+        )}>
+        <p>{t('ofCloseText', { pet: q.pet_label })}</p>
+      </Dialog>
     </li>
   );
 }
