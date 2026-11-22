@@ -1037,6 +1037,7 @@ ul.choose-list { list-style: none; margin: 0; padding: 0; }
 .iq-item.is-emergency { border-inline-start-color: var(--crit, #b3261e); }
 .iq-item.is-soon { border-inline-start-color: var(--warn, #b7791f); }
 .iq-item.is-done { opacity: 0.75; }
+.iq-item.is-msg { border-inline-start-color: var(--brand); }
 .iq-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-2); align-items: baseline; }
 .iq-msg { white-space: pre-wrap; overflow-wrap: anywhere; margin: var(--s-2) 0; }
 .iq-reply { border-inline-start: 3px solid var(--brand); padding-inline-start: var(--s-3); white-space: pre-wrap; overflow-wrap: anywhere; }

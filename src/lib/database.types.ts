@@ -1291,6 +1291,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: { appointment_id: string; status: string; source: string; practice_name: string; practice_phone: string | null; cancel_reason: string | null; cancel_note: string | null; can_cancel: boolean; alternatives: string[] | null; reminders: string[]; can_move: boolean; practice_id: string; owner_note: string | null; moved_from: string | null; minutes: number }[]
       }
+      practice_send_message: {
+        Args: { p_pet: string; p_text: string }
+        Returns: string
+      }
+      owner_reply_message: {
+        Args: { p_id: string; p_text: string }
+        Returns: undefined
+      }
       push_quick_action: {
         Args: { p_token: string; p_action: string }
         Returns: Json

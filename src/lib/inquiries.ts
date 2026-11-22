@@ -21,11 +21,14 @@ export interface PracticeInquiry {
   id: string; pet_id: string; has_access: boolean; pet_label: string; owner_label: string; topic: Topic; urgency: Urgency; message: string;
   status: InquiryStatus; reply: string | null; replied_at: string | null; replied_by_name: string | null;
   offered_slots: string[] | null; offered_type_name: string | null; booked_appointment_id: string | null; created_at: string;
+  /** Auftrag 13: Nachricht der Praxis (origin 'practice') mit Antwort der Halter:in */
+  origin?: 'owner' | 'practice'; owner_reply?: string | null; owner_replied_at?: string | null; sent_by_name?: string | null;
 }
 export interface OwnerInquiry {
   id: string; pet_id: string; pet_name: string; practice_name: string; practice_phone: string | null; topic: Topic; urgency: Urgency; message: string;
   status: InquiryStatus; reply: string | null; replied_at: string | null; offered_slots: string[] | null; offered_type_name: string | null;
   can_edit: boolean; created_at: string;
+  origin?: 'owner' | 'practice'; owner_reply?: string | null; owner_replied_at?: string | null; sent_by_name?: string | null;
 }
 export interface InquiryTarget { pet_id: string; pet_name: string; practice_id: string; practice_name: string; practice_phone: string | null }
 
@@ -79,6 +82,12 @@ export async function offerInquiry(id: string, typeId: string, slots: string[]):
   const { error } = await supabase.rpc('practice_offer_inquiry', { p_id: id, p_type_id: typeId, p_slots: slots });
   if (error) throw error;
 }
+/** Nachricht an die Halter:innen eines Patienten mit Freigabe */
+export async function sendPracticeMessage(petId: string, text: string): Promise<string> {
+  const { data, error } = await supabase.rpc('practice_send_message', { p_pet: petId, p_text: text.trim() });
+  if (error) throw error;
+  return data;
+}
 export async function closeInquiry(id: string): Promise<void> {
   const { error } = await supabase.rpc('practice_close_inquiry', { p_id: id });
   if (error) throw error;
@@ -106,6 +115,11 @@ export async function takeInquirySlot(id: string, slot: string): Promise<string>
   const { data, error } = await supabase.rpc('owner_take_inquiry_slot', { p_id: id, p_slot: slot });
   if (error) throw error;
   return data;
+}
+/** Antwort der Halter:in auf eine Nachricht der Praxis */
+export async function replyPracticeMessage(id: string, text: string): Promise<void> {
+  const { error } = await supabase.rpc('owner_reply_message', { p_id: id, p_text: text.trim() });
+  if (error) throw error;
 }
 export async function closeOwnerInquiry(id: string): Promise<void> {
   const { error } = await supabase.rpc('owner_close_inquiry', { p_id: id });

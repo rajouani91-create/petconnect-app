@@ -51,6 +51,7 @@ export function PatientHead({ ctx, bill, open }: { ctx: RecordCtx; bill: Treatme
           <button type="button" className="btn btn-primary" onClick={() => open('treat')}>+ {t('blTrTitle')}</button>
         )}
         <Link to="impfnachweis" className="btn btn-secondary">{t('cfLink')}</Link>
+        {!p.deceased && <Link to={`/praxis/anfragen?schreiben=${ctx.petId}`} className="btn btn-secondary">{t('msgWrite')}</Link>}
       </div>
     </section>
   );

@@ -80,7 +80,7 @@ export function buildMessage(j: Job): { title: string; body: string; url: string
     const t = T.iq[ev];
     if (t) {
       const fill = (x: string) => x.replace('{pet}', j.pet).replace('{o}', j.title).replace('{p}', j.title);
-      return { title: ev.startsWith('new') ? fill(t[0]) : `${j.pet}: ${fill(t[0])}`, body: fill(t[1]), url: j.url, tag };
+      return { title: ev.startsWith('new') || ev === 'owner_reply' ? fill(t[0]) : `${j.pet}: ${fill(t[0])}`, body: fill(t[1]), url: j.url, tag };
     }
   }
   if (j.kind === 'invoice') {

@@ -5,7 +5,9 @@
 -- 3. Quick Actions aus der Android-Benachrichtigung: Einmal-Token je Medikament-/Alltags-Meldung (nur Hash gespeichert),
 --    public.push_quick_action prüft Token, Frist und Berechtigung und trägt die Gabe bzw. „erledigt“ ein; „Später“ plant
 --    eine neue Erinnerung in 30 Minuten (höchstens 3-mal je Gabe).
--- Abwärtsverträglich: push_claim liefert dieselben Felder wie bisher plus notification_id, category, action.
+-- 4. Nachrichten der Praxis an Halter:innen (auf den Anfragen aufgebaut), Halter:in kann antworten; Push an beide Seiten.
+-- Abwärtsverträglich: push_claim liefert dieselben Felder wie bisher plus notification_id, category, action;
+-- practice_inquiries()/owner_inquiries() liefern zusätzliche Spalten.
 
 -- ---------- Tabellen ----------
 
@@ -199,9 +201,14 @@ begin
   delete from private.push_snoozes s where s.remind_at < p_now - interval '1 day';
 
   with due as (
-    select * from private.due_pushes(p_now)
+    -- eigene Nachrichten der Praxis lösen keine „Neue Anfrage“ beim Team aus
+    select * from private.due_pushes(p_now) d
+    where not (d.kind = 'inquiry' and d.info->>'event' = 'new'
+               and exists (select 1 from public.practice_inquiries q where q.id = d.ref_id and q.origin = 'practice'))
     union all
     select * from private.due_snoozes(p_now)
+    union all
+    select * from private.due_messages(p_now)
   ),
   ins as (
     insert into private.push_sent (kind, ref_id, slot, user_id)
@@ -321,3 +328,143 @@ end;
 $$;
 revoke all on function public.push_quick_action(text, text) from public;
 grant execute on function public.push_quick_action(text, text) to anon, authenticated;
+
+-- ---------- Nachrichten der Praxis (auf den Anfragen aufgebaut) ----------
+-- Die Praxis schreibt den Halter:innen eines Patienten mit Freigabe; die Halter:in kann antworten.
+-- origin = 'practice': message = Text der Praxis, owner_reply = Antwort der Halter:in.
+
+alter table public.practice_inquiries add column if not exists origin text not null default 'owner' check (origin in ('owner', 'practice'));
+alter table public.practice_inquiries add column if not exists owner_reply text check (char_length(owner_reply) <= 1000);
+alter table public.practice_inquiries add column if not exists owner_replied_at timestamptz;
+alter table public.practice_inquiries add column if not exists sent_by_name text;
+
+create or replace function public.practice_send_message(p_pet uuid, p_text text)
+returns uuid
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  pid uuid := private.active_practice_id();
+  t text := btrim(coalesce(p_text, ''));
+  pet public.pets%rowtype;
+  new_id uuid;
+begin
+  if pid is null then raise exception 'forbidden' using errcode = '42501'; end if;
+  if char_length(t) not between 1 and 1000 then raise exception 'text_invalid' using errcode = '22023'; end if;
+  select * into pet from public.pets p where p.id = p_pet and not coalesce(p.deceased, false);
+  if not found or not exists (select 1 from public.pet_practice_access x where x.pet_id = p_pet and x.practice_id = pid) then
+    raise exception 'patient_not_found' using errcode = 'P0002';
+  end if;
+  if (select count(*) from public.practice_inquiries q where q.practice_id = pid and q.origin = 'practice' and q.created_at > now() - interval '1 day') >= 100 then
+    raise exception 'too_many_requests' using errcode = '54000';
+  end if;
+  insert into public.practice_inquiries (practice_id, pet_id, user_id, pet_label, owner_label, topic, urgency, message, status, origin, sent_by_name)
+  values (pid, pet.id, null, left(pet.name, 60),
+          left(coalesce((select nullif(btrim(pr.display_name), '') from public.profiles pr where pr.id = pet.owner_id), '–'), 80),
+          'question', 'normal', t, 'answered', 'practice', private.staff_name(pid))
+  returning id into new_id;
+  return new_id;
+end;
+$$;
+
+create or replace function public.owner_reply_message(p_id uuid, p_text text)
+returns void
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  q public.practice_inquiries%rowtype;
+  t text := btrim(coalesce(p_text, ''));
+begin
+  if (select auth.uid()) is null then raise exception 'forbidden' using errcode = '42501'; end if;
+  if char_length(t) not between 1 and 1000 then raise exception 'text_invalid' using errcode = '22023'; end if;
+  select * into q from public.practice_inquiries x where x.id = p_id for update;
+  if not found or q.origin <> 'practice' or not private.can_edit_pet(q.pet_id) then raise exception 'entry_not_found' using errcode = 'P0002'; end if;
+  if q.status = 'done' then raise exception 'status_invalid' using errcode = '22023'; end if;
+  update public.practice_inquiries set owner_reply = t, owner_replied_at = now(), status = 'open' where id = p_id;
+end;
+$$;
+
+drop function if exists public.practice_inquiries();
+create or replace function public.practice_inquiries()
+returns table (id uuid, pet_id uuid, has_access boolean, pet_label text, owner_label text, topic text, urgency text, message text, status text,
+               reply text, replied_at timestamptz, replied_by_name text, offered_slots timestamptz[], offered_type_name text,
+               booked_appointment_id uuid, created_at timestamptz, origin text, owner_reply text, owner_replied_at timestamptz, sent_by_name text)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  pid uuid := private.active_practice_id();
+begin
+  return query
+    select q.id, q.pet_id, exists (select 1 from public.pet_practice_access x where x.pet_id = q.pet_id and x.practice_id = pid),
+           q.pet_label, q.owner_label, q.topic, q.urgency, q.message, q.status, q.reply, q.replied_at, q.replied_by_name,
+           q.offered_slots, q.offered_type_name, q.booked_appointment_id, q.created_at, q.origin, q.owner_reply, q.owner_replied_at, q.sent_by_name
+    from public.practice_inquiries q
+    where q.practice_id = pid and (q.status <> 'done' or q.closed_at > now() - interval '30 days')
+    order by (q.status = 'done'), case q.urgency when 'emergency' then 0 when 'soon' then 1 else 2 end, q.created_at
+    limit 300;
+end;
+$$;
+
+drop function if exists public.owner_inquiries();
+create or replace function public.owner_inquiries()
+returns table (id uuid, pet_id uuid, pet_name text, practice_name text, practice_phone text, topic text, urgency text, message text, status text,
+               reply text, replied_at timestamptz, offered_slots timestamptz[], offered_type_name text, can_edit boolean, created_at timestamptz,
+               origin text, owner_reply text, owner_replied_at timestamptz, sent_by_name text)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select q.id, q.pet_id, q.pet_label, pa.name, pa.phone, q.topic, q.urgency, q.message, q.status, q.reply, q.replied_at,
+         case when q.status <> 'done' and q.offered_slots is not null
+              then array(select x from unnest(q.offered_slots) x where x > now() + interval '1 hour' order by x) end,
+         q.offered_type_name, private.can_edit_pet(q.pet_id), q.created_at, q.origin, q.owner_reply, q.owner_replied_at, q.sent_by_name
+  from public.practice_inquiries q
+  join public.practice_accounts pa on pa.id = q.practice_id
+  where private.is_pet_member(q.pet_id)
+  order by q.created_at desc
+  limit 100;
+$$;
+
+-- Push zu Nachrichten: neue Nachricht → Halter:innen; Antwort → Team der Praxis
+create or replace function private.due_messages(p_now timestamptz)
+returns table (user_id uuid, kind text, ref_id uuid, slot timestamptz, pet_name text, title text, info jsonb, url text)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  return query
+  select pm.user_id, 'inquiry'::text, q.id, q.created_at, q.pet_label, pa.name, jsonb_build_object('event', 'message'), '/mehr/anfragen'::text
+  from public.practice_inquiries q
+  join public.practice_accounts pa on pa.id = q.practice_id
+  join public.pet_members pm on pm.pet_id = q.pet_id and pm.role in ('owner', 'carer')
+  left join public.notification_prefs np on np.user_id = pm.user_id
+  where q.origin = 'practice' and coalesce(np.practice, true) and q.created_at > p_now - interval '10 minutes' and q.created_at <= p_now
+  union all
+  select ps.user_id, 'inquiry'::text, q.id, q.owner_replied_at, q.pet_label, q.owner_label, jsonb_build_object('event', 'owner_reply'), '/praxis/anfragen'::text
+  from public.practice_inquiries q
+  join public.practice_staff ps on ps.practice_id = q.practice_id
+  where q.origin = 'practice' and q.owner_replied_at is not null
+    and q.owner_replied_at > p_now - interval '10 minutes' and q.owner_replied_at <= p_now;
+end;
+$$;
+revoke all on function private.due_messages(timestamptz) from public, anon, authenticated;
+
+revoke all on function public.practice_send_message(uuid, text) from public, anon;
+revoke all on function public.owner_reply_message(uuid, text) from public, anon;
+revoke all on function public.practice_inquiries() from public, anon;
+revoke all on function public.owner_inquiries() from public, anon;
+grant execute on function public.practice_send_message(uuid, text) to authenticated;
+grant execute on function public.owner_reply_message(uuid, text) to authenticated;
+grant execute on function public.practice_inquiries() to authenticated;
+grant execute on function public.owner_inquiries() to authenticated;
