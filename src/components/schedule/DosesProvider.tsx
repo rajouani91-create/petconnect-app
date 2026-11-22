@@ -62,11 +62,17 @@ export function DosesProvider({ children }: { children: ReactNode }) {
     const refresh = () => {
       if (document.visibilityState === 'visible' && latest.current.wanted) void latest.current.reload();
     };
+    // „Gegeben“ direkt in der Benachrichtigung (Service Worker meldet sich)
+    const onSw = (e: MessageEvent) => {
+      if ((e.data as { type?: unknown } | null)?.type === 'pc-quick-action' && latest.current.wanted) void latest.current.reload();
+    };
     document.addEventListener('visibilitychange', refresh);
     window.addEventListener('focus', refresh);
+    navigator.serviceWorker?.addEventListener('message', onSw);
     return () => {
       document.removeEventListener('visibilitychange', refresh);
       window.removeEventListener('focus', refresh);
+      navigator.serviceWorker?.removeEventListener('message', onSw);
     };
   }, []);
 

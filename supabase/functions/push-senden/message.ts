@@ -6,7 +6,27 @@ export type Job = {
   ref_id: string; slot: string; pet: string; title: string; url: string; language: string;
   info: { rkind?: string; label?: string | null; amount?: number; unit?: string; hint?: string; time?: string; overdue?: boolean; location?: string | null; event?: string; target?: string; starts_at?: string; vaccine?: string; due_on?: string; urgency?: string; number?: string; gross?: number; currency?: string };
   subs: { id: string; endpoint: string; p256dh: string; auth: string }[];
+  /** Auftrag 13: gespeicherte Benachrichtigung, Kategorie und Einmal-Token für Aktionen aus der Benachrichtigung */
+  notification_id?: string | null; category?: string | null; action?: string | null;
 };
+
+export type Api = { url: string; key: string } | null;
+
+/** Nutzlast der Push-Nachricht: Text und Ziel, dazu ID, Kategorie und – bei Medikament/Alltag – Token und Adresse
+ *  der Datenbank für „Erledigt“/„Später“ direkt aus der Benachrichtigung (ohne Anmeldung, nur mit dem Einmal-Token). */
+export function buildPayload(j: Job, api: Api): Record<string, unknown> {
+  const m = buildMessage(j);
+  const out: Record<string, unknown> = { ...m };
+  if (j.notification_id) out.nid = j.notification_id;
+  if (j.category) out.cat = j.category;
+  /* geplante Uhrzeit der Gabe (bei „Später erinnern“ weicht der Zeitpunkt der Meldung davon ab) */
+  if (j.kind === 'medication' && /^\d{2}:\d{2}$/.test(j.info.time ?? '')) out.t = j.info.time;
+  if (j.action && /^[0-9a-f]{64}$/.test(j.action) && api && /^https:\/\//.test(api.url) && api.key) {
+    out.qa = j.action;
+    out.api = { url: api.url.replace(/\/+$/, ''), key: api.key };
+  }
+  return out;
+}
 
 const LOCALE: Record<string, string> = { de: 'de-DE', en: 'en-GB', fr: 'fr-FR', ar: 'ar-u-nu-latn', nl: 'nl-NL', es: 'es-ES', ru: 'ru-RU', tr: 'tr-TR', sv: 'sv-SE', da: 'da-DK', no: 'nb-NO' };
 

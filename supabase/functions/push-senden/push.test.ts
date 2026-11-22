@@ -1,7 +1,7 @@
 // Prüft die Verschlüsselung (RFC 8291) mit der Gegenseite eines Geräts und die Texte der Benachrichtigungen.
 import { describe, expect, it } from 'vitest';
 import { b64u, encryptPayload, generateVapid, unb64u } from './webpush';
-import { buildMessage, type Job } from './message';
+import { buildMessage, buildPayload, type Job } from './message';
 import { TEXTS } from './texts';
 
 const enc = new TextEncoder();
@@ -125,5 +125,19 @@ describe('buildMessage', () => {
   });
   it('unbekannte Art: neutrale Meldung', () => {
     expect(buildMessage(job({ kind: 'neu' as Job['kind'], title: 'Etwas' }))).toMatchObject({ title: 'Bello', body: 'Etwas' });
+  });
+});
+
+describe('buildPayload (Auftrag 13)', () => {
+  const job: Job = { kind: 'medication', ref_id: 'm1', slot: '2026-01-15T08:30:00Z', pet: 'Bello', title: 'Carprofen', url: '/erinnerungen', language: 'de',
+    info: { amount: 1, unit: 'tablet', time: '08:00' }, subs: [], notification_id: 'n1', category: 'medication', action: 'a'.repeat(64) };
+  it('enthält ID, Kategorie, Uhrzeit, Token und Adresse', () => {
+    const p = buildPayload(job, { url: 'https://x.supabase.co/', key: 'pk' });
+    expect(p).toMatchObject({ url: '/erinnerungen', nid: 'n1', cat: 'medication', t: '08:00', qa: 'a'.repeat(64), api: { url: 'https://x.supabase.co', key: 'pk' } });
+  });
+  it('ohne Schlüssel oder mit ungültigem Token: kein Token in der Nachricht', () => {
+    expect(buildPayload(job, null).qa).toBeUndefined();
+    expect(buildPayload({ ...job, action: 'kurz' }, { url: 'https://x.supabase.co', key: 'pk' }).qa).toBeUndefined();
+    expect(buildPayload({ ...job, action: null, kind: 'invoice' }, { url: 'https://x.supabase.co', key: 'pk' }).t).toBeUndefined();
   });
 });

@@ -92,8 +92,13 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-/** Beschriftung der Knöpfe in der Benachrichtigung (Sprache des Geräts) */
+/** Beschriftung der Knöpfe in der Benachrichtigung und der Bestätigung (Sprache des Geräts) */
 const ACTION_LABEL = {
+  fed: { de: 'Gefüttert', en: 'Fed', fr: 'Nourri', es: 'Alimentado', nl: 'Gevoerd', no: 'Fôret', nb: 'Fôret', sv: 'Utfodrad', da: 'Fodret', tr: 'Beslendi', ru: 'Накормлен', ar: 'تم الإطعام' },
+  snooze: { de: 'Später erinnern', en: 'Remind me later', fr: 'Rappeler plus tard', es: 'Recordar más tarde', nl: 'Later herinneren', no: 'Påminn senere', nb: 'Påminn senere', sv: 'Påminn senare', da: 'Påmind senere', tr: 'Sonra hatırlat', ru: 'Напомнить позже', ar: 'ذكّرني لاحقًا' },
+  okDone: { de: '✓ Eingetragen.', en: '✓ Saved.', fr: '✓ Enregistré.', es: '✓ Guardado.', nl: '✓ Opgeslagen.', no: '✓ Lagret.', nb: '✓ Lagret.', sv: '✓ Sparat.', da: '✓ Gemt.', tr: '✓ Kaydedildi.', ru: '✓ Сохранено.', ar: '✓ تم الحفظ.' },
+  okAlready: { de: '✓ War bereits eingetragen.', en: '✓ Already recorded.', fr: '✓ Déjà enregistré.', es: '✓ Ya estaba registrado.', nl: '✓ Was al opgeslagen.', no: '✓ Var allerede registrert.', nb: '✓ Var allerede registrert.', sv: '✓ Redan registrerat.', da: '✓ Var allerede registreret.', tr: '✓ Zaten kaydedilmişti.', ru: '✓ Уже отмечено.', ar: '✓ مسجل بالفعل.' },
+  okSnooze: { de: 'Erinnerung in 30 Minuten.', en: 'Reminder in 30 minutes.', fr: 'Rappel dans 30 minutes.', es: 'Recordatorio en 30 minutos.', nl: 'Herinnering over 30 minuten.', no: 'Påminnelse om 30 minutter.', nb: 'Påminnelse om 30 minutter.', sv: 'Påminnelse om 30 minuter.', da: 'Påmindelse om 30 minutter.', tr: '30 dakika sonra hatırlatma.', ru: 'Напоминание через 30 минут.', ar: 'تذكير بعد 30 دقيقة.' },
   give: { de: 'Gegeben', en: 'Given', fr: 'Donné', es: 'Administrado', nl: 'Gegeven', no: 'Gitt', nb: 'Gitt', sv: 'Givet', da: 'Givet', tr: 'Verildi', ru: 'Дано', ar: 'تم الإعطاء' },
   done: { de: 'Erledigt', en: 'Done', fr: 'Fait', es: 'Hecho', nl: 'Gedaan', no: 'Ferdig', nb: 'Ferdig', sv: 'Klart', da: 'Klaret', tr: 'Tamam', ru: 'Готово', ar: 'تم' },
 };
@@ -119,10 +124,10 @@ function berlinTime(slot) {
   return h && mi ? `${h.value}:${mi.value}` : null;
 }
 
-/** Adresse für den Knopf: Heute-Seite mit Bestätigungskarte */
-function actionUrl(a) {
+/** Adresse für den Knopf: Heute-Seite mit Bestätigungskarte (time: geplante Uhrzeit, falls bekannt) */
+function actionUrl(a, planned) {
   if (a.kind === 'give') {
-    const time = berlinTime(a.slot);
+    const time = typeof planned === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(planned) ? planned : berlinTime(a.slot);
     return time ? `${APP_HOME}?gegeben=${a.id}&zeit=${time}` : TODAY_URL;
   }
   return `${APP_HOME}?erledigt=${a.id}`;
@@ -147,17 +152,73 @@ function readPush(data) {
   // Ziel beim Antippen: die Adresse aus der Nachricht (z. B. die Rechnung), sonst „Heute“
   const target = { v: 2, url: typeof msg.url === 'string' && msg.url ? safeUrl(msg.url) : TODAY_URL };
   const a = actionFromTag(tag);
-  if (a) target.actionUrl = actionUrl(a);
+  let actions;
+  if (a) {
+    target.actionUrl = actionUrl(a, msg.t);
+    const quick = quickApi(msg);
+    if (quick) {
+      // Erledigen direkt aus der Benachrichtigung (ohne die App zu öffnen)
+      target.qa = msg.qa;
+      target.api = quick;
+      actions = a.kind === 'give'
+        ? [{ action: 'done', title: actionLabel('give') }, { action: 'snooze', title: actionLabel('snooze') }]
+        : [{ action: 'done', title: actionLabel(msg.cat === 'feeding' ? 'fed' : 'done') }];
+    } else {
+      // ältere Funktion ohne Token: Knopf öffnet „Heute“ mit Bestätigungskarte
+      actions = [{ action: a.kind, title: actionLabel(a.kind) }];
+    }
+  }
   return {
     title: msg.title.slice(0, 120),
     options: {
       body: typeof msg.body === 'string' ? msg.body.slice(0, 300) : '',
       tag: tag ? tag.slice(0, 100) : 'petconnect',
       data: target,
-      // Knopf „Gegeben“ bzw. „Erledigt“, wenn die Meldung zu einem Medikament oder Alltagspunkt gehört
-      ...(a ? { actions: [{ action: a.kind, title: actionLabel(a.kind) }] } : {}),
+      ...(actions ? { actions } : {}),
     },
   };
+}
+
+/** Token und Adresse der Datenbank für Quick Actions prüfen (nur https, Token = 64 Hex-Zeichen) */
+function quickApi(msg) {
+  if (typeof msg.qa !== 'string' || !/^[0-9a-f]{64}$/.test(msg.qa)) return null;
+  const api = msg.api;
+  if (!api || typeof api.url !== 'string' || typeof api.key !== 'string' || !api.key) return null;
+  try {
+    const u = new URL(api.url);
+    if (u.protocol !== 'https:') return null;
+    return { url: u.origin, key: api.key };
+  } catch {
+    return null;
+  }
+}
+
+/** „Erledigt“ / „Später“ ausführen. Klappt es nicht (offline, Token abgelaufen, Fehler), öffnet sich die App. */
+async function quickAction(data, action, title, tag) {
+  try {
+    const res = await fetch(`${data.api.url}/rest/v1/rpc/push_quick_action`, {
+      method: 'POST',
+      headers: { apikey: data.api.key, Authorization: `Bearer ${data.api.key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_token: data.qa, p_action: action }),
+    });
+    const r = res.ok ? await res.json() : null;
+    const result = r && typeof r === 'object' ? r.result : null;
+    if (result === 'done' || result === 'already' || result === 'snoozed') {
+      const body = actionLabel(result === 'done' ? 'okDone' : result === 'already' ? 'okAlready' : 'okSnooze');
+      await self.registration.showNotification(title, { body, tag, icon: '/icons/icon-192.png', badge: '/icons/badge-96.png', silent: true, data: { v: 2, url: data.url } });
+      // offene App-Fenster aktualisieren (Heute, Glocke)
+      const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const w of wins) w.postMessage({ type: 'pc-quick-action', result });
+      // Bestätigung nach kurzer Zeit wieder ausblenden
+      await new Promise((ok) => setTimeout(ok, 4000));
+      const shown = await self.registration.getNotifications({ tag });
+      for (const n of shown) if (n.body === body) n.close();
+      return;
+    }
+  } catch {
+    // offline oder Netzfehler: unten die App öffnen
+  }
+  await openUrl(action === 'done' && typeof data.actionUrl === 'string' ? data.actionUrl : typeof data.url === 'string' ? data.url : TODAY_URL);
 }
 
 /** Nur Pfade der eigenen Origin zulassen. Pfade der App ohne APP_BASE (so liefert sie die Datenbank, z. B. „/mehr/rechnungen/…“)
@@ -204,6 +265,10 @@ async function openUrl(path) {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data || {};
+  if (data.v === 2 && data.qa && data.api && (event.action === 'done' || event.action === 'snooze')) {
+    event.waitUntil(quickAction(data, event.action, event.notification.title, event.notification.tag));
+    return;
+  }
   let target = TODAY_URL;
   if (data.v === 2) {
     // Knopf → „Heute“ mit Bestätigungskarte; Antippen → Ziel der Nachricht

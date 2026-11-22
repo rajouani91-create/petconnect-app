@@ -14,10 +14,13 @@ export function useUnreadCount(): number | null {
     load();
     const timer = window.setInterval(load, 60_000);
     const onVisible = () => { if (document.visibilityState === 'visible') load(); };
+    const onSw = (e: MessageEvent) => { if ((e.data as { type?: unknown } | null)?.type === 'pc-quick-action') load(); };
     window.addEventListener(NOTIF_CHANGED, load);
     window.addEventListener('focus', load);
     document.addEventListener('visibilitychange', onVisible);
+    navigator.serviceWorker?.addEventListener('message', onSw);
     return () => {
+      navigator.serviceWorker?.removeEventListener('message', onSw);
       window.clearInterval(timer);
       window.removeEventListener(NOTIF_CHANGED, load);
       window.removeEventListener('focus', load);

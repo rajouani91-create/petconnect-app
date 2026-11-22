@@ -11,7 +11,7 @@ const ROUTINE = '1c0b6f2d-4e3a-4b7c-9d8e-2f3a4b5c6d7e';
 
 type Listener = (event: Record<string, unknown>) => void;
 
-function load(base: string) {
+function load(base: string, fetchImpl?: (url: string, init?: RequestInit) => Promise<Response>) {
   const source = SOURCE.replace(/^const APP_BASE = '[^']*';/m, `const APP_BASE = '${base}';`);
   const listeners: Record<string, Listener> = {};
   const shown: { title: string; options: Record<string, unknown> }[] = [];
@@ -28,6 +28,7 @@ function load(base: string) {
         shown.push({ title, options });
         return Promise.resolve();
       },
+      getNotifications: () => Promise.resolve([]),
     },
     clients: {
       matchAll: () => Promise.resolve(windows),
@@ -42,8 +43,8 @@ function load(base: string) {
   // Speicher und Netz nachgebildet: nichts davon trifft eine echte Adresse
   const store = { match: () => Promise.resolve(undefined), put: () => Promise.resolve(), addAll: () => Promise.resolve() };
   const caches = { open: () => Promise.resolve(store), match: () => Promise.resolve(undefined), keys: () => Promise.resolve([]), delete: () => Promise.resolve(true) };
-  const fetch = () => Promise.resolve(new Response('', { status: 200 }));
-  const ctx = vm.createContext({ self, caches, fetch, URL, URLSearchParams, Intl, Response, console });
+  const fetch = fetchImpl ?? (() => Promise.resolve(new Response('', { status: 200 })));
+  const ctx = vm.createContext({ self, caches, fetch, URL, URLSearchParams, Intl, Response, console, JSON, setTimeout: (f: () => void) => f() });
   vm.runInContext(source, ctx);
   const get = <T>(expr: string) => vm.runInContext(expr, ctx) as T;
   const fire = (type: string, event: Record<string, unknown>) => {
@@ -56,7 +57,7 @@ function load(base: string) {
     if (!entry) throw new Error('Keine Benachrichtigung angezeigt');
     return entry;
   };
-  return { fire, firstShown, opened, windows, get };
+  return { fire, firstShown, opened, windows, get, shown };
 }
 
 async function click(sw: ReturnType<typeof load>, data: unknown, action = '') {
@@ -212,6 +213,68 @@ for (const base of ['', '/app']) {
     });
   });
 }
+
+describe('sw.js: Quick Actions (Auftrag 13)', () => {
+  const TOK = 'a'.repeat(64);
+  const API = { url: 'https://x.supabase.co/', key: 'pk' };
+  const push = (sw: ReturnType<typeof load>, extra: Record<string, unknown>) =>
+    sw.fire('push', { data: { json: () => ({ title: 'Bello: Carprofen', url: '/erinnerungen', tag: `medication-${MED}-2026-01-15T08:30:00.000Z`, t: '08:00', ...extra }) }, waitUntil: () => undefined });
+
+  it('Medikament mit Token: Knöpfe „Gegeben“ und „Später erinnern“', () => {
+    const sw = load('/app');
+    push(sw, { qa: TOK, api: API });
+    const o = sw.firstShown().options as { actions: { action: string; title: string }[]; data: { qa: string; api: { url: string }; actionUrl: string } };
+    expect(o.actions.map((a) => a.action)).toEqual(['done', 'snooze']);
+    expect(o.actions.map((a) => a.title)).toEqual(['Gegeben', 'Später erinnern']);
+    expect(o.data.api.url).toBe('https://x.supabase.co');
+    // geplante Uhrzeit aus der Nachricht, nicht aus dem (verschobenen) Zeitpunkt
+    expect(o.data.actionUrl).toBe(`/app/?gegeben=${MED}&zeit=08:00`);
+  });
+
+  it('Füttern: Knopf „Gefüttert“', () => {
+    const sw = load('/app');
+    sw.fire('push', { data: { json: () => ({ title: 'Bello: Füttern', tag: `routine-${ROUTINE}-2026-01-15T08:00:00.000Z`, cat: 'feeding', qa: TOK, api: API }) }, waitUntil: () => undefined });
+    expect((sw.firstShown().options as { actions: { title: string }[] }).actions.map((a) => a.title)).toEqual(['Gefüttert']);
+  });
+
+  it('Ungültiges Token oder http: alter Knopf (öffnet die App)', () => {
+    const sw = load('/app');
+    push(sw, { qa: 'xyz', api: API });
+    push(sw, { qa: TOK, api: { url: 'http://x', key: 'k' } });
+    for (const s of sw.shown) expect((s.options as { actions: { action: string }[] }).actions.map((a) => a.action)).toEqual(['give']);
+  });
+
+  it('„Gegeben“ trägt ohne App-Fenster ein und zeigt eine Bestätigung', async () => {
+    const calls: { url: string; body: string }[] = [];
+    const sw = load('/app', (url, init) => {
+      calls.push({ url, body: String(init?.body) });
+      return Promise.resolve(new Response(JSON.stringify({ result: 'done' }), { status: 200 }));
+    });
+    push(sw, { qa: TOK, api: API });
+    await click(sw, sw.firstShown().options.data, 'done');
+    expect(calls).toEqual([{ url: 'https://x.supabase.co/rest/v1/rpc/push_quick_action', body: JSON.stringify({ p_token: TOK, p_action: 'done' }) }]);
+    expect(sw.opened).toEqual([]);
+    expect((sw.shown[1]?.options as { body?: string } | undefined)?.body).toBe('✓ Eingetragen.');
+  });
+
+  it('„Später erinnern“ bestätigt die neue Erinnerung', async () => {
+    const sw = load('/app', () => Promise.resolve(new Response(JSON.stringify({ result: 'snoozed' }), { status: 200 })));
+    push(sw, { qa: TOK, api: API });
+    await click(sw, sw.firstShown().options.data, 'snooze');
+    expect((sw.shown[1]?.options as { body?: string } | undefined)?.body).toBe('Erinnerung in 30 Minuten.');
+  });
+
+  it('Offline oder abgelaufen: App öffnet sich mit der Bestätigungskarte', async () => {
+    const off = load('/app', () => Promise.reject(new Error('offline')));
+    push(off, { qa: TOK, api: API });
+    await click(off, off.firstShown().options.data, 'done');
+    expect(off.opened).toEqual([`${ORIGIN}/app/?gegeben=${MED}&zeit=08:00`]);
+    const exp = load('/app', () => Promise.resolve(new Response(JSON.stringify({ result: 'expired' }), { status: 200 })));
+    push(exp, { qa: TOK, api: API });
+    await click(exp, exp.firstShown().options.data, 'snooze');
+    expect(exp.opened).toEqual([`${ORIGIN}/app/erinnerungen`]);
+  });
+});
 
 describe('sw.js mit APP_BASE /app: Seiten außerhalb der App', () => {
   it('Landing, Rechtsseiten und Sitter-Links werden nicht angefasst', () => {

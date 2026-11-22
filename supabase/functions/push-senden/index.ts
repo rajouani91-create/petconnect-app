@@ -4,9 +4,12 @@
 /* VAPID-Schlüssel werden beim ersten Lauf erzeugt und in private.push_config gespeichert. */
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0';
 import { generateVapid, sendPush, type VapidKeys } from './webpush.ts';
-import { buildMessage, type Job } from './message.ts';
+import { buildPayload, type Api, type Job } from './message.ts';
 
 const SUBJECT = 'https://petconnect24.com';
+/* Öffentliche Adresse und öffentlicher Schlüssel (kein Geheimnis) für Aktionen aus der Benachrichtigung */
+const API_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+const API: Api = API_KEY ? { url: Deno.env.get('SUPABASE_URL') ?? '', key: API_KEY } : null;
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -51,7 +54,7 @@ Deno.serve(async (req) => {
     const ok: string[] = [], gone: string[] = [], failed: string[] = [];
     await Promise.all(jobs.flatMap((job) => job.subs.map(async (s) => {
       try {
-        const status = await sendPush(s, buildMessage(job), k, SUBJECT, job.kind === 'medication' ? 3 * 3600 : 12 * 3600);
+        const status = await sendPush(s, buildPayload(job, API), k, SUBJECT, job.kind === 'medication' ? 3 * 3600 : 12 * 3600);
         if (status >= 200 && status < 300) ok.push(s.id);
         else if (status === 404 || status === 410) gone.push(s.id);
         else failed.push(s.id);
