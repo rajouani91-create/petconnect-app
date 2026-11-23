@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import {
-  activityName, areaPath, cumulative, fmt, growthPct, linePath, niceMax, pct, sortedActivity, sortedRecords, speciesName, sumLast, toPoints,
-  type ActivityData, type DashboardData, type SeriesKey,
+  activityName, areaPath, cumulative, euro, fmt, growthPct, hoursText, linePath, niceMax, notifCategoryName, pct, sortedActivity, sortedRecords,
+  speciesName, sumLast, toPoints,
+  type ActivityData, type DashboardData, type PracticeDashboardData, type SeriesKey,
 } from '../../lib/dashboard';
-import { staffActivity, staffDashboard } from '../../lib/staff';
+import { staffActivity, staffDashboard, staffDashboardPractice } from '../../lib/staff';
 
 // Der Bereich ist für Admins (intern), deshalb bewusst nur Deutsch und ohne die Sprachdateien der App.
 const REFRESH_MS = 60_000;
 
-const METRICS: { key: SeriesKey; label: string; hint: string; color: string }[] = [
+type MetricKey = SeriesKey | 'practice';
+const METRICS: { key: MetricKey; label: string; hint: string; color: string }[] = [
   { key: 'interactions', label: 'Interaktionen', hint: 'neue oder abgehakte Einträge pro Tag', color: 'var(--brand)' },
   { key: 'signups', label: 'Registrierungen', hint: 'neue Konten pro Tag', color: 'var(--accent)' },
   { key: 'pets', label: 'Neue Tiere', hint: 'angelegte Tierprofile pro Tag', color: 'var(--ok)' },
+  { key: 'practice', label: 'Praxis-Aktionen', hint: 'Befunde, Impfungen, Termine, Anfragen, Vorschläge, Rechnungen und Impferinnerungen pro Tag', color: 'var(--warn)' },
 ];
+type Tab = 'overview' | 'practices' | 'owners' | 'notifications' | 'system';
 
 /** Zahl zählt beim Laden hoch (außer bei „weniger Bewegung“). */
 function useCountUp(target: number): number {
@@ -40,14 +44,16 @@ function useCountUp(target: number): number {
   return shown;
 }
 
-function Kpi({ label, value, sub, tone, spark }: { label: string; value: number; sub?: string; tone: 'brand' | 'accent' | 'ok' | 'warn'; spark?: number[] }) {
+function Kpi({ label, value, sub, tone, spark, isNew, format = fmt }: {
+  label: string; value: number; sub?: string; tone: 'brand' | 'accent' | 'ok' | 'warn'; spark?: number[]; isNew?: boolean; format?: (n: number) => string;
+}) {
   const shown = useCountUp(value);
   const max = spark ? Math.max(...spark, 1) : 1;
   const pts = spark ? toPoints(spark, 100, 28, { l: 1, r: 1, t: 2, b: 2 }, max) : [];
   return (
     <div className={`dash-kpi tone-${tone}`}>
-      <div className="dash-kpi-label">{label}</div>
-      <div className="dash-kpi-value">{fmt(shown)}</div>
+      <div className="dash-kpi-label">{label}{isNew && <span className="dash-new">neu</span>}</div>
+      <div className="dash-kpi-value">{format(shown)}</div>
       {sub && <div className="dash-kpi-sub">{sub}</div>}
       {spark && spark.length > 1 && (
         <svg className="dash-spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
@@ -281,21 +287,176 @@ function Activity({ a }: { a: ActivityData }) {
   );
 }
 
-/** Zahlen-Übersicht für Admins: Konten, Tiere, Interaktionen, KI-Nutzung. Aktualisiert sich selbst. */
+/** Anteile als ein Balken mit Legende */
+function StackBar({ parts, label, format = fmt }: { parts: { label: string; n: number; color: string }[]; label: string; format?: (n: number) => string }) {
+  const total = parts.reduce((a, p) => a + p.n, 0);
+  return (
+    <div className="stack-sm">
+      <div className="dash-stack" role="img" aria-label={`${label}: ${parts.map((p) => `${p.label} ${p.n}`).join(', ')}`}>
+        {total > 0 ? parts.filter((p) => p.n > 0).map((p) => <span key={p.label} style={{ width: `${(p.n / total) * 100}%`, background: p.color }} />) : <span className="dash-stack-empty" />}
+      </div>
+      <div className="dash-legend" aria-hidden="true">
+        {parts.map((p) => <span key={p.label}><i style={{ background: p.color }} />{p.label} {format(p.n)}{total > 0 && ` · ${pct(p.n, total)} %`}</span>)}
+      </div>
+    </div>
+  );
+}
+
+/** Kennzahlen als Liste: Bezeichnung links, Wert rechts */
+function Facts({ rows }: { rows: { label: string; value: string; strong?: boolean }[] }) {
+  return (
+    <dl className="dash-facts">
+      {rows.map((r) => (
+        <div key={r.label}><dt>{r.label}</dt><dd>{r.strong ? <strong>{r.value}</strong> : r.value}</dd></div>
+      ))}
+    </dl>
+  );
+}
+
+function Chips({ items }: { items: { label: string; value: string }[] }) {
+  return <div className="dash-chips">{items.map((x) => <div key={x.label} className="dash-chip"><span>{x.label}</span><strong>{x.value}</strong></div>)}</div>;
+}
+
+/** Weg einer Anfrage: gestellt → Vorschlag → gebucht */
+function InquiryFunnel({ p }: { p: PracticeDashboardData }) {
+  const q = p.inquiries;
+  const steps = [
+    { label: 'Anfragen', n: q.total, tone: 'tone-brand' },
+    { label: 'mit Terminvorschlag', n: q.offered, tone: 'tone-brand' },
+    { label: 'Termin gebucht', n: q.booked, tone: 'tone-ok' },
+    { label: 'abgelehnt oder andere Zeit', n: q.declined + q.wished, tone: 'tone-warn' },
+  ];
+  return (
+    <article className="card dash-card">
+      <h3>Weg einer Anfrage</h3>
+      <p className="muted dash-hint">Halter:in fragt → Praxis schlägt Termine vor → Termin gebucht</p>
+      <ul className="dash-funnel">
+        {steps.map((st) => (
+          <li key={st.label}>
+            <span className="dash-funnel-head">
+              <span>{st.label}</span>
+              <span className="dash-bar-n">{fmt(st.n)}{q.total > 0 && <small> · {pct(st.n, q.total)} %</small>}</span>
+            </span>
+            <span className="dash-bar-track" aria-hidden="true"><span className={`dash-bar-fill ${st.tone}`} style={{ width: `${q.total ? Math.max(st.n ? 4 : 0, (st.n / q.total) * 100) : 0}%` }} /></span>
+          </li>
+        ))}
+      </ul>
+      <p className="muted dash-hint">Mittlere Zeit bis zur ersten Antwort oder zum Vorschlag: {hoursText(q.replied_h)}</p>
+    </article>
+  );
+}
+
+function PracticesTab({ p }: { p: PracticeDashboardData }) {
+  const a = p.appointments;
+  const e = p.entries;
+  const inv = p.invoices;
+  const entryRows = [
+    { key: 'finding', label: 'Befunde', n: e.finding }, { key: 'vital', label: 'Gewicht & Vitalwerte', n: e.vital },
+    { key: 'medication', label: 'Medikamente', n: e.medication }, { key: 'vaccination', label: 'Impfungen', n: e.vaccination },
+  ].sort((x, y) => y.n - x.n);
+  return (
+    <div className="dash-grid-3">
+      <article className="card dash-card">
+        <h3>Praxis-Konten</h3>
+        <Chips items={[{ label: 'aktiv', value: fmt(p.accounts.active) }, { label: 'in Prüfung', value: fmt(p.accounts.pending) }, { label: 'Team gesamt', value: fmt(p.accounts.staff) }]} />
+        <Facts rows={[
+          { label: 'Freigegebene Patienten', value: fmt(p.patients.total), strong: true },
+          { label: '· per Code der Halter:in', value: fmt(p.patients.code) },
+          { label: '· per Anfrage der Praxis', value: fmt(p.patients.request) },
+          { label: 'Gesperrte Praxen', value: fmt(p.accounts.suspended) },
+        ]} />
+      </article>
+      <article className="card dash-card">
+        <h3>Termine der Praxen</h3>
+        <StackBar label="Termine nach Weg" parts={[{ label: 'online gebucht', n: a.online, color: 'var(--brand)' }, { label: 'Telefon/Praxis', n: a.phone, color: 'var(--accent)' }]} />
+        <Facts rows={[
+          { label: 'kommend', value: fmt(a.upcoming), strong: true },
+          { label: 'neu (noch zu bestätigen)', value: fmt(a.new) },
+          { label: 'bestätigt · erschienen', value: `${fmt(a.confirmed)} · ${fmt(a.attended)}` },
+          { label: 'nicht erschienen', value: fmt(a.no_show) },
+          { label: 'von Halter:in verschoben · abgesagt', value: `${fmt(a.moved_by_owner)} · ${fmt(a.cancelled_owner)}` },
+          { label: 'von der Praxis abgesagt', value: fmt(a.cancelled_practice) },
+          { label: 'Warteliste · Impferinnerungen', value: `${fmt(a.waitlist)} · ${fmt(a.recalls)}` },
+        ]} />
+      </article>
+      <article className="card dash-card">
+        <h3>Patientenakte</h3>
+        <p className="muted dash-hint">Einträge der Praxen{e.voided > 0 ? `, ohne ${fmt(e.voided)} stornierte` : ''}</p>
+        <BarRows rows={entryRows} tone="tone-accent" />
+      </article>
+      <article className="card dash-card dash-span2">
+        <h3>Abrechnung</h3>
+        <p className="muted dash-hint">Summe über alle Praxen, brutto, ohne Entwürfe und stornierte Rechnungen</p>
+        <Chips items={[
+          { label: 'Rechnungen', value: fmt(inv.count) }, { label: 'Summe', value: euro(inv.gross) }, { label: 'bezahlt', value: euro(inv.paid) },
+          { label: 'offen', value: euro(inv.open) }, { label: 'Entwürfe', value: fmt(inv.drafts) }, { label: 'Stornos', value: fmt(inv.cancellations) },
+        ]} />
+        <StackBar label="Rechnungsbetrag" format={(v) => euro(v)} parts={[{ label: 'bezahlt', n: Number(inv.paid) || 0, color: 'var(--ok)' }, { label: 'offen', n: Number(inv.open) || 0, color: 'var(--warn)' }]} />
+      </article>
+      <article className="card dash-card">
+        <h3>Anfragen &amp; Nachrichten</h3>
+        <Facts rows={[
+          { label: 'Anfragen von Halter:innen', value: fmt(p.inquiries.total), strong: true },
+          { label: '· davon offen', value: fmt(p.inquiries.open) },
+          { label: 'Nachrichten der Praxen', value: fmt(p.inquiries.messages) },
+          { label: 'Vorschlag angenommen', value: fmt(p.inquiries.booked) },
+          { label: 'abgelehnt · andere Zeit gewünscht', value: `${fmt(p.inquiries.declined)} · ${fmt(p.inquiries.wished)}` },
+          { label: 'Mittlere Antwortzeit', value: hoursText(p.inquiries.replied_h) },
+        ]} />
+      </article>
+    </div>
+  );
+}
+
+function NotificationsTab({ p }: { p: PracticeDashboardData }) {
+  const n = p.notifications;
+  const rows = Object.entries(n.by_category).map(([k, v]) => ({ key: k, label: notifCategoryName(k), n: v })).sort((a, b) => b.n - a.n);
+  const series = p.series;
+  return (
+    <div className="dash-grid-3">
+      <article className="card dash-card dash-span2">
+        <h3>Benachrichtigungen nach Kategorie</h3>
+        <p className="muted dash-hint">alle gespeicherten Mitteilungen · {fmt(n.total)} gesamt</p>
+        {rows.length > 0 ? <BarRows rows={rows} tone="tone-brand" /> : <p className="muted">Noch keine Benachrichtigungen.</p>}
+      </article>
+      <article className="card dash-card">
+        <h3>Wirkung</h3>
+        <Chips items={[{ label: 'Push-Geräte', value: fmt(n.devices) }, { label: 'gelesen', value: `${pct(n.read, n.total)} %` }, { label: 'Quick Actions', value: fmt(n.quick_actions) }]} />
+        <p className="muted dash-hint">„Quick Actions“: direkt in der Android-Mitteilung „Gegeben“, „Erledigt“, „Gefüttert“ oder „Später erinnern“ getippt.</p>
+      </article>
+      <article className="card dash-card dash-span3">
+        <h3>Benachrichtigungen pro Tag</h3>
+        <p className="muted dash-hint">{fmt(n.last_7d)} in den letzten 7 Tagen</p>
+        <LineChart days={series.map((x) => x.d)} values={series.map((x) => x.notifications)} color="var(--brand)" unit="Benachrichtigungen" />
+      </article>
+    </div>
+  );
+}
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'overview', label: 'Überblick' }, { key: 'practices', label: 'Praxen' }, { key: 'owners', label: 'Halter:innen' },
+  { key: 'notifications', label: 'Benachrichtigungen' }, { key: 'system', label: 'System' },
+];
+
+/** Zahlen-Übersicht für Admins: Überblick, Praxen, Halter:innen, Benachrichtigungen, System. Aktualisiert sich selbst. */
 export function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [practice, setPractice] = useState<PracticeDashboardData | null>(null);
   const [activity, setActivity] = useState<ActivityData | null>(null);
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [range, setRange] = useState<7 | 30>(30);
-  const [metric, setMetric] = useState<SeriesKey>('interactions');
+  const [metric, setMetric] = useState<MetricKey>('interactions');
+  const [tab, setTab] = useState<Tab>('overview');
 
   const load = useCallback(async () => {
     setBusy(true);
     try {
       setData(await staffDashboard());
-      // Die 24-Stunden-Ansicht ist zusätzlich: fehlt sie (z. B. Funktion noch nicht eingespielt), bleibt der Rest sichtbar
-      setActivity(await staffActivity().catch(() => null));
+      // Zusätzliche Teile: fehlen sie (z. B. Funktion noch nicht eingespielt), bleibt der Rest sichtbar
+      const [act, prac] = await Promise.all([staffActivity().catch(() => null), staffDashboardPractice().catch(() => null)]);
+      setActivity(act);
+      setPractice(prac);
       setFailed(false);
     } catch {
       setFailed(true);
@@ -330,11 +491,19 @@ export function Dashboard() {
   }
 
   const series = data.series.slice(-range);
+  const pseries = (practice?.series ?? []).slice(-range);
   const m = METRICS.find((x) => x.key === metric) ?? METRICS[0]!;
+  const chart = m.key === 'practice'
+    ? { days: pseries.map((x) => x.d), values: pseries.map((x) => x.practice) }
+    : { days: series.map((p) => p.d), values: series.map((p) => p[m.key as SeriesKey]) };
+  const chartTotal = chart.values.reduce((a, b) => a + b, 0);
   const interactions7 = sumLast(data.series, 'interactions', 7);
   const speciesRows = Object.entries(data.pets.by_species).map(([k, n]) => ({ key: k, label: speciesName(k), n })).sort((a, b) => b.n - a.n);
   const aiMax = niceMax(Math.max(0, ...data.ai.hourly.map((h) => h.n)), 4);
   const updated = new Date(data.generated_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const missing = !practice && <p className="notice notice-info">Die Praxis-Zahlen sind noch nicht verfügbar (Datenbankfunktion fehlt oder konnte nicht geladen werden).</p>;
+  const p = practice;
+  const metrics = METRICS.filter((x) => x.key !== 'practice' || p);
 
   return (
     <section className="dash" aria-labelledby="dash-title">
@@ -355,79 +524,135 @@ export function Dashboard() {
         </div>
       </header>
 
+      <nav className="dash-tabs" aria-label="Bereiche des Dashboards">
+        {TABS.map((x) => (
+          <button key={x.key} type="button" aria-pressed={tab === x.key} className={tab === x.key ? 'on' : ''} onClick={() => setTab(x.key)}>
+            {x.label}
+            {x.key === 'system' && data.tickets.open > 0 && <span className="dash-tab-badge" aria-label={`${data.tickets.open} offene Tickets`}>{data.tickets.open}</span>}
+          </button>
+        ))}
+      </nav>
+
       {failed && <p className="notice notice-warn" role="status">Aktualisierung fehlgeschlagen, die Zahlen unten sind vom letzten Mal.</p>}
 
-      <div className="dash-kpis">
-        <Kpi tone="brand" label="Konten" value={data.users.total} sub={`+${fmt(data.users.new_7d)} in 7 Tagen`} spark={data.series.map((p) => p.signups)} />
-        <Kpi tone="ok" label="Aktiv (7 Tage)" value={data.users.active_7d} sub={`${pct(data.users.active_7d, data.users.total)} % aller Konten`} />
-        <Kpi tone="accent" label="Tiere" value={data.pets.total} sub={`+${fmt(data.pets.new_7d)} in 7 Tagen`} spark={data.series.map((p) => p.pets)} />
-        <Kpi tone="brand" label="Interaktionen (7 Tage)" value={interactions7} sub="neue oder abgehakte Einträge" spark={data.series.map((p) => p.interactions)} />
-        <Kpi tone="accent" label="KI-Anfragen (24 Std.)" value={data.ai.requests_24h} sub={`von ${fmt(data.ai.users_24h)} Personen`} spark={data.ai.hourly.map((h) => h.n)} />
-        <Kpi tone="ok" label="Geteilte Tiere" value={data.pets.shared} sub={`${fmt(data.sharing.invites_accepted)} von ${fmt(data.sharing.invites)} Einladungen angenommen`} />
-        <Kpi tone="brand" label="Push-Geräte" value={data.push.subscriptions} sub={`${fmt(data.push.sent_7d)} Nachrichten in 7 Tagen`} />
-        <Kpi tone={data.tickets.open > 0 ? 'warn' : 'ok'} label="Offene Tickets" value={data.tickets.open} sub={`${fmt(data.tickets.in_progress)} in Arbeit · ${fmt(data.tickets.closed)} erledigt`} />
-      </div>
+      {tab === 'overview' && (
+        <>
+          <div className="dash-kpis dash-kpis-4">
+            <Kpi tone="brand" label="Konten" value={data.users.total} sub={`+${fmt(data.users.new_7d)} in 7 Tagen · ${fmt(data.users.active_7d)} aktiv`} spark={data.series.map((x) => x.signups)} />
+            <Kpi tone="accent" label="Tiere" value={data.pets.total} sub={`+${fmt(data.pets.new_7d)} in 7 Tagen${p ? ` · ${fmt(p.patients.pets)} bei Praxen` : ''}`} spark={data.series.map((x) => x.pets)} />
+            {p && <Kpi isNew tone="ok" label="Praxen aktiv" value={p.accounts.active} sub={`${fmt(p.accounts.staff)} im Team · ${fmt(p.accounts.pending)} in Prüfung`} />}
+            {p && <Kpi isNew tone="brand" label="Praxistermine" value={p.appointments.total} sub={`${fmt(p.appointments.upcoming)} kommend · ${fmt(p.appointments.online)} online gebucht`} />}
+            {p && <Kpi isNew tone="accent" label="Anfragen" value={p.inquiries.total} sub={`${fmt(p.inquiries.offered)} mit Vorschlag · ${fmt(p.inquiries.booked)} gebucht`} />}
+            {p && <Kpi isNew tone="ok" label="Abgerechnet" value={Number(p.invoices.gross) || 0} format={(v) => euro(v)} sub={`${fmt(p.invoices.count)} Rechnungen · ${euro(p.invoices.paid)} bezahlt`} />}
+            {p && <Kpi isNew tone="brand" label="Benachrichtigungen (7 Tage)" value={p.notifications.last_7d} sub={`${pct(p.notifications.read, p.notifications.total)} % gelesen · ${fmt(p.notifications.quick_actions)} Quick Actions`} spark={p.series.map((x) => x.notifications)} />}
+            {!p && <Kpi tone="brand" label="Interaktionen (7 Tage)" value={interactions7} sub="neue oder abgehakte Einträge" spark={data.series.map((x) => x.interactions)} />}
+            <Kpi tone={data.tickets.open > 0 ? 'warn' : 'ok'} label="Offene Tickets" value={data.tickets.open} sub={`${fmt(data.tickets.in_progress)} in Arbeit · ${fmt(data.tickets.closed)} erledigt`} />
+          </div>
+          {missing}
+          <div className="dash-grid-3">
+            <article className="card dash-card dash-span2">
+              <div className="card-head">
+                <h3>Verlauf pro Tag</h3>
+                <div className="dash-seg" role="group" aria-label="Kennzahl">
+                  {metrics.map((x) => (
+                    <button key={x.key} type="button" aria-pressed={metric === x.key} className={metric === x.key ? 'on' : ''} onClick={() => setMetric(x.key)}>{x.label}</button>
+                  ))}
+                </div>
+              </div>
+              <p className="muted dash-hint">{m.label}: {m.hint} · zuletzt {fmt(chartTotal)} in {range} Tagen</p>
+              <LineChart days={chart.days} values={chart.values} color={m.color} unit={m.label.toLowerCase()} />
+            </article>
+            {p ? <InquiryFunnel p={p} /> : (
+              <article className="card dash-card">
+                <h3>Aktivierung</h3>
+                <Meter label="Konto mit Tier" part={data.users.with_pets} whole={data.users.total} note={`${fmt(data.users.with_pets)} von ${fmt(data.users.total)} Konten`} />
+              </article>
+            )}
+          </div>
+        </>
+      )}
 
-      <div className="dash-grid-2">
-        {activity && <Activity a={activity} />}
+      {tab === 'practices' && (p ? <PracticesTab p={p} /> : missing)}
 
-        <Growth data={data} range={range} />
+      {tab === 'owners' && (
+        <>
+          <div className="dash-kpis dash-kpis-4">
+            <Kpi tone="brand" label="Konten" value={data.users.total} sub={`+${fmt(data.users.new_7d)} in 7 Tagen`} spark={data.series.map((x) => x.signups)} />
+            <Kpi tone="ok" label="Aktiv (7 Tage)" value={data.users.active_7d} sub={`${pct(data.users.active_7d, data.users.total)} % aller Konten`} />
+            <Kpi tone="accent" label="Tiere" value={data.pets.total} sub={`+${fmt(data.pets.new_7d)} in 7 Tagen`} spark={data.series.map((x) => x.pets)} />
+            <Kpi tone="brand" label="Interaktionen (7 Tage)" value={interactions7} sub="neue oder abgehakte Einträge" spark={data.series.map((x) => x.interactions)} />
+          </div>
+          <div className="dash-grid-2">
+            <Growth data={data} range={range} />
+            <article className="card dash-card">
+              <h3>Aktivierung</h3>
+              <p className="muted dash-hint">Wie weit kommen Konten in der App?</p>
+              <div className="stack">
+                <Meter label="Konto mit Tier" part={data.users.with_pets} whole={data.users.total} note={`${fmt(data.users.with_pets)} von ${fmt(data.users.total)} Konten haben mindestens ein Tier`} />
+                <Meter label="Aktiv in 30 Tagen" part={data.users.active_30d} whole={data.users.total} note={`${fmt(data.users.active_30d)} Konten haben sich angemeldet`} />
+                <Meter label="Tier geteilt" part={data.pets.shared} whole={data.pets.total} note={`${fmt(data.pets.shared)} ${data.pets.shared === 1 ? 'Tier hat' : 'Tiere haben'} mehrere Mitglieder`} />
+                {p && <Meter label="Tier bei einer Praxis" part={p.patients.pets} whole={data.pets.total} note={`${fmt(p.patients.pets)} Tiere sind für eine Praxis freigegeben`} />}
+              </div>
+            </article>
+            <article className="card dash-card">
+              <h3>Tiere nach Art</h3>
+              <p className="muted dash-hint">{fmt(data.pets.total)} Tiere insgesamt</p>
+              {speciesRows.length > 0 ? <BarRows rows={speciesRows} tone="tone-accent" /> : <p className="muted">Noch keine Tiere.</p>}
+            </article>
+            <article className="card dash-card">
+              <h3>Erfasste Inhalte</h3>
+              <p className="muted dash-hint">Alles, was Nutzer:innen bisher in der App angelegt haben</p>
+              <BarRows rows={sortedRecords(data.records)} tone="tone-brand" />
+            </article>
+            <article className="card dash-card">
+              <h3>Teilen</h3>
+              <Facts rows={[
+                { label: 'Geteilte Tiere', value: fmt(data.pets.shared), strong: true },
+                { label: 'Einladungen angenommen', value: `${fmt(data.sharing.invites_accepted)} von ${fmt(data.sharing.invites)}` },
+                { label: 'Mitglieder', value: fmt(data.sharing.members) },
+                { label: 'Links für Tiersitter', value: fmt(data.sharing.sitter_links) },
+              ]} />
+            </article>
+          </div>
+        </>
+      )}
 
-        <article className="card dash-card dash-wide">
-          <div className="card-head">
-            <h3>Verlauf pro Tag</h3>
-            <div className="dash-seg" role="group" aria-label="Kennzahl">
-              {METRICS.map((x) => (
-                <button key={x.key} type="button" aria-pressed={metric === x.key} className={metric === x.key ? 'on' : ''} onClick={() => setMetric(x.key)}>{x.label}</button>
-              ))}
+      {tab === 'notifications' && (p ? <NotificationsTab p={p} /> : missing)}
+
+      {tab === 'system' && (
+        <div className="dash-grid-2">
+          {activity && <Activity a={activity} />}
+          <article className="card dash-card">
+            <h3>Tickets</h3>
+            <Chips items={[{ label: 'offen', value: fmt(data.tickets.open) }, { label: 'in Arbeit', value: fmt(data.tickets.in_progress) }, { label: 'erledigt', value: fmt(data.tickets.closed) }]} />
+            <Facts rows={[
+              { label: 'Push-Geräte', value: fmt(data.push.subscriptions) },
+              { label: 'Push-Nachrichten (7 Tage)', value: fmt(data.push.sent_7d) },
+              { label: 'Gesperrte Konten', value: fmt(data.users.locked) },
+            ]} />
+          </article>
+          <article className="card dash-card">
+            <h3>KI-Anfragen pro Stunde</h3>
+            <p className="muted dash-hint">{fmt(data.ai.requests_24h)} in 24 Stunden von {fmt(data.ai.users_24h)} Personen</p>
+            <div className="dash-hours" role="img" aria-label={`KI-Anfragen pro Stunde, insgesamt ${data.ai.requests_24h} in 24 Stunden`}>
+              {data.ai.hourly.map((h) => {
+                const hour = new Date(h.h).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                return (
+                  <span key={h.h} className="dash-hour" title={`${hour} Uhr: ${h.n}`}>
+                    <span className="dash-hour-bar" style={{ height: `${Math.max(h.n > 0 ? 6 : 2, (h.n / aiMax) * 100)}%` }} />
+                  </span>
+                );
+              })}
             </div>
-          </div>
-          <p className="muted dash-hint">{m.label}: {m.hint} · zuletzt {fmt(sumLast(series, m.key, range))} in {range} Tagen</p>
-          <LineChart days={series.map((p) => p.d)} values={series.map((p) => p[m.key])} color={m.color} unit={m.label.toLowerCase()} />
-        </article>
-
-        <article className="card dash-card">
-          <h3>KI-Anfragen pro Stunde</h3>
-          <p className="muted dash-hint">letzte 24 Stunden, Maximum {fmt(aiMax)}</p>
-          <div className="dash-hours" role="img" aria-label={`KI-Anfragen pro Stunde, insgesamt ${data.ai.requests_24h} in 24 Stunden`}>
-            {data.ai.hourly.map((h) => {
-              const hour = new Date(h.h).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-              return (
-                <span key={h.h} className="dash-hour" title={`${hour} Uhr: ${h.n}`}>
-                  <span className="dash-hour-bar" style={{ height: `${Math.max(h.n > 0 ? 6 : 2, (h.n / aiMax) * 100)}%` }} />
-                </span>
-              );
-            })}
-          </div>
-          <div className="dash-hours-axis" aria-hidden="true"><span>vor 24 Std.</span><span>jetzt</span></div>
-        </article>
-
-        <article className="card dash-card">
-          <h3>Tiere nach Art</h3>
-          <p className="muted dash-hint">{fmt(data.pets.total)} Tiere insgesamt</p>
-          {speciesRows.length > 0 ? <BarRows rows={speciesRows} tone="tone-accent" /> : <p className="muted">Noch keine Tiere.</p>}
-        </article>
-
-        <article className="card dash-card">
-          <h3>Aktivierung</h3>
-          <p className="muted dash-hint">Wie weit kommen Konten in der App?</p>
-          <div className="stack">
-            <Meter label="Konto mit Tier" part={data.users.with_pets} whole={data.users.total} note={`${fmt(data.users.with_pets)} von ${fmt(data.users.total)} Konten haben mindestens ein Tier`} />
-            <Meter label="Aktiv in 30 Tagen" part={data.users.active_30d} whole={data.users.total} note={`${fmt(data.users.active_30d)} Konten haben sich angemeldet`} />
-            <Meter label="Tier geteilt" part={data.pets.shared} whole={data.pets.total} note={`${fmt(data.pets.shared)} ${data.pets.shared === 1 ? 'Tier hat' : 'Tiere haben'} mehrere Mitglieder`} />
-          </div>
-        </article>
-
-        <article className="card dash-card">
-          <h3>Erfasste Inhalte</h3>
-          <p className="muted dash-hint">Alles, was Nutzer:innen bisher in der App angelegt haben</p>
-          <BarRows rows={sortedRecords(data.records)} tone="tone-brand" />
-        </article>
-      </div>
+            <div className="dash-hours-axis" aria-hidden="true"><span>vor 24 Std.</span><span>jetzt</span></div>
+          </article>
+        </div>
+      )}
 
       <p className="muted dash-note">
         Seitenaufrufe und Klicks werden nicht erfasst, weil die App bewusst kein Tracking nutzt (so steht es in der Datenschutzerklärung).
-        „Interaktionen“ zählt, was in der Datenbank neu entsteht, zum Beispiel erledigte Routinen, Gewichte, Termine oder Medikamenten-Gaben. „Aktiv“ bedeutet: letzte Anmeldung im Zeitraum. Es werden nur Zahlen angezeigt, keine Namen und keine Tierdaten.
+        „Interaktionen“ zählt, was in der Datenbank neu entsteht, zum Beispiel erledigte Routinen, Gewichte, Termine oder Medikamenten-Gaben. „Aktiv“ bedeutet: letzte Anmeldung im Zeitraum.
+        Es werden nur Zahlen und Summen angezeigt, keine Namen, keine Tier- und keine Behandlungsdaten.
       </p>
     </section>
   );

@@ -1595,6 +1595,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      staff_dashboard_practice: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       staff_team: {
         Args: Record<PropertyKey, never>
         Returns: {

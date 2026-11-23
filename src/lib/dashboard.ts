@@ -17,6 +17,46 @@ export interface DayPoint {
   interactions: number;
 }
 export type SeriesKey = 'signups' | 'pets' | 'interactions';
+
+/** Antwort von staff_dashboard_practice: Praxen und Benachrichtigungen, nur Zahlen und Summen. */
+export interface PracticeDashboardData {
+  generated_at: string;
+  accounts: { active: number; pending: number; suspended: number; staff: number };
+  patients: { total: number; pets: number; code: number; request: number };
+  appointments: {
+    total: number; online: number; phone: number; upcoming: number; new: number; confirmed: number; attended: number; no_show: number;
+    cancelled_owner: number; cancelled_practice: number; moved_by_owner: number; waitlist: number; recalls: number;
+  };
+  entries: { finding: number; vital: number; medication: number; vaccination: number; voided: number };
+  invoices: { count: number; drafts: number; gross: number | string; paid: number | string; open: number | string; cancellations: number };
+  inquiries: { total: number; open: number; offered: number; booked: number; declined: number; wished: number; messages: number; replied_h: number | string | null };
+  notifications: { total: number; last_7d: number; read: number; by_category: Record<string, number>; quick_actions: number; devices: number };
+  series: { d: string; practice: number; notifications: number }[];
+}
+
+/** Euro-Betrag (Datenbank liefert numeric teils als Text) */
+export function euro(v: number | string | null | undefined): string {
+  const n = Number(v ?? 0);
+  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: n >= 1000 ? 0 : 2 }).format(Number.isFinite(n) ? n : 0);
+}
+
+/** Antwortzeit der Praxis lesbar: Minuten, Stunden oder Tage */
+export function hoursText(h: number | string | null | undefined): string {
+  if (h === null || h === undefined || h === '') return '–';
+  const n = Number(h);
+  if (!Number.isFinite(n)) return '–';
+  if (n < 1) return `${Math.max(1, Math.round(n * 60))} Min.`;
+  if (n < 48) return `${new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }).format(n)} Std.`;
+  return `${Math.round(n / 24)} Tage`;
+}
+
+const NOTIF_CAT: Record<string, string> = {
+  care: 'Alltag/Pflege', feeding: 'Füttern', medication: 'Medikamente', appointment: 'Termine', message: 'Nachrichten',
+  practice: 'Praxis', vaccination: 'Impfungen', system: 'System',
+};
+export function notifCategoryName(key: string): string {
+  return NOTIF_CAT[key] ?? key;
+}
 export type RecordKey =
   | 'routine_items' | 'routine_done' | 'weights' | 'vaccinations' | 'documents' | 'appointments'
   | 'reminders' | 'medications' | 'doses_given' | 'lab_values' | 'insurances' | 'claims';
