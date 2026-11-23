@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { ActivityData, DashboardData } from './dashboard';
+import type { ActivityData, DashboardData, PracticeDashboardData } from './dashboard';
 
 export type StaffRole = 'admin' | 'support';
 export type AccountStatus = 'active' | 'locked';
@@ -73,6 +73,12 @@ export async function staffDashboard(): Promise<DashboardData> {
   const { data, error } = await supabase.rpc('staff_dashboard');
   if (error) throw error;
   return data as unknown as DashboardData;
+}
+
+export async function staffDashboardPractice(): Promise<PracticeDashboardData> {
+  const { data, error } = await supabase.rpc('staff_dashboard_practice');
+  if (error) throw error;
+  return data as unknown as PracticeDashboardData;
 }
 
 export async function staffActivity(): Promise<ActivityData> {
