@@ -155,9 +155,11 @@ export function TodayMeds() {
 }
 
 /** Übersicht: nächste offene Gabe über alle Tiere + „Alle Gaben heute“ */
-export function NextDoseCard() {
+export function NextDoseCard({ exceptPet }: { exceptPet?: string } = {}) {
   const { t } = useI18n();
-  const d = useTodayDoses();
+  const all = useTodayDoses();
+  // Auf „Heute“ stehen die Gaben des gewählten Tieres schon in der Tagesliste: dann nur die der anderen Tiere
+  const d = exceptPet ? { ...all, planned: all.planned.filter((p) => p.med.pet_id !== exceptPet) } : all;
   const [status, setStatus] = useStatus();
   const { register, focusLater } = useFocusAfter();
   // Nach dem Abhaken wechselt die Karte zur nächsten Gabe: Fokus auf den Link
@@ -166,7 +168,7 @@ export function NextDoseCard() {
   const next = nextOpenDose(d.planned, d.data.doses, d.day);
   return (
     <section className="card stack" aria-labelledby="nd-h">
-      <h2 id="nd-h">{t('odTitle')}</h2>
+      <h2 id="nd-h">{t(exceptPet ? 'odOthers' : 'odTitle')}</h2>
       {next ? (
         <>
           <h3 className="label">{t('odNext')}</h3>

@@ -187,7 +187,7 @@ export function Pet() {
               <PetNextAppointment key={`next-${pet.id}`} petId={pet.id} canBook={editable && !pet.deceased} />
               <section aria-labelledby={`${uid}-qa`} className="stack">
                 <h2 id={`${uid}-qa`}>{t('petAreasH')}</h2>
-                <PetTiles petId={pet.id} />
+                <PetTiles petId={pet.id} vacc={vacc.get(pet.id)} kg={kg?.pet === pet.id ? kg.kg : null} />
               </section>
             </>
           )}

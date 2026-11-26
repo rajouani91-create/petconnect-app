@@ -101,6 +101,8 @@ export function Practices() {
   // Collapse-State für Filtergruppen
   const [showSpecies, setShowSpecies] = useState(true);
   const [showServices, setShowServices] = useState(true);
+  // Nach einer Suche: Ort nur als kurze Zeile, Ergebnisse rücken nach oben; „Ändern“ öffnet das Formular
+  const [editWhere, setEditWhere] = useState(false);
 
   const editablePets = pets.filter((p) => canEdit(myRole(p)));
 
@@ -383,6 +385,13 @@ export function Practices() {
         </section>
       )}
 
+      {center && !editWhere ? (
+        <section className="card where-bar" aria-labelledby={`${uid}-where`}>
+          <h2 id={`${uid}-where`} className="sr-only">{t('psWhere')}</h2>
+          <span className="where-text"><strong>{center.label}</strong><span className="small muted">{t('psKm', { n: filters.radius })}{filters.q ? ` · „${filters.q}“` : ''}</span></span>
+          <button type="button" className="btn btn-secondary" onClick={() => setEditWhere(true)}>{t('psWhereChange')}</button>
+        </section>
+      ) : (
       <section className="card stack" aria-labelledby={`${uid}-where`}>
         <h2 id={`${uid}-where`}>{t('psWhere')}</h2>
         <div className="field">
@@ -397,11 +406,6 @@ export function Practices() {
         </div>
         {geoMsg && <p className={`notice ${geoMsg === 'psGeoWait' ? 'notice-info' : 'notice-warn'}`} role="status">{t(geoMsg)}</p>}
         <p className="muted small">{t('psGeoPrivacy')}</p>
-        <div className="quick-chips" role="group" aria-label={t('psQuick')}>
-          <button type="button" className="chip" aria-pressed={onlineOnly} onClick={() => setOnlineOnly((v) => !v)}>{t('psOnlineBookable')}</button>
-          <button type="button" className="chip" aria-pressed={filters.openNow} onClick={() => setFilters({ openNow: !filters.openNow })}>{t('psOpenNowChip')}</button>
-          <button type="button" className="chip" aria-pressed={emergency} onClick={() => setFilters({ services: toggle(filters.services, 'emergency_24h') })}>{t('psEmergencyChip')}</button>
-        </div>
         <div className="row-2">
           <div className="field">
             <label htmlFor={`${uid}-r`}>{t('psRadius')}</label>
@@ -414,8 +418,15 @@ export function Practices() {
             <input id={`${uid}-q`} type="search" maxLength={80} value={nameInput} onChange={(e) => setNameInput(e.target.value)} />
           </div>
         </div>
+        {center && <div className="actions actions-start"><button type="button" className="btn btn-primary" onClick={() => setEditWhere(false)}>{t('psWhereDone')}</button></div>}
       </section>
+      )}
 
+      <div className="quick-chips is-wrap" role="group" aria-label={t('psQuick')}>
+          <button type="button" className="chip" aria-pressed={onlineOnly} onClick={() => setOnlineOnly((v) => !v)}>{t('psOnlineBookable')}</button>
+          <button type="button" className="chip" aria-pressed={filters.openNow} onClick={() => setFilters({ openNow: !filters.openNow })}>{t('psOpenNowChip')}</button>
+          <button type="button" className="chip" aria-pressed={emergency} onClick={() => setFilters({ services: toggle(filters.services, 'emergency_24h') })}>{t('psEmergencyChip')}</button>
+      </div>
       <details className="card disclosure filters-more">
         <summary id={`${uid}-filters`}>{t('psMoreFilters')}{moreActive > 0 ? ` (${moreActive})` : ''}</summary>
         <div className="stack">
