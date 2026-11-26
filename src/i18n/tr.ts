@@ -2674,4 +2674,11 @@ export const tr: Messages = {
   odOthers: "Bugün: diğer hayvanların ilaçları",
   psWhereChange: "Değiştir",
   psWhereDone: "Tamam",
+  ncDo: "İşaretle",
+  ncGive: "Dozu işaretle",
+  ncDoL: "Tamamlandı olarak işaretle: {x}",
+  ncDoneState: "Tamamlandı",
+  ncGiven: "Verildi",
+  ncTaskDone: "İşaretlendi – Günlük rutinde ve Bugün’de de.",
+  ncGivenDone: "Doz kaydedildi – İlaçlar’da ve Bugün’de de.",
 };

@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { formatIsoDate } from '../i18n';
 import {
-  CATEGORY_LABEL, NOTIF_CATEGORIES, PAGE_SIZE, deleteNotification, groupByDay, listNotifications, markRead, markUnread, notifTarget, notifText,
-  type NotifCategory, type NotificationRow,
+  CATEGORY_LABEL, NOTIF_CATEGORIES, PAGE_SIZE, completeTask, deleteNotification, doneTaskKeys, groupByDay, listNotifications, markRead, markUnread,
+  notifTarget, notifText, taskKey, taskOf, type NotifCategory, type NotificationRow,
 } from '../lib/notifications';
 import { addDays } from '../lib/booking';
 import { dayOf, timeOf } from '../lib/practiceAppointments';
@@ -33,6 +33,24 @@ export function NotificationCenter({ practice = false }: { practice?: boolean })
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useStatus();
+  // erledigte Aufgaben hinter Alltags- und Medikamenten-Meldungen (Schlüssel: taskKey)
+  const [done, setDone] = useState<Set<string>>(() => new Set());
+
+  // Erledigtes nachladen; Meldungen zu schon erledigten Aufgaben gelten als gelesen
+  const syncDone = useCallback(async (rs: NotificationRow[]) => {
+    try {
+      const keys = await doneTaskKeys(rs);
+      setDone((cur) => new Set([...cur, ...keys]));
+      const stale = rs.filter((r) => { const tk = taskOf(r); return !r.read_at && tk !== null && keys.has(taskKey(tk)); }).map((r) => r.id);
+      if (stale.length > 0) {
+        await markRead(stale);
+        const at = new Date().toISOString();
+        setRows((cur) => (cur ? cur.map((r) => (stale.includes(r.id) ? { ...r, read_at: at } : r)) : cur));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -40,12 +58,13 @@ export function NotificationCenter({ practice = false }: { practice?: boolean })
       setRows(r);
       setMore(r.length === PAGE_SIZE);
       setLoadErr(false);
+      void syncDone(r);
     } catch (e) {
       console.error(e);
       setLoadErr(true);
       setRows((cur) => cur ?? []);
     }
-  }, []);
+  }, [syncDone]);
   useEffect(() => { void load(); }, [load]);
 
   async function loadMore() {
@@ -56,6 +75,7 @@ export function NotificationCenter({ practice = false }: { practice?: boolean })
       const r = await listNotifications(last.created_at);
       setRows((cur) => [...(cur ?? []), ...r.filter((x) => !(cur ?? []).some((c) => c.id === x.id))]);
       setMore(r.length === PAGE_SIZE);
+      void syncDone(r);
     } catch (e) {
       console.error(e);
       setStatus(t('errGeneric'), false);
@@ -76,6 +96,18 @@ export function NotificationCenter({ practice = false }: { practice?: boolean })
     } finally {
       setBusy(false);
     }
+  }
+
+  async function complete(n: NotificationRow) {
+    const tk = taskOf(n);
+    if (!tk) return;
+    const key = taskKey(tk);
+    const at = new Date().toISOString();
+    await run(() => completeTask(n), t(tk.type === 'medication' ? 'ncGivenDone' : 'ncTaskDone'), (rs) => rs.map((r) => {
+      const o = taskOf(r);
+      return o && taskKey(o) === key ? { ...r, read_at: r.read_at ?? at } : r;
+    }));
+    setDone((cur) => new Set([...cur, key]));
   }
 
   async function open(n: NotificationRow) {
@@ -134,24 +166,42 @@ export function NotificationCenter({ practice = false }: { practice?: boolean })
                 {g.rows.map((n) => {
                   const { title, body } = notifText(n, lang);
                   const when = timeOf(n.created_at);
+                  const task = taskOf(n);
+                  const isDone = task !== null && done.has(taskKey(task));
                   return (
                     <li key={n.id} className={`nc-item${n.read_at ? '' : ' is-unread'}`}>
                       <span className={`nc-icon nc-${n.category}`} aria-hidden="true">{ICON[n.category]}</span>
-                      <button type="button" className="nc-main" onClick={() => void open(n)}
-                        aria-label={`${n.read_at ? '' : `${t('ncUnread')}: `}${title}. ${body}. ${t(CATEGORY_LABEL[n.category])}, ${when}`}>
-                        <span className="nc-title">{title}</span>
-                        {body && <span className="nc-body">{body}</span>}
-                        <span className="nc-meta">{t(CATEGORY_LABEL[n.category])} · {when}</span>
-                      </button>
+                      <div className="nc-col">
+                        <button type="button" className="nc-main" onClick={() => void open(n)}
+                          aria-label={`${n.read_at ? '' : `${t('ncUnread')}: `}${title}. ${body}. ${t(CATEGORY_LABEL[n.category])}, ${when}`}>
+                          <span className="nc-title">{title}</span>
+                          {body && <span className="nc-body">{body}</span>}
+                          <span className="nc-meta">{t(CATEGORY_LABEL[n.category])} · {when}</span>
+                        </button>
+                        {task && (
+                          <div className="nc-task">
+                            {isDone ? (
+                              <span className="pill pill-ok">✓ {t(task.type === 'medication' ? 'ncGiven' : 'ncDoneState')}</span>
+                            ) : (
+                              <button type="button" className="btn btn-primary btn-sm" disabled={busy}
+                                aria-label={t('ncDoL', { x: title })} onClick={() => void complete(n)}>
+                                ✓ {t(task.type === 'medication' ? 'ncGive' : 'ncDo')}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       <span className="nc-actions">
                         {!n.read_at && <span className="nc-dot" aria-hidden="true" />}
-                        <button type="button" className="btn-icon btn-sm nc-read" disabled={busy}
-                          aria-label={t(n.read_at ? 'ncMarkUnreadL' : 'ncMarkReadL', { x: title })} title={t(n.read_at ? 'ncMarkUnread' : 'ncMarkRead')}
-                          onClick={() => void (n.read_at
-                            ? run(() => markUnread(n.id), t('ncMarkedUnread'), (rs) => rs.map((r) => (r.id === n.id ? { ...r, read_at: null } : r)))
-                            : run(() => markRead([n.id]), t('ncMarkedRead'), (rs) => rs.map((r) => (r.id === n.id ? { ...r, read_at: new Date().toISOString() } : r))))}>
-                          <span aria-hidden="true">{n.read_at ? '○' : '✓'}</span>
-                        </button>
+                        {!task && (
+                          <button type="button" className="btn-icon btn-sm nc-read" disabled={busy}
+                            aria-label={t(n.read_at ? 'ncMarkUnreadL' : 'ncMarkReadL', { x: title })} title={t(n.read_at ? 'ncMarkUnread' : 'ncMarkRead')}
+                            onClick={() => void (n.read_at
+                              ? run(() => markUnread(n.id), t('ncMarkedUnread'), (rs) => rs.map((r) => (r.id === n.id ? { ...r, read_at: null } : r)))
+                              : run(() => markRead([n.id]), t('ncMarkedRead'), (rs) => rs.map((r) => (r.id === n.id ? { ...r, read_at: new Date().toISOString() } : r))))}>
+                            <span aria-hidden="true">{n.read_at ? '○' : '✓'}</span>
+                          </button>
+                        )}
                         <button type="button" className="btn-icon btn-sm" disabled={busy} aria-label={t('ncDeleteL', { x: title })} title={t('ncDelete')}
                           onClick={() => void run(() => deleteNotification(n.id), t('ncDeleted'), (rs) => rs.filter((r) => r.id !== n.id))}>
                           <IconTrash size={18} />

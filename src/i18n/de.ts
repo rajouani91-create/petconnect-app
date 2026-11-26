@@ -2673,6 +2673,13 @@ export const de = {
   odOthers: "Heute: Medikamente der anderen Tiere",
   psWhereChange: "Ändern",
   psWhereDone: "Fertig",
+  ncDo: "Abhaken",
+  ncGive: "Gabe abhaken",
+  ncDoL: "Als erledigt eintragen: {x}",
+  ncDoneState: "Erledigt",
+  ncGiven: "Gegeben",
+  ncTaskDone: "Abgehakt – auch im Alltag und auf „Heute“.",
+  ncGivenDone: "Gabe eingetragen – auch bei den Medikamenten und auf „Heute“.",
 } as const satisfies Record<string, string>;
 
 export type MessageKey = keyof typeof de;

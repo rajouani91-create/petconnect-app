@@ -2674,4 +2674,11 @@ export const ar: Messages = {
   odOthers: "اليوم: أدوية الحيوانات الأخرى",
   psWhereChange: "تغيير",
   psWhereDone: "تم",
+  ncDo: "تأشير",
+  ncGive: "تأشير الجرعة",
+  ncDoL: "تسجيل كمنجز: {x}",
+  ncDoneState: "منجز",
+  ncGiven: "تم الإعطاء",
+  ncTaskDone: "تم التأشير – أيضًا في الروتين اليومي وفي اليوم.",
+  ncGivenDone: "تم تسجيل الجرعة – أيضًا في الأدوية وفي اليوم.",
 };

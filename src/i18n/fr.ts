@@ -2674,4 +2674,11 @@ export const fr: Messages = {
   odOthers: "Aujourd’hui : médicaments des autres animaux",
   psWhereChange: "Modifier",
   psWhereDone: "Terminé",
+  ncDo: "Cocher",
+  ncGive: "Cocher la prise",
+  ncDoL: "Marquer comme fait : {x}",
+  ncDoneState: "Fait",
+  ncGiven: "Donné",
+  ncTaskDone: "Coché – aussi dans le quotidien et sur Aujourd’hui.",
+  ncGivenDone: "Prise enregistrée – aussi dans Médicaments et sur Aujourd’hui.",
 };

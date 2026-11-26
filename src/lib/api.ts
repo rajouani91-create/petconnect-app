@@ -13,6 +13,7 @@ import { isGrantRole, isOpenInvite, parsePreview, toRole, type GrantRole, type I
 import type { TemplateEntry } from './templates';
 import type { PetFormValues, RoutineFormValues } from './validate';
 import { petFormToRow } from './validate';
+import { markTaskRead } from './taskSync';
 
 export class ApiError extends Error {
   readonly code: string | undefined;
@@ -133,6 +134,8 @@ export async function markDone(itemId: string, date: string): Promise<void> {
     { onConflict: 'routine_item_id,done_on', ignoreDuplicates: true },
   );
   if (res.error) throw new ApiError(res.error);
+  // passende Benachrichtigung in der Glocke als gelesen markieren
+  void markTaskRead({ type: 'routine', ref: itemId, day: date, time: null });
 }
 
 export async function markUndone(itemId: string, date: string): Promise<void> {
@@ -752,7 +755,10 @@ export async function listDosesRange(petId: string, from: string, to: string): P
 
 /** „Gegeben“: Person und Zeitpunkt setzt die Datenbank. Doppelt → 23505 (isDuplicate). */
 export async function giveDose(medicationId: string, petId: string, day: string, time: string): Promise<DoseRow> {
-  return check(await supabase.from('medication_doses').insert({ medication_id: medicationId, pet_id: petId, scheduled_on: day, scheduled_time: time }).select('*').single());
+  const row: DoseRow = check(await supabase.from('medication_doses').insert({ medication_id: medicationId, pet_id: petId, scheduled_on: day, scheduled_time: time }).select('*').single());
+  // passende Benachrichtigung in der Glocke als gelesen markieren
+  void markTaskRead({ type: 'medication', ref: medicationId, day, time: time.slice(0, 5) });
+  return row;
 }
 
 export async function undoDose(id: string): Promise<void> {

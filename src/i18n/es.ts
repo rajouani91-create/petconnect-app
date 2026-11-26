@@ -2674,4 +2674,11 @@ export const es: Messages = {
   odOthers: "Hoy: medicación de los otros animales",
   psWhereChange: "Cambiar",
   psWhereDone: "Listo",
+  ncDo: "Marcar",
+  ncGive: "Marcar toma",
+  ncDoL: "Marcar como hecho: {x}",
+  ncDoneState: "Hecho",
+  ncGiven: "Dado",
+  ncTaskDone: "Marcado – también en Rutina y en Hoy.",
+  ncGivenDone: "Toma registrada – también en Medicación y en Hoy.",
 };

@@ -2674,4 +2674,11 @@ export const nl: Messages = {
   odOthers: "Vandaag: medicatie van de andere dieren",
   psWhereChange: "Wijzigen",
   psWhereDone: "Klaar",
+  ncDo: "Afvinken",
+  ncGive: "Dosis afvinken",
+  ncDoL: "Als gedaan markeren: {x}",
+  ncDoneState: "Gedaan",
+  ncGiven: "Gegeven",
+  ncTaskDone: "Afgevinkt – ook in Dagelijks en bij Vandaag.",
+  ncGivenDone: "Dosis genoteerd – ook bij Medicatie en Vandaag.",
 };

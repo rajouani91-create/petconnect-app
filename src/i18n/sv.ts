@@ -2674,4 +2674,11 @@ export const sv: Messages = {
   odOthers: "I dag: de andra djurens medicin",
   psWhereChange: "Ändra",
   psWhereDone: "Klar",
+  ncDo: "Bocka av",
+  ncGive: "Bocka av dos",
+  ncDoL: "Markera som klar: {x}",
+  ncDoneState: "Klart",
+  ncGiven: "Given",
+  ncTaskDone: "Avbockat – även i Vardag och under I dag.",
+  ncGivenDone: "Dos registrerad – även under Medicin och I dag.",
 };

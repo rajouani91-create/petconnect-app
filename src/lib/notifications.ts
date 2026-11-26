@@ -3,6 +3,10 @@
 import { supabase } from './supabase';
 import type { MessageKey } from '../i18n';
 import { buildMessage, type Job } from '../../supabase/functions/push-senden/message.ts';
+import { giveDose, isDuplicate, markDone } from './api';
+import { NOTIF_CHANGED, markTaskRead, notifChanged, taskKey, taskOf, type NotifTask } from './taskSync';
+
+export { NOTIF_CHANGED, taskKey, taskOf, type NotifTask };
 
 export const NOTIF_CATEGORIES = ['practice', 'medication', 'feeding', 'care', 'vaccination', 'appointment', 'message', 'system'] as const;
 export type NotifCategory = (typeof NOTIF_CATEGORIES)[number];
@@ -17,9 +21,7 @@ export interface NotificationRow {
 }
 
 export const PAGE_SIZE = 40;
-/** Ereignis nach Änderungen (gelesen, gelöscht), damit die Glocke sofort neu zählt */
-export const NOTIF_CHANGED = 'pc-notifications-changed';
-const changed = () => window.dispatchEvent(new Event(NOTIF_CHANGED));
+const changed = notifChanged;
 
 const isCategory = (v: unknown): v is NotifCategory => typeof v === 'string' && (NOTIF_CATEGORIES as readonly string[]).includes(v);
 
@@ -90,4 +92,42 @@ export async function deleteNotification(id: string): Promise<void> {
   const { error } = await supabase.from('notifications').delete().eq('id', id);
   if (error) throw error;
   changed();
+}
+
+// ---------- Aufgaben hinter Benachrichtigungen (Alltag, Medikamente) ----------
+
+/** Welche der Aufgaben hinter diesen Benachrichtigungen schon erledigt sind (Schlüssel: taskKey) */
+export async function doneTaskKeys(rows: readonly Pick<NotificationRow, 'kind' | 'ref_id' | 'slot' | 'info'>[]): Promise<Set<string>> {
+  const tasks = rows.map(taskOf).filter((t): t is NotifTask => t !== null);
+  const out = new Set<string>();
+  const rt = tasks.filter((t) => t.type === 'routine');
+  const md = tasks.filter((t) => t.type === 'medication');
+  const uniq = (xs: string[]) => [...new Set(xs)];
+  const [a, b] = await Promise.all([
+    rt.length ? supabase.from('routine_done').select('routine_item_id, done_on').in('routine_item_id', uniq(rt.map((t) => t.ref))).in('done_on', uniq(rt.map((t) => t.day))) : null,
+    md.length ? supabase.from('medication_doses').select('medication_id, scheduled_on, scheduled_time').in('medication_id', uniq(md.map((t) => t.ref))).in('scheduled_on', uniq(md.map((t) => t.day))) : null,
+  ]);
+  if (a?.error) throw a.error;
+  if (b?.error) throw b.error;
+  for (const r of a?.data ?? []) out.add(taskKey({ type: 'routine', ref: r.routine_item_id, day: r.done_on, time: null }));
+  for (const r of b?.data ?? []) out.add(taskKey({ type: 'medication', ref: r.medication_id, day: r.scheduled_on, time: String(r.scheduled_time).slice(0, 5) }));
+  return out;
+}
+
+/** Aufgabe direkt aus der Benachrichtigung erledigen: Alltag abhaken bzw. Gabe eintragen; danach gilt die Meldung als gelesen. */
+export async function completeTask(n: Pick<NotificationRow, 'kind' | 'ref_id' | 'slot' | 'info' | 'pet_id'>): Promise<void> {
+  const task = taskOf(n);
+  if (!task) throw new Error('no_task');
+  if (task.type === 'routine') {
+    await markDone(task.ref, task.day);
+  } else {
+    if (!n.pet_id) throw new Error('no_pet');
+    try {
+      await giveDose(task.ref, n.pet_id, task.day, task.time);
+    } catch (e) {
+      // schon von jemand anderem gegeben: gilt als erledigt
+      if (!isDuplicate(e)) throw e;
+      await markTaskRead(task);
+    }
+  }
 }
