@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampPos, defaultPos, isDrag, parsePos } from './fab';
+import { clampPos, defaultPos, isDrag, parsePos, snapToEdge } from './fab';
 
 const box = { width: 400, height: 800, top: 70, bottom: 90, side: 12 };
 
@@ -39,5 +39,18 @@ describe('isDrag', () => {
   it('unterscheidet Tippen und Ziehen', () => {
     expect(isDrag(2, 3)).toBe(false);
     expect(isDrag(10, 0)).toBe(true);
+  });
+});
+
+describe('snapToEdge', () => {
+  const b = { width: 400, height: 800, top: 60, bottom: 80, side: 16 };
+  it('schiebt links von der Mitte an den linken Rand', () => {
+    expect(snapToEdge({ x: 100, y: 300 }, b)).toEqual({ x: 16, y: 300 });
+  });
+  it('schiebt rechts von der Mitte an den rechten Rand', () => {
+    expect(snapToEdge({ x: 250, y: 300 }, b)).toEqual({ x: 400 - 56 - 16, y: 300 });
+  });
+  it('begrenzt die Höhe weiterhin', () => {
+    expect(snapToEdge({ x: 300, y: 2000 }, b).y).toBe(800 - 56 - 80);
   });
 });

@@ -23,6 +23,7 @@ import { IconCheck, KindIcon } from '../components/Icons';
 import { Loading } from '../components/Loading';
 import { PracticeRequests } from '../components/PracticeRequests';
 import { PatientInvites } from '../components/PatientInvites';
+import { PushPrompt } from '../components/PushPrompt';
 
 export function Today() {
   const { t, lang } = useI18n();
@@ -212,14 +213,6 @@ export function Today() {
         </section>
       )}
 
-      {items && todays.length > 0 && (
-        <section className="card today-hero" aria-labelledby="hero-h">
-          <h2 id="hero-h" className="label">{t('todayH')}</h2>
-          <p className="today-hero-count">{t('todayProgress', { done: todays.filter((e) => allDone.has(e.id)).length, total: todays.length })}</p>
-          <progress className="today-hero-bar" max={todays.length} value={todays.filter((e) => allDone.has(e.id)).length} aria-labelledby="hero-h" />
-        </section>
-      )}
-
       <PetSwitcher />
 
       {error && <p className="notice notice-crit" role="alert">{t('errGeneric')}</p>}
@@ -235,6 +228,15 @@ export function Today() {
               <h2 id="today-h">{t('todayH')}</h2>
               <Link to="/alltag" className="link">{t('toPlan')}</Link>
             </div>
+            {todays.length > 0 && (() => {
+              const nDone = todays.filter((e) => allDone.has(e.id)).length;
+              return (
+                <div className="today-progress">
+                  <progress max={todays.length} value={nDone} aria-labelledby="today-h today-count" />
+                  <span id="today-count" className="small">{t('todayProgress', { done: nDone, total: todays.length })}</span>
+                </div>
+              );
+            })()}
             {todays.length === 0 ? (
               <p className="muted">{t('todayEmpty')}</p>
             ) : (
@@ -267,7 +269,7 @@ export function Today() {
                       >
                         <IconCheck size={20} />
                       </button>
-                      <span className="time mono">{time}</span>
+                      <span className="time">{time}</span>
                       {isKind(kind) && <KindIcon kind={kind} size={20} className="kind-icon" />}
                       <span className="today-title">{title}</span>
                       {pill && <span className="pill pill-ok">{pill}</span>}
@@ -279,7 +281,9 @@ export function Today() {
           </section>
         </>
       )}
-      <NextDoseCard />
+      {/* Gaben dieses Tieres stehen schon in der Liste „Heute“; hier nur die der anderen Tiere */}
+      <NextDoseCard exceptPet={active.id} />
+      <PushPrompt />
       <UpcomingCard onStatus={setStatus} />
       <p className="sr-only" role="status" aria-live="polite">{status}</p>
     </div>
@@ -339,7 +343,7 @@ function NextCard({
         <div className="next-text">
           <p className="next-title">{entryTitle(item, t, lang)}</p>
           <p className="next-meta">
-            <span className="mono">{t('gpAt', { t: time })}</span>
+            <span className="num">{t('gpAt', { t: time })}</span>
             <span className={`pill${next.state === 'now' ? ' pill-accent' : ''}`}>{rel}</span>
             {next.state === 'now' && next.overdueMin > 0 && <span className="muted">{t('overdueSince', { m: next.overdueMin })}</span>}
           </p>

@@ -32,6 +32,15 @@ export function clampPos(p: FabPos, box: FabBox, size = FAB_SIZE): FabPos {
   };
 }
 
+/** Nach dem Loslassen an den näheren Seitenrand schieben, damit der Button keine Inhalte mitten im Bild verdeckt. */
+export function snapToEdge(p: FabPos, box: FabBox, size = FAB_SIZE): FabPos {
+  const c = clampPos(p, box, size);
+  const minX = box.left ?? box.side;
+  const maxX = Math.max(minX, box.width - size - box.side);
+  const mid = (minX + maxX) / 2;
+  return { x: c.x <= mid ? minX : maxX, y: c.y };
+}
+
 /** Startposition: unten rechts über der Navigation. */
 export function defaultPos(box: FabBox, size = FAB_SIZE): FabPos {
   return clampPos({ x: box.width - size - box.side, y: box.height - size - box.bottom }, box, size);

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { Link, useLocation } from 'react-router';
 import { useI18n } from '../i18n/I18nProvider';
 import { IconAssistant } from './Icons';
-import { FAB_SIZE, FAB_STORAGE_KEY, clampPos, defaultPos, isDrag, parsePos, type FabBox, type FabPos } from '../lib/fab';
+import { FAB_SIZE, FAB_STORAGE_KEY, clampPos, defaultPos, snapToEdge, isDrag, parsePos, type FabBox, type FabPos } from '../lib/fab';
 
 /** Seiten, auf denen der Button nichts zu suchen hat (der Assistent selbst, Notfall). */
 const HIDDEN_ON = ['/mehr/assistent', '/notfall'];
@@ -74,7 +74,7 @@ export function AssistantFab() {
       }, 0);
       setDragging(false);
       setPos((p) => {
-        const next = clampPos(p, measure());
+        const next = snapToEdge(p, measure());
         try {
           localStorage.setItem(FAB_STORAGE_KEY, JSON.stringify(next));
         } catch {

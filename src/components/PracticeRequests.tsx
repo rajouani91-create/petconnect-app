@@ -4,6 +4,7 @@ import { formatIsoDate } from '../i18n';
 import { usePets } from '../pets/PetsProvider';
 import { useAuth } from '../auth/AuthProvider';
 import { answerAccessRequest, ownerAccessRequests, type OwnerRequest } from '../lib/practiceAccess';
+import { Dialog } from './Dialog';
 
 /** „{Praxis} bittet um Zugriff“: Halter:in wählt eigene Tiere und erlaubt, oder lehnt ab. Unsichtbar ohne offene Anfragen. */
 export function PracticeRequests() {
@@ -15,6 +16,8 @@ export function PracticeRequests() {
   const [chosen, setChosen] = useState<Record<string, string[]>>({});
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // Anfrage im Blatt geöffnet (Details und Auswahl erst dort)
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -43,6 +46,7 @@ export function PracticeRequests() {
     try {
       await answerAccessRequest(r.id, accept, accept ? ids : []);
       setMsg({ ok: true, text: accept ? t('prqAccepted', { p: r.practice_name }) : t('prqDeclined') });
+      setOpenId(null);
       await load();
     } catch {
       setMsg({ ok: false, text: t('errGeneric') });
@@ -51,37 +55,55 @@ export function PracticeRequests() {
     }
   }
 
+  const petNames = own.map((p) => p.name).join(', ');
+  const open = reqs.find((r) => r.id === openId) ?? null;
+  const sel = open ? selected(open.id) : [];
+  const chosenNames = own.filter((p) => sel.includes(p.id)).map((p) => p.name).join(', ');
+
   return (
     <div className="stack">
       {msg && <p className={`notice ${msg.ok ? 'notice-ok' : 'notice-crit'}`} role={msg.ok ? 'status' : 'alert'}>{msg.text}</p>}
-      {reqs.map((r) => {
-        const sel = selected(r.id);
-        return (
-          <section key={r.id} className="card stack practice-request" aria-labelledby={`prq-${r.id}`}>
+      {reqs.map((r) => (
+        <section key={r.id} className="card practice-request is-compact" aria-labelledby={`prq-${r.id}`}>
+          <div className="prq-text">
             <h2 id={`prq-${r.id}`}>{t('prqTitle', { p: r.practice_name })}</h2>
-            <p className="muted small">{[r.city, formatIsoDate(r.created_at.slice(0, 10), lang)].filter(Boolean).join(' · ')}</p>
-            {r.note && <p className="pre">„{r.note}“</p>}
+            <p className="small muted">{own.length > 0 ? t('prqFor', { pets: petNames }) : r.city}</p>
+          </div>
+          <button type="button" className="btn btn-primary" onClick={() => { setMsg(null); setOpenId(r.id); }}>{t('prqReview')}</button>
+        </section>
+      ))}
+      <Dialog open={open !== null} sheet title={open ? open.practice_name : ''} onClose={() => setOpenId(null)}
+        actions={open ? (
+          <>
+            <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void answer(open, false)}>{t('prqDecline')}</button>
+            <button type="button" className="btn btn-primary" disabled={busy || sel.length === 0} aria-busy={busy} onClick={() => void answer(open, true)}>
+              {sel.length > 0 ? t('prqAllowFor', { pets: chosenNames }) : t('prqAllow')}
+            </button>
+          </>
+        ) : null}>
+        {open && (
+          <div className="stack">
+            <p className="muted small">{[open.city, formatIsoDate(open.created_at.slice(0, 10), lang)].filter(Boolean).join(' · ')}</p>
+            {open.note && <p className="pre">„{open.note}“</p>}
             <fieldset className="field">
               <legend>{t('prqWhich')}</legend>
               <div className="stack">
                 {own.map((p) => (
                   <label key={p.id} className="check-row">
                     <input type="checkbox" checked={sel.includes(p.id)}
-                      onChange={(e) => setChosen((c) => ({ ...c, [r.id]: e.target.checked ? [...sel, p.id] : sel.filter((x) => x !== p.id) }))} />
+                      onChange={(e) => setChosen((c) => ({ ...c, [open.id]: e.target.checked ? [...sel, p.id] : sel.filter((x) => x !== p.id) }))} />
                     <span>{p.name}</span>
                   </label>
                 ))}
               </div>
             </fieldset>
-            <p className="muted small">{t('prqWhat')}</p>
+            <h3 className="label">{t('prqSees')}</h3>
+            <p className="small">{t('prqWhat')}</p>
             <p className="muted small">{t('paCanWrite')}</p>
-            <div className="row-actions">
-              <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void answer(r, true)}>{t('prqAllow')}</button>
-              <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void answer(r, false)}>{t('prqDecline')}</button>
-            </div>
-          </section>
-        );
-      })}
+            {msg && !msg.ok && <p className="notice notice-crit" role="alert">{msg.text}</p>}
+          </div>
+        )}
+      </Dialog>
     </div>
   );
 }
