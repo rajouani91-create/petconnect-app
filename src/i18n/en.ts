@@ -2674,4 +2674,11 @@ export const en: Messages = {
   odOthers: "Today: other pets’ medication",
   psWhereChange: "Change",
   psWhereDone: "Done",
+  ncDo: "Check off",
+  ncGive: "Check off dose",
+  ncDoL: "Mark as done: {x}",
+  ncDoneState: "Done",
+  ncGiven: "Given",
+  ncTaskDone: "Checked off – also in Daily routine and on Today.",
+  ncGivenDone: "Dose recorded – also in Medication and on Today.",
 };

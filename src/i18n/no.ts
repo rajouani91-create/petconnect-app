@@ -2674,4 +2674,11 @@ export const no: Messages = {
   odOthers: "I dag: de andre dyrenes medisin",
   psWhereChange: "Endre",
   psWhereDone: "Ferdig",
+  ncDo: "Kryss av",
+  ncGive: "Kryss av dose",
+  ncDoL: "Merk som gjort: {x}",
+  ncDoneState: "Gjort",
+  ncGiven: "Gitt",
+  ncTaskDone: "Krysset av – også i Hverdag og under I dag.",
+  ncGivenDone: "Dose registrert – også under Medisiner og I dag.",
 };
